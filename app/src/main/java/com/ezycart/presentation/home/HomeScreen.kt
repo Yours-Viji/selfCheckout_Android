@@ -185,11 +185,14 @@ fun HomeScreen(
 ) {
     // val loadCellState by sensorSerialPortViewModel.usbData.collectAsStateWithLifecycle()
     val weightData by sensorSerialPortViewModel.connectionLog.collectAsStateWithLifecycle()
-    //val weightState by sensorSerialPortViewModel.weightState.collectAsStateWithLifecycle()
+    val weightState by sensorSerialPortViewModel.weightState.collectAsStateWithLifecycle()
+
+
     val state by viewModel.stateFlow.collectAsStateWithLifecycle()
     val showDialog = remember { mutableStateOf(false) }
     val cartCount = viewModel.cartCount.collectAsState()
     val employeeName = viewModel.employeeName.collectAsState()
+    val errorMessage = viewModel.errorMessage.collectAsState()
     val priceInfo by viewModel.priceDetails.collectAsState()
     val productInfo by viewModel.productInfo.collectAsState()
     val shoppingCartInfo = viewModel.shoppingCartInfo.collectAsState()
@@ -221,6 +224,18 @@ fun HomeScreen(
             }
         }
     }
+
+    LaunchedEffect(errorMessage.value) {
+        errorMessage.value.let { message ->
+            DynamicToast.makeError(context, message).show()
+            viewModel.clearError()
+        }
+    }
+
+    LaunchedEffect(weightState) {
+        viewModel.handleWeightUpdate(weightState)
+    }
+
     LaunchedEffect(state.isReadyToInitializePaymentSdk) {
         onPaymentInitialize()
     }

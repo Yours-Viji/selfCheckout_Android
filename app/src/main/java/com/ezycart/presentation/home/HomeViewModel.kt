@@ -16,7 +16,10 @@ import com.ezycart.domain.usecase.PaymentUseCase
 import com.ezycart.domain.usecase.ShoppingUseCase
 import com.ezycart.model.ProductInfo
 import com.ezycart.model.ProductPriceInfo
+import com.ezycart.presentation.WeightUpdate
 import com.ezycart.presentation.common.data.Constants
+import com.ezycart.services.usb.WeightValidationManager
+import com.ezycart.services.usb.WeightValidationManager.ValidationResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -80,7 +83,13 @@ class HomeViewModel @Inject constructor(
     private var pollingJob: Job? = null
     private val _paymentStatusState = MutableStateFlow<PaymentStatusState>(PaymentStatusState.Idle)
     val paymentStatusState: StateFlow<PaymentStatusState> = _paymentStatusState.asStateFlow()
-var tempcounter =0
+
+    private val validationManager = WeightValidationManager()
+    private var weightAtRemoval: Double = 0.0
+
+    private val _errorMessage = MutableStateFlow("")
+    val errorMessage: StateFlow<String> = _errorMessage.asStateFlow()
+
     sealed class PaymentStatusState {
         object Idle : PaymentStatusState()
         object Loading : PaymentStatusState()
@@ -565,4 +574,37 @@ var tempcounter =0
         return PaymentRequest("HLB","HLB@123456789")
     }
 
+
+    fun handleWeightUpdate(update: WeightUpdate) {
+        viewModelScope.launch {
+            when (update.status) {
+                0 -> { /* Initial load - Save baseline w1 if needed */ }
+
+                -1 -> {
+                    // Customer picked up an item
+                    weightAtRemoval = Math.abs(update.delta_w1)
+                }
+
+                1 -> {
+                    // Customer placed item in LC2
+                    val product = _productInfo.value
+                    if (product != null) {
+                        val result = validationManager.validateAddition(
+                            product = product,
+                            deltaW1 = weightAtRemoval,
+                            deltaW2 = update.delta_w2
+                        )
+
+                        if (result is ValidationResult.Success) {
+                            //addToCart(product)
+                            addProductToShoppingCart(product.barcode,1)
+                            _productInfo.value = null // Clear for next scan
+                        } else {
+                            _errorMessage.value = (result as ValidationResult.Error).message
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
