@@ -1191,7 +1191,7 @@ fun CartScreen(
                 //repeat(20) {
                     itemsIndexed(cartItems) { index, productData ->
                         CartItemCard(
-                            productInfo = cartItems[0],
+                            productInfo = cartItems[index],
                             onRemove = { onRemoveItem(it) },
                             onEditProduct = { barCode, id, updatedQuantity ->
                                 onEditProduct(barCode, id, updatedQuantity)
