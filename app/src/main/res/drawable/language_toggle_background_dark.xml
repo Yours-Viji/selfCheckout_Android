@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <layer-list>
+            <item>
+                <shape>
+                    <stroke android:color="@color/white" android:width="1dp"></stroke>
+
+                    <corners android:radius="20dp" />
+
+                    <padding android:bottom="3dp" android:left="5dp" android:right="5dp" android:top="3dp" />
+                </shape>
+            </item>
+
+            <item android:drawable="@drawable/outline_language_white" android:gravity="center_vertical|left" />
+            <item android:drawable="@drawable/ic_baseline_arrow_drop_down_white" android:gravity="center_vertical|right" />
+        </layer-list>
+    </item>
+</selector>
