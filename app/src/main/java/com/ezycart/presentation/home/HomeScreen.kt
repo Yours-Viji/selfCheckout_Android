@@ -153,14 +153,19 @@ import com.ezycart.domain.model.AppMode
 import com.ezycart.payment.nearpay.NearPaymentListener
 import com.ezycart.presentation.ScannerViewModel
 import com.ezycart.presentation.SensorSerialPortViewModel
+import com.ezycart.presentation.UsbTerminalDialog
 import com.ezycart.presentation.activation.LockScreenOrientation
 import com.ezycart.presentation.alertview.QrPaymentAlertView
 import com.ezycart.presentation.common.components.BarcodeScannerListener
 import com.ezycart.presentation.common.data.Constants
 import com.ezycart.presentation.landing.BitesHeader
+import com.ezycart.services.usb.SensorSerialPortCommunication
+
+import com.ezycart.services.usb.com.LoginWeightScaleSerialPort
 import com.google.accompanist.web.rememberWebViewState
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
+import com.hoho.android.usbserial.util.SerialInputOutputManager
 import com.pranavpandey.android.dynamic.toasts.DynamicToast
 import io.nearpay.sdk.utils.enums.TransactionData
 import kotlinx.coroutines.CoroutineScope
@@ -184,8 +189,8 @@ fun HomeScreen(
     onTransactionCalled: () -> Unit
 ) {
     // val loadCellState by sensorSerialPortViewModel.usbData.collectAsStateWithLifecycle()
-    val weightData by sensorSerialPortViewModel.connectionLog.collectAsStateWithLifecycle()
-    val weightState by sensorSerialPortViewModel.weightState.collectAsStateWithLifecycle()
+    //val weightData by sensorSerialPortViewModel.connectionLog.collectAsStateWithLifecycle()
+   // val weightState by sensorSerialPortViewModel.weightState.collectAsStateWithLifecycle()
 
 
     val state by viewModel.stateFlow.collectAsStateWithLifecycle()
@@ -211,8 +216,9 @@ fun HomeScreen(
     val focusRequester = remember { FocusRequester() }
     val showErrorMessage = remember { mutableStateOf("") }
     val showWalletScanner = remember { mutableStateOf(false) }
-
+    var showTerminal = remember { mutableStateOf(false) }
     val context = LocalContext.current
+     val weightBuffer = StringBuilder()
 
     LockScreenOrientation(context,ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
 
@@ -232,22 +238,66 @@ fun HomeScreen(
         }
     }
 
-    LaunchedEffect(weightState) {
-        viewModel.handleWeightUpdate(weightState)
-    }
+    /*LaunchedEffect(weightState) {
+       // viewModel.handleWeightUpdate(weightState)
+    }*/
 
     LaunchedEffect(state.isReadyToInitializePaymentSdk) {
         onPaymentInitialize()
     }
     LaunchedEffect(priceInfo) {
         if (priceInfo != null) {
-            showDialog.value = true
+           // showDialog.value = true
         }
     }
     if (showErrorMessage.value.isNotEmpty()) {
         DynamicToast.makeError(context, showErrorMessage.value).show()
     }
+    if (showTerminal.value) {
+        LoginWeightScaleSerialPort.initWeightScaleSerialPort(
+            context = context,
+            listener = object : SerialInputOutputManager.Listener {
 
+                override fun onNewData(data: ByteArray) {
+                    val chunk = String(data)
+                    // Always append the chunk to the buffer first
+                    weightBuffer.append(chunk)
+
+                    // Check the buffer for the delimiter (newline)
+                    while (weightBuffer.contains("\n")) {
+                        val indexOfNewline = weightBuffer.indexOf("\n")
+
+                        // Extract the full message up to the newline
+                        val fullMessage = weightBuffer.substring(0, indexOfNewline).trim()
+
+                        if (fullMessage.isNotEmpty()) {
+                            // Send the COMPLETE JSON string to the ViewModel
+                            viewModel.setErrorMessage(fullMessage)
+                            try {
+                                viewModel.handleRawUsbData(fullMessage)
+                            } catch (e: Exception) {
+                            }
+                        }
+
+                        // Remove the processed message from the buffer
+                        weightBuffer.delete(0, indexOfNewline + 1)
+                    }
+                }
+
+                override fun onRunError(e: Exception) {
+                    // Handle disconnection or hardware errors
+                    Log.e("USB_ERROR", "Serial error: ${e.message}")
+                    viewModel.setErrorMessage("Serial error: ${e.message}")
+                    //SensorSerialPortCommunication.emitSensorMessage("Error: ${e.message}")
+                }
+            }
+        )
+        UsbTerminalDialog(
+            onDismiss = { showTerminal.value = false },
+            sensorViewModel = sensorSerialPortViewModel,
+            viewModel = viewModel,
+        )
+    }
     if (proceedTapToPay.value) {
         shoppingCartInfo.value.let {
             val finalAmount = it?.finalAmount ?: 0.0
@@ -412,7 +462,7 @@ fun HomeScreen(
                 )
             }
         ) {*/
-            BitesHeaderNew (cartCount = cartCount.value,onHelpClick = { /* Show Help Dialog */ })
+            BitesHeaderNew (cartCount = cartCount.value,onHelpClick = { showTerminal.value =true })
            /* Scaffold(
                *//* topBar = {
                     MyTopAppBar(

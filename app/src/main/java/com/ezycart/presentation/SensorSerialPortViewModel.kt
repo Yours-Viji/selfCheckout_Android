@@ -136,7 +136,7 @@ class SensorSerialPortViewModel @Inject constructor(
     }
 
     fun sendCommand(command: String) {
-        SensorSerialPortCommunication.sendMessageToWeightScale(command)
+        SensorSerialPortCommunication.sendMessageToWeightScale("$command\r\n")
     }
     fun disconnectManually() {
         SensorSerialPortCommunication.closeAllConnections()
@@ -144,7 +144,7 @@ class SensorSerialPortViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         // Ensure ports are closed when ViewModel is destroyed
-        SensorSerialPortCommunication.closeAllConnections()
+      //  SensorSerialPortCommunication.closeAllConnections()
     }
 }
 

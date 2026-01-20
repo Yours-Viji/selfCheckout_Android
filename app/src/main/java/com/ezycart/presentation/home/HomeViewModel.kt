@@ -1,5 +1,7 @@
 package com.ezycart.presentation.home
 
+import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ezycart.data.datastore.PreferencesManager
@@ -20,7 +22,9 @@ import com.ezycart.presentation.WeightUpdate
 import com.ezycart.presentation.common.data.Constants
 import com.ezycart.services.usb.WeightValidationManager
 import com.ezycart.services.usb.WeightValidationManager.ValidationResult
+import com.ezycart.services.usb.com.UsbSerialManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +32,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import javax.inject.Inject
 
 @HiltViewModel
@@ -110,9 +116,22 @@ class HomeViewModel @Inject constructor(
             _employeeName.update { preferencesManager.getEmployeeName() }
             _canShowPriceChecker.update { preferencesManager.canShowPriceChecker() }
         }
-
+       // observeUsbData()
     }
 
+    fun setErrorMessage(data : String){
+        _errorMessage.value = "New Data ==>>: $data"
+    }
+    private fun observeUsbData() {
+        viewModelScope.launch {
+            // This 'calls' the flow to start receiving data from the manager
+            UsbSerialManager.serialData.collect { rawJson ->
+                _errorMessage.value = "Data: $rawJson"
+                // Parse and handle your business logic (Status 0, -1, 1, 10)
+               // handleLoadCellLogic(rawJson)
+            }
+        }
+    }
     fun setPriceCheckerView(canShow: Boolean) {
         viewModelScope.launch {
             preferencesManager.setPriceCheckerStatus(canShow)
@@ -615,6 +634,7 @@ class HomeViewModel @Inject constructor(
 
     fun handleWeightUpdate(update: WeightUpdate) {
         viewModelScope.launch {
+           // _errorMessage.value = "Weight Data Old: $update"
             when (update.status) {
                 0 -> {
 
@@ -684,5 +704,32 @@ class HomeViewModel @Inject constructor(
         }
 
 
+    }
+
+    fun handleRawUsbData(jsonString: String) {
+        try {
+            val json = JSONObject(jsonString)
+            val status = json.optInt("status")
+            val deltaW1 = json.optDouble("delta_w1", 0.0)
+            val deltaW2 = json.optDouble("delta_w2", 0.0)
+            val w1 = json.optDouble("w1", 0.0)
+            val w2 = json.optDouble("w2", 0.0)
+
+            handleWeightUpdate(WeightUpdate(status = status, delta_w1 = deltaW1, delta_w2 = deltaW2, w1 = w1,w2=w2))
+           /* when (status) {
+                0 -> { *//* Initial loading: Capture w1 baseline *//* }
+                -1 -> {
+                    // Removal from LC1: Item picked up
+                   // lastRemovedWeight = Math.abs(deltaW1)
+                }
+                1 -> {
+                    // Added to LC2: Validate against lastRemovedWeight or Software Weight
+                    //validateWeight(lastRemovedWeight, deltaW2)
+                  //  handleWeightUpdate(WeightUpdate(status = status, delta_w1 = deltaW1, delta_w2 = deltaW2))
+                }
+            }*/
+        } catch (e: Exception) {
+            Log.e("USB_PARSE", "Invalid JSON: $jsonString")
+        }
     }
 }

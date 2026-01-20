@@ -34,8 +34,8 @@ object SensorSerialPortCommunication {
 
     private var mUsbManager: UsbManager? = null
     private var serialPort: UsbSerialPort? = null
-    private var ledSerialPort: UsbSerialPort? = null
-    private var scannerSerialPort: UsbSerialPort? = null
+    //private var ledSerialPort: UsbSerialPort? = null
+    //private var scannerSerialPort: UsbSerialPort? = null
 
     private var mSerialIoManager: SerialInputOutputManager? = null
     private var ledSerialIoManager: SerialInputOutputManager? = null
@@ -68,10 +68,10 @@ object SensorSerialPortCommunication {
                 }
 
                 // Initialize LED
-                ledSerialPort?.let {
+              /*  ledSerialPort?.let {
                     setupPort(it, ledListener) { manager -> ledSerialIoManager = manager }
                     _sensorMessage.emit("Connected - $it.device.productName")
-                }
+                }*/
             } catch (e: Exception) {
                 _sensorMessage.emit("Error on Connection")
                 Log.e(TAG, "Failed to initialize ports: ${e.message}")
@@ -95,13 +95,14 @@ if (manager.deviceList.values.isNullOrEmpty()){
 
                     when {
                         productName.contains("sparkfun") || productName.contains("arduino") -> {
-                            ledSerialPort = port
+                            //ledSerialPort = port
                         }
                         productName.contains("newland") -> {
-                            scannerSerialPort = port
+                            //scannerSerialPort = port
                         }
                         else -> {
                             serialPort = port
+                            _sensorMessage.tryEmit("Load cell connected")
                         }
                     }
                 }
@@ -209,14 +210,14 @@ if (manager.deviceList.values.isNullOrEmpty()){
             _sensorMessage.tryEmit("Disconnected - ${serialPort!!.device.productName}")
 
             serialPort?.close()
-            ledSerialPort?.close()
+           // ledSerialPort?.close()
 
 
         } catch (e: IOException) {
             Log.e(TAG, "Error closing ports: ${e.message}")
         } finally {
             serialPort = null
-            ledSerialPort = null
+           // ledSerialPort = null
             mSerialIoManager = null
             ledSerialIoManager = null
         }
