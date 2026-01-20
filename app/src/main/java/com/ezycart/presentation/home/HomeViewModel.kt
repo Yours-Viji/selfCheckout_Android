@@ -337,6 +337,7 @@ class HomeViewModel @Inject constructor(
                         isLoading = false
                     )
                     _productInfo.value = result.data
+                    addProductToShoppingCart(productInfo.value!!.barcode,1)
                     getPriceDetails(barCode)
                 }
 
@@ -375,7 +376,8 @@ class HomeViewModel @Inject constructor(
                         isLoading = false
                     )
                     _priceDetails.value = result.data
-                    handleProductRemoval()
+
+                   // handleProductRemoval()
                     loadingManager.hide()
                 }
 

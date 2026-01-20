@@ -12,31 +12,29 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.ezycart.domain.usecase.LoadingManager
 import com.ezycart.payment.nearpay.NearPayService
-import com.ezycart.payment.nearpay.NearPaymentListener
-import com.ezycart.presentation.ScannerViewModel
 import com.ezycart.presentation.SplashViewModel
 import com.ezycart.presentation.activation.ActivationScreen
-import com.ezycart.presentation.common.components.BarcodeScannerListener
 import com.ezycart.presentation.common.components.CustomRationaleDialog
 import com.ezycart.presentation.common.components.GlobalLoadingOverlay
 import com.ezycart.presentation.common.data.Constants
 import com.ezycart.presentation.home.HomeScreen
+import com.ezycart.presentation.home.HomeViewModel
 import com.ezycart.presentation.home.WebViewScreen
 import com.ezycart.presentation.landing.LandingScreen
-import com.ezycart.presentation.login.LoginScreen
+import com.ezycart.presentation.payment.PaymentSelectionScreen
 import com.ezycart.services.usb.SensorSerialPortCommunication
 import com.meticha.permissions_compose.PermissionManagerConfig
 import dagger.hilt.android.AndroidEntryPoint
@@ -171,9 +169,29 @@ class MainActivity : ComponentActivity(){
                                                 popUpTo("home") { inclusive = true } // remove home from back stack
                                             }
                                         },
+                                        goToPaymentScreen ={
+                                            navController.navigate("payment") {
+                                                popUpTo("home") { inclusive = false }
+                                            }
+                                        },
                                         onTransactionCalled = {
                                             navController.navigateToWebView(Constants.EZY_LITE_TRANSACTION_URL)
                                         }
+                                    )
+                                }
+                                composable("payment") { backStackEntry ->
+                                    // Get the HomeViewModel using the "home" destination as the parent
+                                    val parentEntry = remember(backStackEntry) {
+                                        navController.getBackStackEntry("home")
+                                    }
+                                    val homeViewModel: HomeViewModel = hiltViewModel(parentEntry)
+                                    val count = homeViewModel.cartCount.collectAsStateWithLifecycle()
+                                    val shoppingCartInfo = homeViewModel.shoppingCartInfo.collectAsStateWithLifecycle()
+
+                                    PaymentSelectionScreen(
+                                        cartCount = count.value,
+                                        shoppingCartInfo = shoppingCartInfo.value,
+                                        onBackClick = { navController.popBackStack() }
                                     )
                                 }
                                 composable("webview/{url}") { backStackEntry ->

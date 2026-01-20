@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
@@ -85,22 +87,25 @@ fun LandingScreen(viewModel: LandingViewModel = viewModel(),
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp) // Professional footer height for 22"
+                    .height(200.dp) // Maintain your professional footer height
                     .background(Color.Black)
                     .clickable(enabled = !uiState.value.isStarted) {
                         viewModel.onStartClicked()
                     },
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center // This handles horizontal and vertical centering
             ) {
                 if (!uiState.value.isStarted) {
                     Text(
                         text = "TOUCH TO START",
-                        style = TextStyle(
-                            color = Color.White,
-                            fontSize = 36.sp,
-                            fontWeight = FontWeight.Light,
-                            letterSpacing = 4.sp
-                        )
+                        color = Color.White,
+                        fontSize = 36.sp,
+                        fontWeight = FontWeight.Light,
+                        letterSpacing = 4.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .height(200.dp)
+                            .fillMaxWidth()
+                            .wrapContentHeight(Alignment.CenterVertically)
                     )
                 }
             }

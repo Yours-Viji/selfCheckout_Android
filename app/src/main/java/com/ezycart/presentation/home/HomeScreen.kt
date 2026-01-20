@@ -186,6 +186,7 @@ fun HomeScreen(
     onPaymentInitialize: () -> Unit,
     makeNearPayment: (String, String, NearPaymentListener?) -> Unit,
     onLogout: () -> Unit,
+    goToPaymentScreen: () -> Unit,
     onTransactionCalled: () -> Unit
 ) {
     // val loadCellState by sensorSerialPortViewModel.usbData.collectAsStateWithLifecycle()
@@ -523,9 +524,7 @@ fun HomeScreen(
                         showWalletScanner.value = true
                         // viewModel.initWavPayQrPayment()
 
-                    }, onTapToPayClick = {
-                        proceedTapToPay.value = true
-                    },
+                    }, onTapToPayClick = goToPaymentScreen,
                         onLogout = onLogout,)
 
                 }
@@ -754,7 +753,7 @@ fun PickersShoppingScreen(
                             id = id
                         )
                     },
-                    onPayNowClick = { showSheet.value = true},
+                    onPayNowClick = onTapToPayClick,
                     onLogout = onLogout,
                 )
             }
@@ -809,39 +808,39 @@ fun CheckoutSummaryScreen(
         Column {
             BillRow(
                 "Sub Total",
-                "${Constants.currencySymbol} ${paymentSummary?.totalPrice ?: 0.0}",
+                "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.totalPrice ?: 0.0)}",
                 color = Color.Black
             )
             BillRow(
                 "Promo Discount",
-                "${Constants.currencySymbol} ${paymentSummary?.promotionSave ?: 0.0}",
+                "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.promotionSave ?: 0.0)}",
                 color = Color.Black
             )
             BillRow(
                 "Special Discount",
-                "${Constants.currencySymbol} ${paymentSummary?.totalDiscount ?: 0.0}",
+                "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.totalDiscount ?: 0.0)}",
                 color = Color.Black
             )
             BillRow(
                 "Coupon Discount",
-                "${Constants.currencySymbol} ${paymentSummary?.couponAmount ?: 0.0}",
+                "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.couponAmount ?: 0.0)}",
                 color = Color.Black
             )
             BillRow(
                 "Voucher Discount",
-                "${Constants.currencySymbol} ${paymentSummary?.vourcherAmount ?: 0.0}",
+                "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.vourcherAmount ?: 0.0)}",
                 color = Color.Black
             )
             BillRow(
                 "Tax",
-                "${Constants.currencySymbol} ${paymentSummary?.totalTax ?: 0.0}",
+                "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.totalTax ?: 0.0)}",
                 color = Color.Black
             )
             Divider(modifier = Modifier.padding(vertical = 8.dp))
             Spacer(modifier = Modifier.height(5.dp))
             BillRow(
                 "Grand Total",
-                "${Constants.currencySymbol} ${paymentSummary?.finalAmount ?: 0.0}",
+                "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.finalAmount ?: 0.0)}",
                 isBold = true,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -1081,39 +1080,39 @@ fun CartScreen(
                         // Grand Total Row
                         BillRow(
                             "Sub Total",
-                            "${Constants.currencySymbol} ${paymentSummary?.totalPrice ?: 0.0}",
+                            "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.totalPrice ?: 0.0)}",
                             color = Color.Black
                         )
                         BillRow(
                             "Promo Discount",
-                            "${Constants.currencySymbol} ${paymentSummary?.promotionSave ?: 0.0}",
+                            "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.promotionSave ?: 0.0)}",
                             color = Color.Black
                         )
                         BillRow(
                             "Special Discount",
-                            "${Constants.currencySymbol} ${paymentSummary?.totalDiscount ?: 0.0}",
+                            "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.totalDiscount ?: 0.0)}",
                             color = Color.Black
                         )
                         BillRow(
                             "Coupon Discount",
-                            "${Constants.currencySymbol} ${paymentSummary?.couponAmount ?: 0.0}",
+                            "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.couponAmount ?: 0.0)}",
                             color = Color.Black
                         )
                         BillRow(
                             "Voucher Discount",
-                            "${Constants.currencySymbol} ${paymentSummary?.vourcherAmount ?: 0.0}",
+                            "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.vourcherAmount ?: 0.0)}",
                             color = Color.Black
                         )
                         BillRow(
                             "Tax",
-                            "${Constants.currencySymbol} ${paymentSummary?.totalTax ?: 0.0}",
+                            "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.totalTax ?: 0.0)}",
                             color = Color.Black
                         )
                         Divider(modifier = Modifier.padding(vertical = 8.dp))
                         Spacer(modifier = Modifier.height(5.dp))
                         BillRow(
                             "Grand Total",
-                            "${Constants.currencySymbol} ${paymentSummary?.finalAmount ?: 0.0}",
+                            "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.finalAmount ?: 0.0)}",
                             isBold = true,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -3312,6 +3311,18 @@ fun PaymentFailureAlert(
 
         }
     }
+}
+
+fun getFormattedPrice(price: Double): String {
+    var formattedAmount = "0.0"
+
+    try {
+        formattedAmount = String.format("%.2f", price)
+    } catch (e: Exception) {
+        TODO("Not yet implemented")
+    }
+
+    return formattedAmount
 }
 
 

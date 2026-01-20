@@ -5,5 +5,6 @@ data class HomeState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val isPaymentSuccess: Boolean = false,
-    val isReadyToInitializePaymentSdk: Boolean=false
+    val isReadyToInitializePaymentSdk: Boolean=false,
+    val isPaymentStarted: Boolean = false,
 )

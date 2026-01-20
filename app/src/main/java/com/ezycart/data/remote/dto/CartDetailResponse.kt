@@ -9,7 +9,7 @@ data class ShoppingCartDetails(
     val totalItems: Int,
     val totalPrice: Double,
     val promotionSave: Double,
-    val totalTax: Any,
+    val totalTax: Double,
     val prePaidAmount:Double,
     val hasAlcoholProduct: Boolean,
     var ageVerified: Boolean,
