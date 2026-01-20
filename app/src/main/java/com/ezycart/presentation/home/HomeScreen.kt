@@ -548,20 +548,24 @@ fun BitesHeaderNew(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color.White)
-                .padding(vertical = 12.dp, horizontal = 16.dp),
-            contentAlignment = Alignment.Center
+                .padding(all = 12.dp),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Replace with your actual logo resource
-                Image(
-                    painter = painterResource(id = R.drawable.ic_bites_logo),
-                    contentDescription = "Bites Logo",
-                    modifier = Modifier.height(80.dp),
-                    contentScale = ContentScale.Fit
-                )
+            // Camera on the Left
+            CameraPreview(
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .size(100.dp) // Adjusted size for 21" screen
+            )
 
-
-            }
+            // Logo Centered
+            Image(
+                painter = painterResource(id = R.drawable.ic_bites_logo),
+                contentDescription = "Bites Logo",
+                modifier = Modifier
+                    .height(80.dp)
+                    .align(Alignment.Center),
+                contentScale = ContentScale.Fit
+            )
         }
 
         // 2. Purple Action Bar (Self Checkout & Help)
@@ -611,7 +615,35 @@ fun BitesHeaderNew(
         }
     }
 }
+@Composable
+fun CameraPreview(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val previewView = remember { PreviewView(context) }
+    val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
 
+    LaunchedEffect(Unit) {
+        val cameraProvider = cameraProviderFuture.get()
+        val preview = androidx.camera.core.Preview.Builder().build().also {
+            it.setSurfaceProvider(previewView.surfaceProvider)
+        }
+
+        val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
+
+        try {
+            cameraProvider.unbindAll()
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview)
+        } catch (e: Exception) {
+            Log.e("Camera", "Use case binding failed", e)
+        }
+    }
+
+    AndroidView(
+        factory = { previewView },
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp)) // Nice rounded corners for kiosk UI
+    )
+}
 @Composable
 fun EmptyCartScreen(
 
