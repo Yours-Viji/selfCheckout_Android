@@ -91,7 +91,10 @@ class HomeViewModel @Inject constructor(
     val paymentStatusState: StateFlow<PaymentStatusState> = _paymentStatusState.asStateFlow()
 
     private val validationManager = WeightValidationManager()
-    private var weightAtRemoval: Double = 0.0
+    private var weightAtRemovalW1: Double = 0.0
+    private var weightAtRemovalDeltaW2: Double = 0.0
+    private val _isDeleteProcess = MutableStateFlow<Boolean>(false)
+    val isDeleteProcess: StateFlow<Boolean> = _isDeleteProcess.asStateFlow()
     private var loadCellOneTotalWeight  : Double = 0.0
 
     private val _errorMessage = MutableStateFlow("")
@@ -640,26 +643,25 @@ class HomeViewModel @Inject constructor(
 
                 /* Initial load - Save baseline w1 if needed */
                     loadCellOneTotalWeight = update.w1
-                    weightAtRemoval = 0.0
+                    weightAtRemovalW1 = 0.0
+                    weightAtRemovalDeltaW2 =0.0
                 }
 
                 -1 -> {
                     // Customer picked up an item
-
-                    if (update.loadcell_id == 1) {
-                        weightAtRemoval = Math.abs(update.delta_w1)
-                    }
-
+                    weightAtRemovalW1 = Math.abs(update.delta_w1)
+                    weightAtRemovalDeltaW2 = Math.abs(update.delta_w2)
                 }
 
                 1 -> {
                     // Customer placed item in LC2
-                    weightAtRemoval = 0.0
+                    weightAtRemovalW1 = 0.0
+                    weightAtRemovalDeltaW2 =0.0
                     val product = _productInfo.value
                     if (product != null) {
                         val result = validationManager.validateAddition(
                             product = product,
-                            deltaW1 = weightAtRemoval,
+                            deltaW1 = weightAtRemovalW1,
                             deltaW2 = update.delta_w2
                         )
 
@@ -678,7 +680,7 @@ class HomeViewModel @Inject constructor(
 
     fun handleProductRemoval() {
         val product = _productInfo.value
-        val productToRemove = weightAtRemoval
+        val productToRemove = weightAtRemovalDeltaW2
         if (productToRemove > 10.0 && product != null) {
 
             val item = _cartDataList.value.find { it.barcode == product!!.barcode }
@@ -693,7 +695,7 @@ class HomeViewModel @Inject constructor(
                     // Call your Delete/Remove API
                     deleteProductFromShoppingCart(product.barcode, productIdToDelete)
                     //_selectedProductForRemoval.value = null
-                    weightAtRemoval = 0.0
+                    weightAtRemovalDeltaW2 = 0.0
                 } else {
                     // Notify the user via UI alert
                     _errorMessage.value = (result as ValidationResult.Error).message
@@ -714,8 +716,9 @@ class HomeViewModel @Inject constructor(
             val deltaW2 = json.optDouble("delta_w2", 0.0)
             val w1 = json.optDouble("w1", 0.0)
             val w2 = json.optDouble("w2", 0.0)
+            val id = json.optInt("loadcell_id")
 
-            handleWeightUpdate(WeightUpdate(status = status, delta_w1 = deltaW1, delta_w2 = deltaW2, w1 = w1,w2=w2))
+            handleWeightUpdate(WeightUpdate(status = status, delta_w1 = deltaW1, delta_w2 = deltaW2, w1 = w1,w2=w2, loadcell_id = id))
            /* when (status) {
                 0 -> { *//* Initial loading: Capture w1 baseline *//* }
                 -1 -> {
