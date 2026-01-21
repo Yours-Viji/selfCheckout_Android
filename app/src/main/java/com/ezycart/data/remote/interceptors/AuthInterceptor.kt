@@ -57,7 +57,7 @@ class AuthInterceptor @Inject constructor(
             requestBuilder.header(Constants.X_AUTHORIZATION, "Bearer $token")
         }
 
-
+Log.i("==>>",appMode.name)
         // Common headers
         requestBuilder.apply {
             header(Constants.CONTENT_TYPE, Constants.CONTENT_TYPE_JSON)
@@ -71,7 +71,7 @@ class AuthInterceptor @Inject constructor(
             header(Constants.DEVICE_BRAND, android.os.Build.BRAND)
             header(Constants.APP_VERSION, "1.0.0")
             header(Constants.BUILD_NO, "01")
-            header("appMode", appMode.name)
+            header("appMode", "sco")
         }
 
         return chain.proceed(requestBuilder.build())

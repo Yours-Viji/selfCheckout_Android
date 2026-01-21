@@ -75,12 +75,12 @@ class MainActivity : ComponentActivity(){
                 onConfirm = onConfirm
             )
         }
-        lifecycleScope.launch {
+       /* lifecycleScope.launch {
             SensorSerialPortCommunication.sensorMessage.collect { data ->
                 Log.i("--->>","LOG RECEIVED: $data")
                 Toast.makeText(application,"-->>$data", Toast.LENGTH_SHORT).show()
             }
-        }
+        }*/
         //enableEdgeToEdge()
         setContent {
 
@@ -162,11 +162,12 @@ class MainActivity : ComponentActivity(){
                                         },
 
                                         onLogout = {
-                                            lifecycleScope.launch {
-                                                splashViewModel.clearUserPreference()
-                                            }
+
                                             navController.navigate("landing") {
                                                 popUpTo("home") { inclusive = true } // remove home from back stack
+                                            }
+                                            lifecycleScope.launch {
+                                                splashViewModel.clearUserPreference()
                                             }
                                         },
                                         goToPaymentScreen ={

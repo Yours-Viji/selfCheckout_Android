@@ -208,7 +208,7 @@ class AuthRepositoryImpl @Inject constructor(
                 deviceId = Constants.deviceId,
                 outletId = outletId,
                 merchantId = merchantId,
-                appMode = appMode.name,
+                appMode = "sco",
                 trolleyNo = "01"
             )
         }

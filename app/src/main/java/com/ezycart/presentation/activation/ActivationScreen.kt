@@ -80,7 +80,7 @@ import kotlinx.coroutines.launch
 fun ActivationScreen(
     viewModel: ActivationViewModel = hiltViewModel(),
 
-    sensorSerialPortViewModel: SensorSerialPortViewModel = hiltViewModel(),
+   // sensorSerialPortViewModel: SensorSerialPortViewModel = hiltViewModel(),
     onLoginSuccess: () -> Unit
 ) {
     val permissions = rememberAppPermissionState(

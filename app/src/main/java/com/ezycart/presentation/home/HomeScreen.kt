@@ -181,7 +181,7 @@ import java.util.Locale
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
-    sensorSerialPortViewModel: SensorSerialPortViewModel = hiltViewModel(),
+    //sensorSerialPortViewModel: SensorSerialPortViewModel = hiltViewModel(),
     onThemeChange: () -> Unit,
     onPaymentInitialize: () -> Unit,
     makeNearPayment: (String, String, NearPaymentListener?) -> Unit,
@@ -218,8 +218,9 @@ fun HomeScreen(
     val showErrorMessage = remember { mutableStateOf("") }
     val showWalletScanner = remember { mutableStateOf(false) }
     var showTerminal = remember { mutableStateOf(false) }
+    var clearTransAction = remember { mutableStateOf(false) }
     val context = LocalContext.current
-     val weightBuffer = StringBuilder()
+    val weightBuffer = remember { StringBuilder() }
 
     LockScreenOrientation(context,ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
 
@@ -251,53 +252,58 @@ fun HomeScreen(
            // showDialog.value = true
         }
     }
+    if(clearTransAction.value){
+        CancelConfirmationDialog(
+            onConfirm = {
+                clearTransAction.value = false
+                onLogout()
+            },
+            onDismiss = { clearTransAction.value = false }
+        )
+    }
     if (showErrorMessage.value.isNotEmpty()) {
         DynamicToast.makeError(context, showErrorMessage.value).show()
     }
-    if (showTerminal.value) {
+    LaunchedEffect(Unit) {
         LoginWeightScaleSerialPort.initWeightScaleSerialPort(
             context = context,
             listener = object : SerialInputOutputManager.Listener {
-
                 override fun onNewData(data: ByteArray) {
                     val chunk = String(data)
-                    // Always append the chunk to the buffer first
                     weightBuffer.append(chunk)
 
-                    // Check the buffer for the delimiter (newline)
                     while (weightBuffer.contains("\n")) {
                         val indexOfNewline = weightBuffer.indexOf("\n")
-
-                        // Extract the full message up to the newline
                         val fullMessage = weightBuffer.substring(0, indexOfNewline).trim()
 
                         if (fullMessage.isNotEmpty()) {
-                            // Send the COMPLETE JSON string to the ViewModel
-                            viewModel.setErrorMessage(fullMessage)
+                            DynamicToast.makeError(context, fullMessage).show()
+                           // viewModel.setErrorMessage(fullMessage)
                             try {
                                 viewModel.handleRawUsbData(fullMessage)
                             } catch (e: Exception) {
+                                Log.e("USB", "Parse error: ${e.message}")
                             }
                         }
-
-                        // Remove the processed message from the buffer
                         weightBuffer.delete(0, indexOfNewline + 1)
                     }
                 }
 
                 override fun onRunError(e: Exception) {
-                    // Handle disconnection or hardware errors
                     Log.e("USB_ERROR", "Serial error: ${e.message}")
                     viewModel.setErrorMessage("Serial error: ${e.message}")
-                    //SensorSerialPortCommunication.emitSensorMessage("Error: ${e.message}")
                 }
             }
         )
-        UsbTerminalDialog(
+    }
+    if (showTerminal.value) {
+
+
+        /*UsbTerminalDialog(
             onDismiss = { showTerminal.value = false },
             sensorViewModel = sensorSerialPortViewModel,
             viewModel = viewModel,
-        )
+        )*/
     }
     if (proceedTapToPay.value) {
         shoppingCartInfo.value.let {
@@ -525,7 +531,7 @@ fun HomeScreen(
                         // viewModel.initWavPayQrPayment()
 
                     }, onTapToPayClick = goToPaymentScreen,
-                        onLogout = onLogout,)
+                        onLogout = {clearTransAction.value = true},)
 
                 }
             //}
@@ -551,11 +557,11 @@ fun BitesHeaderNew(
                 .padding(all = 12.dp),
         ) {
             // Camera on the Left
-            CameraPreview(
+          /*  CameraPreview(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
                     .size(100.dp) // Adjusted size for 21" screen
-            )
+            )*/
 
             // Logo Centered
             Image(
@@ -628,7 +634,7 @@ fun CameraPreview(modifier: Modifier = Modifier) {
             it.setSurfaceProvider(previewView.surfaceProvider)
         }
 
-        val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
+        val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
         try {
             cameraProvider.unbindAll()
@@ -1097,7 +1103,7 @@ fun CartScreen(
         bottomBar = {
 
                 Surface(
-                    modifier = Modifier.fillMaxWidth().height(500.dp),
+                    modifier = Modifier.fillMaxWidth().height(550.dp),
 
                     color = Color.White,
                     shadowElevation = 8.dp, // Adds the slight shadow seen in your image
@@ -1150,47 +1156,156 @@ fun CartScreen(
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
-                        Column(
+                        Card(
                             modifier = Modifier
-                                .fillMaxWidth() // This ensures the column spans the full width of the screen
-                                .padding(vertical = 24.dp), // Space around the button group
-                            verticalArrangement = Arrangement.spacedBy(16.dp), // Space between the two buttons
-                            horizontalAlignment = Alignment.CenterHorizontally // Centers the buttons horizontally
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            //shape = RoundedCornerShape(24.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                         ) {
-                            // 1. Pay Now Button
-                            Button(
-                                onClick = onPayNowClick,
+                            Row(
                                 modifier = Modifier
-                                    .fillMaxWidth(0.6f) // Increased to 60% for better touch target on 22" screen
-                                    .height(50.dp),      // Taller height for a "Primary" action
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFF6A1B9A) // Deep Purple matching the "Bites" theme
-                                ),
-                                shape = RoundedCornerShape(12.dp), // Slightly more rectangular like the image
-                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                                    .fillMaxWidth()
+                                    .padding(24.dp), // Spacious padding for large screen
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(32.dp)
                             ) {
+                                // Left Side: Camera Preview with a "Mirror" border
+                                Box(
+                                    modifier = Modifier
+                                        .size(220.dp)
+                                        .clip(RoundedCornerShape(20.dp))
+                                        .background(Color.Black)
+                                        .border(4.dp, Color(0xFFF2F2F2), RoundedCornerShape(20.dp))
+                                ) {
+                                    CameraPreview(modifier = Modifier.fillMaxSize())
+
+                                    // Subtle "Live" indicator
+                                    Row(
+                                        modifier = Modifier
+                                            .align(Alignment.TopStart)
+                                            .padding(12.dp)
+                                            .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Box(modifier = Modifier.size(8.dp).background(Color.Red, CircleShape))
+                                        Spacer(Modifier.width(4.dp))
+                                        Text("LIVE", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+
+                                // Right Side: Action Column
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    // "Pay Now" with Gradient or High-Contrast Green
+                                    Button(
+                                        onClick = onPayNowClick,
+                                        modifier = Modifier
+                                            .fillMaxWidth(0.85f)
+                                            .height(90.dp) // Large touch target for kiosk
+                                            .shadow(12.dp, RoundedCornerShape(16.dp)),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color(0xFF7CB342) // Professional Leaf Green
+                                        ),
+                                        shape = RoundedCornerShape(16.dp)
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                           /* Icon(
+                                                painter = painterResource(id = R.drawable.ic_payment), // Replace with your icon
+                                                contentDescription = null,
+                                                modifier = Modifier.size(32.dp)
+                                            )*/
+                                            Spacer(Modifier.width(12.dp))
+                                            Text(
+                                                text = "PAY NOW",
+                                                style = TextStyle(
+                                                    fontSize = 32.sp,
+                                                    fontWeight = FontWeight.ExtraBold,
+                                                    letterSpacing = 1.sp
+                                                )
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(24.dp))
+
+                                    // Elegant Cancel Link
+                                    Surface(
+                                        onClick = onLogout,
+                                        color = Color.Transparent,
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Text(
+                                            text = "Cancel Transaction",
+                                            modifier = Modifier.padding(8.dp),
+                                            style = TextStyle(
+                                                color = Color.Gray.copy(alpha = 0.8f),
+                                                fontSize = 22.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                textDecoration = TextDecoration.Underline
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        /*Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 6.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            CameraPreview(
+                                modifier = Modifier
+
+                                    .size(200.dp) // Adjusted size for 21" screen
+                            )
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth() // This ensures the column spans the full width of the screen
+                                    .padding(vertical = 24.dp), // Space around the button group
+                                verticalArrangement = Arrangement.spacedBy(16.dp), // Space between the two buttons
+                                horizontalAlignment = Alignment.CenterHorizontally // Centers the buttons horizontally
+                            ) {
+                                // 1. Pay Now Button
+                                Button(
+                                    onClick = onPayNowClick,
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.6f) // Increased to 60% for better touch target on 22" screen
+                                        .height(55.dp),      // Taller height for a "Primary" action
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = colorResource(R.color.colorGreen) // Deep Purple matching the "Bites" theme
+                                    ),
+                                    shape = RoundedCornerShape(12.dp), // Slightly more rectangular like the image
+                                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                                ) {
+                                    Text(
+                                        text = "PAY NOW",
+                                        color = Color.White,
+                                        fontSize = 30.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+
+                                // 2. Cancel Transaction (Text Button style like the image)
                                 Text(
-                                    text = "PAY NOW",
-                                    color = Color.White,
-                                    fontSize = 28.sp,
-                                    fontWeight = FontWeight.Bold
+                                    text = "Cancel Transaction",
+                                    modifier = Modifier
+                                        .clickable { onLogout() }
+                                        .padding(12.dp),
+                                    style = TextStyle(
+                                        color = Color.Gray,
+                                        fontSize = 20.sp,
+                                        textDecoration = TextDecoration.Underline // Matches common kiosk patterns
+                                    )
                                 )
                             }
-
-                            // 2. Cancel Transaction (Text Button style like the image)
-                            Text(
-                                text = "Cancel Transaction",
-                                modifier = Modifier
-                                    .clickable { onLogout }
-                                    .padding(12.dp),
-                                style = TextStyle(
-                                    color = Color.Gray,
-                                    fontSize = 20.sp,
-                                    textDecoration = TextDecoration.Underline // Matches common kiosk patterns
-                                )
-                            )
-                        }
-
+                        }*/
                         // Pay Now Button
                        /* Row(
                             modifier = Modifier
@@ -1375,7 +1490,7 @@ fun CartItemCard(
             .then(
 
 
-                    Modifier.height(100.dp)
+                    Modifier.height(130.dp)
 
             )
             .fillMaxWidth()
@@ -1391,13 +1506,14 @@ fun CartItemCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .fillMaxHeight()
                 .padding(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Image
             Box(
                 modifier = Modifier
-                    .size(35.dp)
+                    .size(65.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(Color(0xFFF2F2F2)),
                 contentAlignment = Alignment.Center
@@ -1433,7 +1549,7 @@ fun CartItemCard(
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary,
-                        fontSize = 12.sp
+                        fontSize = 16.sp
                     ),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -1456,7 +1572,7 @@ fun CartItemCard(
                             }",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = FontWeight.SemiBold,
-                                fontSize = 10.sp
+                                fontSize = 13.sp
                             ),
                             color = Color.Gray
                         )
@@ -1467,7 +1583,7 @@ fun CartItemCard(
                                 text = "${Constants.currencySymbol} ${"%.2f".format(productInfo.finalPriceBeforeDiscount)}",
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 10.sp
+                                    fontSize = 13.sp
                                 ),
                                 textDecoration = TextDecoration.LineThrough
                             )
@@ -1478,7 +1594,7 @@ fun CartItemCard(
                             text = "${Constants.currencySymbol} ${"%.2f".format(productInfo.finalPrice)}",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 10.sp,
+                                fontSize = 13.sp,
                                 color = colorResource(R.color.colorPrimary)
                             )
                         )
@@ -1491,7 +1607,7 @@ fun CartItemCard(
                         contentDescription = "discount",
                         tint = colorResource(R.color.colorOrange),
                         modifier = Modifier
-                            .size(30.dp)
+                            .size(35.dp)
                             .padding(start = 4.dp, end = 6.dp)
                     )
 
@@ -1499,7 +1615,7 @@ fun CartItemCard(
                         text = "Buy One Get One",
                         style = MaterialTheme.typography.bodyLarge.copy(
                             fontWeight = FontWeight.Bold,
-                            fontSize = 10.sp,
+                            fontSize = 14.sp,
                             color = colorResource(R.color.colorOrange)
                         )
                     )
@@ -1516,21 +1632,21 @@ fun CartItemCard(
                 contentDescription = "Delete ${productInfo.id}",
                 tint = Color.Unspecified,
                 modifier = Modifier
-                    .size( 35.dp)
+                    .size( 45.dp)
                     .padding(start = 4.dp)
                     .clickable {
                         selectedCartItem.value = productInfo
                         showDeleteDialog.value = true
                     }
             )
-            Spacer(Modifier.width(3.dp))
+            Spacer(Modifier.width(5.dp))
             // Edit icon
             Icon(
                 painter = painterResource(id = R.drawable.ic_edit_box),
                 contentDescription = "Edit ${productInfo.id}",
                 tint = Color.Unspecified,
                 modifier = Modifier
-                    .size(35.dp)
+                    .size(45.dp)
                     .padding(start = 4.dp)
                     .clickable {
                         selectedCartItem.value = productInfo
@@ -1543,6 +1659,48 @@ fun CartItemCard(
     }
 }
 
+@Composable
+fun CancelConfirmationDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Cancel Transaction?",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Text(
+                text = "Are you sure you want to cancel? All items in your cart will be cleared.",
+                style = MaterialTheme.typography.bodyLarge,
+                fontSize = 20.sp // Larger for kiosk readability
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                modifier = Modifier.padding(8.dp).height(60.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+            ) {
+                Text("YES, CANCEL", color = Color.White, fontSize = 18.sp)
+            }
+        },
+        dismissButton = {
+            OutlinedButton(
+                onClick = onDismiss,
+                modifier = Modifier.padding(8.dp).height(60.dp)
+            ) {
+                Text("NO, GO BACK", fontSize = 18.sp)
+            }
+        },
+        shape = RoundedCornerShape(24.dp),
+        containerColor = Color.White
+    )
+}
 
 @Composable
 fun BillRow(label: String, value: String, isBold: Boolean = false, color: Color = Color.Gray) {
@@ -1557,7 +1715,7 @@ fun BillRow(label: String, value: String, isBold: Boolean = false, color: Color 
             color = color,
             style = if (isBold) MaterialTheme.typography.bodyLarge.copy(
                 fontWeight = FontWeight.Medium,
-                fontSize = 28.sp
+                fontSize = 30.sp
             )
             else MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
         )
@@ -1566,7 +1724,7 @@ fun BillRow(label: String, value: String, isBold: Boolean = false, color: Color 
             color = color,
             style = if (isBold) MaterialTheme.typography.bodyLarge.copy(
                 fontWeight = FontWeight.Medium,
-                fontSize = 30.sp
+                fontSize = 32.sp
             )
             else MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
         )
