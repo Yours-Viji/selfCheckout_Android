@@ -1724,7 +1724,7 @@ fun BillRow(label: String, value: String, isBold: Boolean = false, color: Color 
             color = color,
             style = if (isBold) MaterialTheme.typography.bodyLarge.copy(
                 fontWeight = FontWeight.Medium,
-                fontSize = 30.sp
+                fontSize = 33.sp
             )
             else MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
         )
@@ -1733,7 +1733,7 @@ fun BillRow(label: String, value: String, isBold: Boolean = false, color: Color 
             color = color,
             style = if (isBold) MaterialTheme.typography.bodyLarge.copy(
                 fontWeight = FontWeight.Medium,
-                fontSize = 32.sp
+                fontSize = 37.sp
             )
             else MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
         )
