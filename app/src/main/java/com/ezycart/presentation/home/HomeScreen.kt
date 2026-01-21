@@ -1522,7 +1522,7 @@ fun CartItemCard(
             // Image
             Box(
                 modifier = Modifier
-                    .size(65.dp)
+                    .size(90.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(Color(0xFFF2F2F2)),
                 contentAlignment = Alignment.Center
@@ -1558,7 +1558,7 @@ fun CartItemCard(
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary,
-                        fontSize = 16.sp
+                        fontSize = 20.sp
                     ),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -1581,7 +1581,7 @@ fun CartItemCard(
                             }",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = FontWeight.SemiBold,
-                                fontSize = 13.sp
+                                fontSize = 18.sp
                             ),
                             color = Color.Gray
                         )
@@ -1592,7 +1592,7 @@ fun CartItemCard(
                                 text = "${Constants.currencySymbol} ${"%.2f".format(productInfo.finalPriceBeforeDiscount)}",
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp
+                                    fontSize = 18.sp
                                 ),
                                 textDecoration = TextDecoration.LineThrough
                             )
@@ -1603,7 +1603,7 @@ fun CartItemCard(
                             text = "${Constants.currencySymbol} ${"%.2f".format(productInfo.finalPrice)}",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 13.sp,
+                                fontSize = 18.sp,
                                 color = colorResource(R.color.colorPrimary)
                             )
                         )
@@ -1624,7 +1624,7 @@ fun CartItemCard(
                         text = "Buy One Get One",
                         style = MaterialTheme.typography.bodyLarge.copy(
                             fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
+                            fontSize = 18.sp,
                             color = colorResource(R.color.colorOrange)
                         )
                     )
@@ -1641,7 +1641,7 @@ fun CartItemCard(
                 contentDescription = "Delete ${productInfo.id}",
                 tint = Color.Unspecified,
                 modifier = Modifier
-                    .size( 45.dp)
+                    .size( 50.dp)
                     .padding(start = 4.dp)
                     .clickable {
                         selectedCartItem.value = productInfo
@@ -1655,7 +1655,7 @@ fun CartItemCard(
                 contentDescription = "Edit ${productInfo.id}",
                 tint = Color.Unspecified,
                 modifier = Modifier
-                    .size(45.dp)
+                    .size(50.dp)
                     .padding(start = 4.dp)
                     .clickable {
                         selectedCartItem.value = productInfo
