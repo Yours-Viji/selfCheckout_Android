@@ -639,15 +639,35 @@ fun CameraPreview(modifier: Modifier = Modifier) {
 
     LaunchedEffect(Unit) {
         val cameraProvider = cameraProviderFuture.get()
+
+        // 1. Build the Preview use case
         val preview = androidx.camera.core.Preview.Builder().build().also {
             it.setSurfaceProvider(previewView.surfaceProvider)
         }
 
-        val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-
         try {
             cameraProvider.unbindAll()
-            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview)
+
+            // 2. LOGIC FIX: Find the correct camera for an Android Box
+            // Instead of DEFAULT_BACK, we look for any available camera
+            val cameraInfoList = cameraProvider.availableCameraInfos
+
+            // Try to find an external camera first (USB), then fall back to anything available
+            val selectedCameraInfo = cameraInfoList.firstOrNull { info ->
+                val facing = info.lensFacing
+                facing == CameraSelector.LENS_FACING_EXTERNAL ||
+                        facing == CameraSelector.LENS_FACING_BACK ||
+                        facing == CameraSelector.LENS_FACING_FRONT
+            } ?: cameraInfoList.firstOrNull() // Absolute fallback to the first camera found
+
+            if (selectedCameraInfo != null) {
+                val cameraSelector = selectedCameraInfo.cameraSelector
+                cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview)
+                Log.d("Camera", "Bound to camera facing: ${selectedCameraInfo.lensFacing}")
+            } else {
+                Log.e("Camera", "No cameras found on this device")
+            }
+
         } catch (e: Exception) {
             Log.e("Camera", "Use case binding failed", e)
         }
@@ -655,8 +675,7 @@ fun CameraPreview(modifier: Modifier = Modifier) {
 
     AndroidView(
         factory = { previewView },
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp)) // Nice rounded corners for kiosk UI
+        modifier = modifier.clip(RoundedCornerShape(12.dp))
     )
 }
 @Composable
