@@ -100,6 +100,9 @@ class HomeViewModel @Inject constructor(
     private val _errorMessage = MutableStateFlow("")
     val errorMessage: StateFlow<String> = _errorMessage.asStateFlow()
 
+    private val _terminalContent = MutableStateFlow("")
+    val terminalContent = _terminalContent.asStateFlow()
+
     sealed class PaymentStatusState {
         object Idle : PaymentStatusState()
         object Loading : PaymentStatusState()
@@ -337,7 +340,7 @@ class HomeViewModel @Inject constructor(
                         isLoading = false
                     )
                     _productInfo.value = result.data
-                    //addProductToShoppingCart(productInfo.value!!.barcode,1)
+                    addProductToShoppingCart(productInfo.value!!.barcode,1)
                     getPriceDetails(barCode)
                 }
 
@@ -709,7 +712,14 @@ class HomeViewModel @Inject constructor(
 
 
     }
+    // Call this to add status messages like "Connecting..." or "Error"
+    fun logStatus(status: String) {
+        _terminalContent.value += "> $status\n"
+    }
 
+    fun clearLogs() {
+        _terminalContent.value = ""
+    }
     fun handleRawUsbData(jsonString: String) {
         try {
             val json = JSONObject(jsonString)
@@ -719,7 +729,7 @@ class HomeViewModel @Inject constructor(
             val w1 = json.optDouble("w1", 0.0)
             val w2 = json.optDouble("w2", 0.0)
             val id = json.optInt("loadcell_id")
-
+            _terminalContent.value += "$jsonString\n"
             handleWeightUpdate(WeightUpdate(status = status, delta_w1 = deltaW1, delta_w2 = deltaW2, w1 = w1,w2=w2, loadcell_id = id))
            /* when (status) {
                 0 -> { *//* Initial loading: Capture w1 baseline *//* }

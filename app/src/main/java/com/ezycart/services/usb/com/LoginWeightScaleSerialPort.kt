@@ -7,7 +7,9 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.hardware.usb.UsbManager
 import android.util.Log
+import com.ezycart.presentation.home.HomeViewModel
 import com.ezycart.services.weightScaleService.CustomSerialProber
+import com.hoho.android.usbserial.driver.UsbSerialDriver
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
 import com.hoho.android.usbserial.util.SerialInputOutputManager
@@ -344,6 +346,123 @@ object LoginWeightScaleSerialPort {
         }
 
     }*/
+// Common Buffer to handle data chunks
+   private val weightBuffer = StringBuilder()
 
+    // 1. Common Method: The actual parsing logic used everywhere
+    fun createCommonListener(context: Context, viewModel: HomeViewModel): SerialInputOutputManager.Listener {
+        return object : SerialInputOutputManager.Listener {
+            override fun onNewData(data: ByteArray) {
+                val chunk = String(data)
+                weightBuffer.append(chunk)
+
+                while (weightBuffer.contains("\n")) {
+                    val indexOfNewline = weightBuffer.indexOf("\n")
+                    val fullMessage = weightBuffer.substring(0, indexOfNewline).trim()
+
+                    if (fullMessage.isNotEmpty()) {
+                        // Optional: Keep Toast for debugging
+                        // DynamicToast.make(context, fullMessage).show()
+                        try {
+                            viewModel.handleRawUsbData(fullMessage)
+                        } catch (e: Exception) {
+                            Log.e("USB", "Parse error: ${e.message}")
+                        }
+                    }
+                    weightBuffer.delete(0, indexOfNewline + 1)
+                }
+            }
+
+            override fun onRunError(e: Exception) {
+                Log.e("USB_ERROR", "Serial error: ${e.message}")
+                viewModel.setErrorMessage("Serial error: ${e.message}")
+            }
+        }
+    }
+
+    // 2. The Connection Method (The "Dumbbell" Logic)
+    fun connectScale(context: Context, listener: SerialInputOutputManager.Listener) {
+        // Disconnect existing if any to avoid port busy errors
+        stopIoManager()
+
+        mUsbManager = context.getSystemService(Context.USB_SERVICE) as UsbManager
+        val usbDefaultProber = UsbSerialProber.getDefaultProber()
+        val usbCustomProber = CustomSerialProber.getCustomSerialProber()!!
+
+        var driver: UsbSerialDriver? = null
+        for (device in mUsbManager!!.deviceList.values) {
+            driver = usbDefaultProber.probeDevice(device) ?: usbCustomProber.probeDevice(device)
+            if (driver != null) break
+        }
+
+        if (driver == null) return
+
+        if (!mUsbManager!!.hasPermission(driver.device)) {
+            val flags = PendingIntent.FLAG_MUTABLE
+            val intent = Intent("com.android.example.USB_PERMISSION").setPackage(context.packageName)
+            val permissionIntent = PendingIntent.getBroadcast(context, 0, intent, flags)
+            mUsbManager?.requestPermission(driver.device, permissionIntent)
+            return
+        }
+        if (driver != null) {
+            for (port in driver.ports.indices) {
+                if (driver.device.productName!!.toString()
+                        .lowercase(Locale.getDefault())
+                        .contains("sparkfun") || driver.device.productName!!.toString()
+                        .lowercase(Locale.getDefault())
+                        .contains("arduino")
+                ) {
+                    //ledSerialPort = driver.ports[port]
+                } else if (driver.device.productName!!.toString()
+                        .lowercase(Locale.getDefault())
+                        .contains("newland")
+                ) {
+                    // scannerSerialPort = driver.ports[port]
+                } else {
+
+                    try {
+                        val connection = mUsbManager?.openDevice(driver.device)
+                        serialPort = driver.ports[port]
+                        serialPort!!.open(connection)
+
+                        serialPort!!.setParameters(115200, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE)
+                        serialPort!!.dtr = true
+                        serialPort!!.rts = true
+                        mSerialIoManager = SerialInputOutputManager(serialPort, listener)
+                        mSerialIoManager?.start()
+                        mSerialIoManager = SerialInputOutputManager(serialPort, listener)
+                        mSerialIoManager?.start()
+                    } catch (e: Exception) {
+                    }
+                }
+
+            }
+
+        }
+
+       /* try {
+            val connection = mUsbManager?.openDevice(driver.device)
+            val port = driver.ports[0]
+            port.open(connection)
+            port.setParameters(115200, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE)
+            port.dtr = true
+            port.rts = true
+
+            serialPort = port
+            mSerialIoManager = SerialInputOutputManager(serialPort, listener)
+            mSerialIoManager?.start()
+        } catch (e: Exception) {
+            Log.e("USB", "Connect Failed: ${e.message}")
+        }*/
+    }
+
+   /* fun stopIoManager() {
+        mSerialIoManager?.stop()
+        mSerialIoManager = null
+        serialPort?.close()
+        serialPort = null
+    }*/
 }
+
+
 

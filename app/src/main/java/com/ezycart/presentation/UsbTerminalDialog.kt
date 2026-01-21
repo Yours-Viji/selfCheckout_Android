@@ -19,6 +19,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Send
 
@@ -38,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -48,27 +50,32 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ezycart.presentation.home.HomeViewModel
+import com.ezycart.services.usb.com.LoginWeightScaleSerialPort
 import kotlinx.coroutines.launch
 
 @Composable
 fun UsbTerminalDialog(
     onDismiss: () -> Unit,
-    sensorViewModel: SensorSerialPortViewModel = hiltViewModel(),
-    viewModel : HomeViewModel = hiltViewModel()
+    viewModel: HomeViewModel = hiltViewModel()
 ) {
-    // Collecting the serial message flow from your existing ViewModel
-    //val terminalLogs = sensorViewModel.connectionLog.collectAsStateWithLifecycle()
-    val message = viewModel.errorMessage.collectAsStateWithLifecycle()
-    var inputText = remember { mutableStateOf("") }
-    val listState = rememberLazyListState()
-    val coroutineScope = rememberCoroutineScope()
+    // Collect the full history of messages
+    val terminalLogs = viewModel.terminalContent.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val inputText = remember { mutableStateOf("") }
+    val scrollState = rememberScrollState()
 
-    // Auto-scroll to bottom when new logs arrive
-    LaunchedEffect(message) {
-        coroutineScope.launch {
-            // Logic to keep the terminal scrolled to the bottom
-            listState.animateScrollToItem(Int.MAX_VALUE)
-        }
+    // 1. AUTO-CONNECT ON OPEN: Mimics the GitHub "Connect" behavior
+    LaunchedEffect(Unit) {
+        viewModel.logStatus("Initializing Scale Connection...")
+
+        // Use the common listener we created in previous step
+        val listener = LoginWeightScaleSerialPort.createCommonListener(context, viewModel)
+        LoginWeightScaleSerialPort.connectScale(context, listener)
+    }
+
+    // 2. AUTO-SCROLL: Keep the green text moving up as new data arrives
+    LaunchedEffect(terminalLogs) {
+        scrollState.animateScrollTo(scrollState.maxValue)
     }
 
     Dialog(
@@ -77,7 +84,7 @@ fun UsbTerminalDialog(
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = Color(0xFF121212) // Dark background like the terminal
+            color = Color(0xFF121212)
         ) {
             Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
                 // Header
@@ -86,35 +93,40 @@ fun UsbTerminalDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("USB Terminal", color = Color.White, style = MaterialTheme.typography.titleMedium)
-                    IconButton(onClick = onDismiss) {
-                        androidx.compose.material3.Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
-                        //I
+                    Text("SERIAL MONITOR", color = Color.White, style = MaterialTheme.typography.titleMedium)
+                    Row {
+                        // Optional Clear Button
+                        IconButton(onClick = { viewModel.clearLogs() }) {
+                            androidx.compose.material3.Icon(Icons.Default.Delete, contentDescription = "Clear", tint = Color.Gray)
+                        }
+                        IconButton(onClick = onDismiss) {
+                            androidx.compose.material3.Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
+                        }
                     }
                 }
 
-                // Black Screen (Terminal Log Area)
+                // Terminal Display Area
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
-                        .background(Color.Black)
+                        .background(Color.Black, shape = RoundedCornerShape(4.dp))
                         .padding(8.dp)
                 ) {
                     SelectionContainer {
                         Text(
-                            text = message.value,
-                            color = Color(0xFF00FF00), // Classic Green Terminal Text
+                            text = terminalLogs.value,
+                            color = Color(0xFF00FF00), // Classic Terminal Green
                             fontFamily = FontFamily.Monospace,
-                            fontSize = 12.sp,
-                            modifier = Modifier.verticalScroll(rememberScrollState())
+                            fontSize = 13.sp,
+                            modifier = Modifier.verticalScroll(scrollState)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                // Input Area (Edit Box and Send Button)
+                // Input Bar
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -124,36 +136,30 @@ fun UsbTerminalDialog(
                         onValueChange = { inputText.value = it },
                         modifier = Modifier
                             .weight(1f)
-                            .background(Color.DarkGray, shape = RoundedCornerShape(4.dp))
-                            .padding(12.dp),
-                        // FIXED: Using the correct Compose TextStyle
-                        textStyle = TextStyle(
-                            color = Color.White,
-                            fontFamily = FontFamily.Monospace,
-                            fontSize = 16.sp
-                        ),
-                        cursorBrush = SolidColor(Color.Green)
+                            .background(Color(0xFF222222), shape = RoundedCornerShape(8.dp))
+                            .padding(14.dp),
+                        textStyle = TextStyle(color = Color.White, fontFamily = FontFamily.Monospace),
+                        cursorBrush = SolidColor(Color.Green),
+                        decorationBox = { innerTextField ->
+                            if (inputText.value.isEmpty()) {
+                                Text("Type command (e.g. TARE)", color = Color.DarkGray)
+                            }
+                            innerTextField()
+                        }
                     )
 
                     IconButton(
                         onClick = {
                             if (inputText.value.isNotBlank()) {
-                                sensorViewModel.sendCommand(inputText.value) // Calls your sendMessageToWeightScale
+                                // Send to hardware
+                                LoginWeightScaleSerialPort.sendMessageToWeightScale("${inputText.value}\r\n")
+                                // Log the sent command to the screen
+                                viewModel.logStatus("TX: ${inputText.value}")
                                 inputText.value = ""
                             }
                         }
                     ) {
-                        androidx.compose.material3.Icon(
-                            imageVector = Icons.Default.Send,
-                            contentDescription = "Help",
-                            tint = Color.Green,
-
-                        )
-                       /* Icon(
-                            painter = painterResource(id = android.R.drawable.ic_menu_send),
-                            contentDescription = "Send",
-                            tint = Color.Green
-                        )*/
+                        androidx.compose.material3.Icon(Icons.Default.Send, contentDescription = "Send", tint = Color.Green)
                     }
                 }
             }

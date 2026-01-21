@@ -221,6 +221,9 @@ fun HomeScreen(
     var clearTransAction = remember { mutableStateOf(false) }
     val context = LocalContext.current
     val weightBuffer = remember { StringBuilder() }
+    val commonListener = remember {
+        LoginWeightScaleSerialPort.createCommonListener(context, viewModel)
+    }
 
     LockScreenOrientation(context,ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
 
@@ -265,45 +268,51 @@ fun HomeScreen(
         DynamicToast.makeError(context, showErrorMessage.value).show()
     }
     LaunchedEffect(Unit) {
-        LoginWeightScaleSerialPort.initWeightScaleSerialPort(
-            context = context,
-            listener = object : SerialInputOutputManager.Listener {
-                override fun onNewData(data: ByteArray) {
-                    val chunk = String(data)
-                    weightBuffer.append(chunk)
+        /*LoginWeightScaleSerialPort.connectScale(context, object : SerialInputOutputManager.Listener {
+            override fun onNewData(data: ByteArray) {
+                val chunk = String(data)
+                weightBuffer.append(chunk)
 
-                    while (weightBuffer.contains("\n")) {
-                        val indexOfNewline = weightBuffer.indexOf("\n")
-                        val fullMessage = weightBuffer.substring(0, indexOfNewline).trim()
+                while (weightBuffer.contains("\n")) {
+                    val indexOfNewline = weightBuffer.indexOf("\n")
+                    val fullMessage = weightBuffer.substring(0, indexOfNewline).trim()
 
-                        if (fullMessage.isNotEmpty()) {
-                            DynamicToast.makeError(context, fullMessage).show()
-                           // viewModel.setErrorMessage(fullMessage)
-                            try {
-                                viewModel.handleRawUsbData(fullMessage)
-                            } catch (e: Exception) {
-                                Log.e("USB", "Parse error: ${e.message}")
-                            }
+                    if (fullMessage.isNotEmpty()) {
+                        DynamicToast.makeError(context, fullMessage).show()
+                        // viewModel.setErrorMessage(fullMessage)
+                        try {
+                            viewModel.handleRawUsbData(fullMessage)
+                        } catch (e: Exception) {
+                            Log.e("USB", "Parse error: ${e.message}")
                         }
-                        weightBuffer.delete(0, indexOfNewline + 1)
                     }
-                }
-
-                override fun onRunError(e: Exception) {
-                    Log.e("USB_ERROR", "Serial error: ${e.message}")
-                    viewModel.setErrorMessage("Serial error: ${e.message}")
+                    weightBuffer.delete(0, indexOfNewline + 1)
                 }
             }
-        )
+
+            override fun onRunError(e: Exception) {
+                Log.e("USB_ERROR", "Serial error: ${e.message}")
+                viewModel.setErrorMessage("Serial error: ${e.message}")
+            }
+        })*/
+        try {
+            LoginWeightScaleSerialPort.connectScale(context, commonListener)
+        } catch (e: Exception) {
+            TODO("Not yet implemented")
+        }
+
     }
     if (showTerminal.value) {
+        try {
+            LoginWeightScaleSerialPort.connectScale(context, commonListener)
+        } catch (e: Exception) {
+            TODO("Not yet implemented")
+        }
 
-
-        /*UsbTerminalDialog(
+        UsbTerminalDialog(
             onDismiss = { showTerminal.value = false },
-            sensorViewModel = sensorSerialPortViewModel,
             viewModel = viewModel,
-        )*/
+        )
     }
     if (proceedTapToPay.value) {
         shoppingCartInfo.value.let {
