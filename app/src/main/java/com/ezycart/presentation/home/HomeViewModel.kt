@@ -103,6 +103,9 @@ class HomeViewModel @Inject constructor(
     private val _terminalContent = MutableStateFlow("")
     val terminalContent = _terminalContent.asStateFlow()
 
+    private val _loadCellValidationLog = MutableStateFlow(">>Loadcell Validation")
+    val loadCellValidationLog: StateFlow<String> = _loadCellValidationLog.asStateFlow()
+
     sealed class PaymentStatusState {
         object Idle : PaymentStatusState()
         object Loading : PaymentStatusState()
@@ -340,7 +343,7 @@ class HomeViewModel @Inject constructor(
                         isLoading = false
                     )
                     _productInfo.value = result.data
-                    addProductToShoppingCart(productInfo.value!!.barcode,1)
+                   // addProductToShoppingCart(productInfo.value!!.barcode,1)
                     getPriceDetails(barCode)
                 }
 
@@ -380,7 +383,7 @@ class HomeViewModel @Inject constructor(
                     )
                     _priceDetails.value = result.data
 
-                   // handleProductRemoval()
+                    handleProductRemoval()
                     loadingManager.hide()
                 }
 
@@ -641,6 +644,9 @@ class HomeViewModel @Inject constructor(
 
 
     fun handleWeightUpdate(update: WeightUpdate) {
+        val message = "${update.status} - w1=${update.w1} - w2=${update.w2} - deltaw1=${update.delta_w1}-deltaw2=${update.delta_w2}"
+        _errorMessage.value = message
+            _loadCellValidationLog.value += "> $message\n"
         viewModelScope.launch {
            // _errorMessage.value = "Weight Data Old: $update"
             when (update.status) {
@@ -660,8 +666,8 @@ class HomeViewModel @Inject constructor(
 
                 1 -> {
                     // Customer placed item in LC2
-                    weightAtRemovalW1 = 0.0
-                    weightAtRemovalDeltaW2 =0.0
+                   // weightAtRemovalW1 = 0.0
+                  //  weightAtRemovalDeltaW2 =0.0
                     val product = _productInfo.value
                     if (product != null) {
                         val result = validationManager.validateAddition(
@@ -672,10 +678,15 @@ class HomeViewModel @Inject constructor(
 
                         if (result is ValidationResult.Success) {
                             //addToCart(product)
+                            _errorMessage.value = result.toString()
+                            _loadCellValidationLog.value += "> ${result.toString()}\n"
                             addProductToShoppingCart(product.barcode, 1)
-                            _productInfo.value = null // Clear for next scan
+                            _productInfo.value = null
+                            weightAtRemovalW1 = 0.0
+                            weightAtRemovalDeltaW2 =0.0 // Clear for next scan
                         } else {
                             _errorMessage.value = (result as ValidationResult.Error).message
+                            _loadCellValidationLog.value += "> ${errorMessage.value}\n"
                         }
                     }
                 }

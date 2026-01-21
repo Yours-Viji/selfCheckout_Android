@@ -17,6 +17,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ExperimentalGetImage
+import androidx.camera.core.ExperimentalLensFacing
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -224,6 +225,7 @@ fun HomeScreen(
     val commonListener = remember {
         LoginWeightScaleSerialPort.createCommonListener(context, viewModel)
     }
+    val loadCellValidationLog = viewModel.loadCellValidationLog.collectAsState()
 
     LockScreenOrientation(context,ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
 
@@ -479,6 +481,15 @@ fun HomeScreen(
             }
         ) {*/
             BitesHeaderNew (cartCount = cartCount.value,onHelpClick = { showTerminal.value =true })
+            Text(
+                text = loadCellValidationLog.value,
+                color = Color.Red,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 20.sp
+                )
+
+            )
            /* Scaffold(
                *//* topBar = {
                     MyTopAppBar(
@@ -504,7 +515,7 @@ fun HomeScreen(
                         .focusTarget(),
                     contentAlignment = Alignment.Center
                 ) {
-                    val localView = LocalView.current
+
                     /* Button(
                          onClick = {
                              // Mock scanner input
@@ -535,12 +546,17 @@ fun HomeScreen(
                      ) {
                          Text("Mock Enter Key")
                      }*/
-                    PickersShoppingScreen( viewModel, onQrPaymentClick = {
-                        showWalletScanner.value = true
-                        // viewModel.initWavPayQrPayment()
 
-                    }, onTapToPayClick = goToPaymentScreen,
-                        onLogout = {clearTransAction.value = true},)
+                    PickersShoppingScreen(
+                        viewModel,
+                        onQrPaymentClick = {
+                            showWalletScanner.value = true
+                            // viewModel.initWavPayQrPayment()
+
+                        },
+                        onTapToPayClick = goToPaymentScreen,
+                        onLogout = { clearTransAction.value = true },
+                    )
 
                 }
             //}
@@ -630,6 +646,8 @@ fun BitesHeaderNew(
         }
     }
 }
+
+@androidx.annotation.OptIn(ExperimentalLensFacing::class)
 @Composable
 fun CameraPreview(modifier: Modifier = Modifier) {
     val context = LocalContext.current
