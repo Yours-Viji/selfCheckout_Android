@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -41,6 +42,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -87,27 +89,30 @@ fun LandingScreen(viewModel: LandingViewModel = viewModel(),
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp) // Maintain your professional footer height
+                    .height(200.dp)
                     .background(Color.Black)
+                    // ADD THIS: It pushes the content up away from the system navigation buttons
+                    .navigationBarsPadding()
                     .clickable(enabled = !uiState.value.isStarted) {
                         viewModel.onStartClicked()
                     },
-                contentAlignment = Alignment.Center // This handles horizontal and vertical centering
+                contentAlignment = Alignment.Center
             ) {
-                if (!uiState.value.isStarted) {
-                    Text(
-                        text = "TOUCH TO START",
-                        color = Color.White,
+                Text(
+                    text = "TOUCH TO START",
+                    color = Color.White,
+                    style = TextStyle(
                         fontSize = 36.sp,
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 4.sp,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .height(200.dp)
-                            .fillMaxWidth()
-                            .wrapContentHeight(Alignment.CenterVertically)
-                    )
-                }
+                        platformStyle = PlatformTextStyle(
+                            includeFontPadding = false
+                        ),
+                        lineHeight = 36.sp
+                    ),
+                    modifier = Modifier.wrapContentSize() // Only takes space needed
+                )
             }
         }
     }
@@ -233,19 +238,24 @@ fun BitesHeader(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color.White)
-                .padding(vertical = 12.dp, horizontal = 16.dp),
-            contentAlignment = Alignment.Center
+
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Replace with your actual logo resource
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = Modifier.height(20.dp))
                 Image(
                     painter = painterResource(id = R.drawable.ic_bites_logo),
                     contentDescription = "Bites Logo",
-                    modifier = Modifier.height(80.dp),
+                    modifier = Modifier
+                        .height(70.dp),
+
                     contentScale = ContentScale.Fit
                 )
-
-
             }
         }
 

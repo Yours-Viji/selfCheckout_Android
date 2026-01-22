@@ -460,7 +460,7 @@ fun HomeScreen(
                 )
             }
         ) {*/
-            BitesHeaderNew (cartCount = cartCount.value,onHelpClick = { showTerminal.value =true },
+            BitesHeaderNew (viewModel,cartCount = cartCount.value,onHelpClick = { showTerminal.value =true },
                 onTitleClick = {showMainLogs.value = !showMainLogs.value
                     viewModel.clearLog()})
             if(showMainLogs.value){
@@ -496,6 +496,7 @@ fun HomeScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         //.padding(innerPadding)
+                        .background(Color.White)
                         .focusRequester(focusRequester) // Add focus requester here too
                         .focusTarget(),
                     contentAlignment = Alignment.Center
@@ -551,10 +552,39 @@ fun HomeScreen(
 
 @Composable
 fun BitesHeaderNew(
+    viewModel: HomeViewModel,
     cartCount: Int = 0,
     onHelpClick: () -> Unit,
     onTitleClick: () -> Unit
 ) {
+    val showManualBarCode = remember { mutableStateOf(false) }
+    val scannedCode = remember { mutableStateOf<String?>(null) }
+    if (showManualBarCode.value) {
+        ManualBarcodeEntryDialog(
+            onProceed = { barcode ->
+                viewModel.resetProductInfoDetails()
+                viewModel.getProductDetails(barcode)
+                // scannerViewModel.onScanned(barcode)
+                showManualBarCode.value = false
+            },
+            onCancel = {
+                showManualBarCode.value = false
+                println("Cancel clicked")
+            },
+            onDismiss = {
+                showManualBarCode.value = false
+            }
+        )
+       /* BarcodeScannerDialog(
+            onDismiss = { showManualBarCode.value = false },
+            onBarcodeScanned = {
+                scannedCode.value = it
+                viewModel.resetProductInfoDetails()
+                viewModel.getProductDetails(scannedCode.value.toString())
+                showManualBarCode.value = false
+            }
+        )*/
+    }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -565,38 +595,85 @@ fun BitesHeaderNew(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color.White)
-                .padding(all = 12.dp),
-        ) {
-            // Camera on the Left
-          /*  CameraPreview(
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .size(100.dp) // Adjusted size for 21" screen
-            )*/
 
-            // Logo Centered
-            Image(
-                painter = painterResource(id = R.drawable.ic_bites_logo),
-                contentDescription = "Bites Logo",
+        ) {
+            Column (
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = Modifier.height(20.dp))
+                Image(
+                    painter = painterResource(id = R.drawable.ic_bites_logo),
+                    contentDescription = "Bites Logo",
+                    modifier = Modifier
+                        .height(70.dp),
+
+                    contentScale = ContentScale.Fit
+                )
+            }
+
+           /* Row(
                 modifier = Modifier
-                    .height(80.dp)
-                    .align(Alignment.Center),
-                contentScale = ContentScale.Fit
-            )
+                    .fillMaxWidth()
+                    .height(80.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+
+                Text(
+                    text = "ezy",
+                    style = TextStyle(
+                        color = Color.Red,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    ),
+                    modifier = Modifier.clickable{onTitleClick()}
+
+                )
+                Text(
+                    text = "Express",
+                    style = TextStyle(
+                        color = Color.Black,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.sp
+                    ),
+                    modifier = Modifier.clickable{onTitleClick()}
+
+                )
+            }*/
+
         }
 
         // 2. Purple Action Bar (Self Checkout & Help)
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color(0xFF6A1B9A)) // Deep Purple
                 .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            contentAlignment = Alignment.Center // This ensures the 'SELF CHECKOUT' is exactly in the middle
         ) {
-            // Invisible spacer to keep "SELF CHECKOUT" perfectly centered
-            Box(modifier = Modifier.size(40.dp))
+            // 1. LEFT SIDE: Scan Button
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterStart) // Force to far left
+                    .size(35.dp)
+                    .clickable { showManualBarCode.value = true },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_scan),
+                    contentDescription = "scan",
+                    tint = Color.White,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
 
+            // 2. CENTER: Title
             Text(
                 text = "SELF CHECKOUT",
                 style = TextStyle(
@@ -605,13 +682,13 @@ fun BitesHeaderNew(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp
                 ),
-                modifier = Modifier.clickable{onTitleClick()}
-
+                modifier = Modifier.clickable { onTitleClick() }
             )
 
-            // Help Button Section
+            // 3. RIGHT SIDE: Help Content
             Row(
                 modifier = Modifier
+                    .align(Alignment.CenterEnd) // Force to far right
                     .clickable { onHelpClick() }
                     .padding(4.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -723,7 +800,7 @@ fun EmptyCartScreen(
             color = MaterialTheme.colorScheme.primary
         )
         Spacer(modifier = Modifier.height(35.dp))
-        ManualBarcodeEntryButton(
+       /* ManualBarcodeEntryButton(
             onEnterBarcodeManually, modifier = Modifier
                 .width(230.dp)
                 .height(48.dp), 20f
@@ -735,7 +812,7 @@ fun EmptyCartScreen(
                     .width(230.dp)
                     .height(48.dp), 20f
             )
-        }
+        }*/
 
     }
 }
@@ -796,7 +873,9 @@ fun PickersShoppingScreen(
                         Modifier.fillMaxWidth()
 
                 )
-                .fillMaxHeight(),
+                .fillMaxHeight()
+                .background(Color.White),
+
             contentAlignment = Alignment.Center
         ) {
             if (cartDataList.value.isEmpty()) {
@@ -1134,272 +1213,127 @@ fun CartScreen(
     val paymentSummary = shoppingCartInfo.value
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        containerColor = Color.White,
         bottomBar = {
-
-                Surface(
-                    modifier = Modifier.fillMaxWidth().height(550.dp),
-
-                    color = Color.White,
-                    shadowElevation = 8.dp, // Adds the slight shadow seen in your image
-                    shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+            Surface(
+                modifier = Modifier.fillMaxWidth().height(550.dp),
+                    /*.navigationBarsPadding(),*/
+                color = Color.White,
+                shadowElevation = 8.dp,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(start = 16.dp, end = 16.dp, top = 16.dp)
+                    // --- BILLING SECTION ---
+                    val summaryRows = listOf(
+                        "Sub Total" to (paymentSummary?.totalPrice ?: 0.0),
+                        "Promo Discount" to (paymentSummary?.promotionSave ?: 0.0),
+                        "Special Discount" to (paymentSummary?.totalDiscount ?: 0.0),
+                        "Coupon Discount" to (paymentSummary?.couponAmount ?: 0.0),
+                        "Voucher Discount" to (paymentSummary?.vourcherAmount ?: 0.0),
+                        "Tax" to (paymentSummary?.totalTax ?: 0.0)
+                    )
 
-                        //.navigationBarsPadding() // Ensures it doesn't overlap system buttons
+                    summaryRows.forEach { (label, value) ->
+                        BillRow(label, "${Constants.currencySymbol} ${getFormattedPrice(value)}", color = Color.Black)
+                    }
+
+                    Divider(modifier = Modifier.padding(vertical = 12.dp), thickness = 1.dp, color = Color.LightGray)
+
+                    BillRow(
+                        "Grand Total",
+                        "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.finalAmount ?: 0.0)}",
+                        isBold = true,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+
+                    Spacer(modifier = Modifier.weight(1f)) // Pushes content to the bottom
+
+                    // --- ACTION SECTION (Camera + Buttons) ---
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.Top, // Aligns buttons and camera to the bottom
+                        horizontalArrangement = Arrangement.SpaceBetween // Aligns Camera Left and Buttons Right
                     ) {
-                        // Grand Total Row
-                        BillRow(
-                            "Sub Total",
-                            "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.totalPrice ?: 0.0)}",
-                            color = Color.Black
-                        )
-                        BillRow(
-                            "Promo Discount",
-                            "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.promotionSave ?: 0.0)}",
-                            color = Color.Black
-                        )
-                        BillRow(
-                            "Special Discount",
-                            "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.totalDiscount ?: 0.0)}",
-                            color = Color.Black
-                        )
-                        BillRow(
-                            "Coupon Discount",
-                            "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.couponAmount ?: 0.0)}",
-                            color = Color.Black
-                        )
-                        BillRow(
-                            "Voucher Discount",
-                            "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.vourcherAmount ?: 0.0)}",
-                            color = Color.Black
-                        )
-                        BillRow(
-                            "Tax",
-                            "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.totalTax ?: 0.0)}",
-                            color = Color.Black
-                        )
-                        Divider(modifier = Modifier.padding(vertical = 8.dp))
-                        Spacer(modifier = Modifier.height(5.dp))
-                        BillRow(
-                            "Grand Total",
-                            "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.finalAmount ?: 0.0)}",
-                            isBold = true,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Card(
+                        // LEFT: Camera Preview
+                        Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            //shape = RoundedCornerShape(24.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                                .size(width = 240.dp, height = 170.dp) // Fixed Aspect Ratio for Camera
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Color.Black)
+                                .border(2.dp, Color(0xFFE0E0E0), RoundedCornerShape(16.dp))
                         ) {
+                            CameraPreview(modifier = Modifier.fillMaxSize())
+
+                            // Live Badge
                             Row(
                                 modifier = Modifier
-                                    .fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(50.dp)
+                                    .align(Alignment.TopStart)
+                                    .padding(8.dp)
+                                    .background(Color.Black.copy(0.6f), RoundedCornerShape(4.dp))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Left Side: Camera Preview with a "Mirror" border
-                                Box(
-                                    modifier = Modifier
-                                        .size(210.dp)
-                                        .clip(RoundedCornerShape(20.dp))
-                                        .background(Color.Black)
-                                        .border(4.dp, Color(0xFFF2F2F2), RoundedCornerShape(20.dp))
-                                ) {
-                                    CameraPreview(modifier = Modifier.fillMaxSize())
-
-                                    // Subtle "Live" indicator
-                                    Row(
-                                        modifier = Modifier
-                                            .align(Alignment.TopStart)
-                                            .padding(12.dp)
-                                            .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
-                                            .padding(horizontal = 6.dp, vertical = 2.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Box(modifier = Modifier.size(8.dp).background(Color.Red, CircleShape))
-                                        Spacer(Modifier.width(4.dp))
-                                        Text("LIVE", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                                    }
-                                }
-
-                                // Right Side: Action Column
-                                Column(
-                                    modifier = Modifier.weight(1f),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    // "Pay Now" with Gradient or High-Contrast Green
-                                    Button(
-                                        onClick = onPayNowClick,
-                                        modifier = Modifier
-                                            .fillMaxWidth(0.85f)
-                                            .height(75.dp) // Large touch target for kiosk
-                                            .shadow(12.dp, RoundedCornerShape(16.dp))
-                                            .focusProperties { canFocus = false },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = Color(0xFF7CB342) // Professional Leaf Green
-                                        ),
-                                        shape = RoundedCornerShape(16.dp)
-                                    ) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                           /* Icon(
-                                                painter = painterResource(id = R.drawable.ic_payment), // Replace with your icon
-                                                contentDescription = null,
-                                                modifier = Modifier.size(32.dp)
-                                            )*/
-                                            Spacer(Modifier.width(12.dp))
-                                            Text(
-                                                text = "PAY NOW",
-                                                style = TextStyle(
-                                                    fontSize = 32.sp,
-                                                    fontWeight = FontWeight.ExtraBold,
-                                                    letterSpacing = 1.sp
-                                                )
-                                            )
-                                        }
-                                    }
-
-                                    Spacer(modifier = Modifier.height(24.dp))
-
-                                    // Elegant Cancel Link
-                                    Surface(
-                                        onClick = onLogout,
-                                        color = Color.Transparent,
-                                        shape = RoundedCornerShape(8.dp)
-                                    ) {
-                                        Text(
-                                            text = "Cancel Transaction",
-                                            modifier = Modifier.padding(8.dp)
-                                                .focusProperties { canFocus = false },
-                                            style = TextStyle(
-                                                color = Color.Gray.copy(alpha = 0.8f),
-                                                fontSize = 22.sp,
-                                                fontWeight = FontWeight.Medium,
-                                                textDecoration = TextDecoration.Underline
-                                            )
-                                        )
-                                    }
-                                }
+                                Box(modifier = Modifier.size(6.dp).background(Color.Red, CircleShape))
+                                Spacer(Modifier.width(4.dp))
+                                Text("LIVE", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                             }
                         }
-                        /*Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 6.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            CameraPreview(
-                                modifier = Modifier
 
-                                    .size(200.dp) // Adjusted size for 21" screen
-                            )
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth() // This ensures the column spans the full width of the screen
-                                    .padding(vertical = 24.dp), // Space around the button group
-                                verticalArrangement = Arrangement.spacedBy(16.dp), // Space between the two buttons
-                                horizontalAlignment = Alignment.CenterHorizontally // Centers the buttons horizontally
+                        // RIGHT: Buttons Column
+                        Column(
+                            modifier = Modifier.width(350.dp), // Fixed width for button consistency
+                            horizontalAlignment = Alignment.End,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            // APPLY VOUCHER BUTTON
+                            OutlinedButton(
+                                onClick = { /* Add your logic */ },
+                                modifier = Modifier.fillMaxWidth().height(50.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
                             ) {
-                                // 1. Pay Now Button
-                                Button(
-                                    onClick = onPayNowClick,
-                                    modifier = Modifier
-                                        .fillMaxWidth(0.6f) // Increased to 60% for better touch target on 22" screen
-                                        .height(55.dp),      // Taller height for a "Primary" action
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = colorResource(R.color.colorGreen) // Deep Purple matching the "Bites" theme
-                                    ),
-                                    shape = RoundedCornerShape(12.dp), // Slightly more rectangular like the image
-                                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
-                                ) {
-                                    Text(
-                                        text = "PAY NOW",
-                                        color = Color.White,
-                                        fontSize = 30.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-
-                                // 2. Cancel Transaction (Text Button style like the image)
-                                Text(
-                                    text = "Cancel Transaction",
-                                    modifier = Modifier
-                                        .clickable { onLogout() }
-                                        .padding(12.dp),
-                                    style = TextStyle(
-                                        color = Color.Gray,
-                                        fontSize = 20.sp,
-                                        textDecoration = TextDecoration.Underline // Matches common kiosk patterns
-                                    )
-                                )
+                                Text("APPLY VOUCHER", style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold))
                             }
-                        }*/
-                        // Pay Now Button
-                       /* Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Group of 3 Action Buttons (Allocated 55% total)
-                            // Button 1: Clear Cart
-                            ActionButton(
-                                modifier = Modifier.weight(0.183f),
-                                label = "Clear",
-                                icon = R.drawable.ic_delete,
-                                color = Color.Red,
-                                onClick = onClearCart
-                            )
-
-                            // Button 2: Enter Barcode
-                            ActionButton(
-                                modifier = Modifier.weight(0.183f),
-                                label = "Barcode",
-                                icon = R.drawable.ic_edit, // Replace with your icon
-                                color = Color(0xFF8BC34A),
-                                onClick = onEnterBarcodeManually
-                            )
-
-                            // Button 3: Scan
-                            ActionButton(
-                                modifier = Modifier.weight(0.183f),
-                                label = "Scan",
-                                icon = R.drawable.ic_scan, // Replace with your icon
-                                color = colorResource(R.color.colorAccent),
-                                onClick = onScanBarcode
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            // Pay Now Button (Allocated 45% exactly)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            // PAY NOW BUTTON
                             Button(
                                 onClick = onPayNowClick,
                                 modifier = Modifier
-                                    .weight(0.45f) // Takes 45% of Row width
-                                    .height(55.dp), // Matched height with action buttons
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF673AB7))
+                                    .fillMaxWidth()
+                                    .height(50.dp)
+                                    .shadow(8.dp, RoundedCornerShape(12.dp)),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8BC34A)), // Light Green
+                                shape = RoundedCornerShape(12.dp)
                             ) {
                                 Text(
                                     text = "PAY NOW",
-                                    textAlign = TextAlign.Center,
-                                    style = MaterialTheme.typography.labelLarge.copy(
-                                        fontSize =  12.sp,
-                                        fontWeight = FontWeight.Bold
+                                    style = TextStyle(color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Black)
+                                )
+                            }
+
+                            // CANCEL TRANSACTION (Red and Simple)
+                            TextButton(
+                                onClick = onLogout,
+                                modifier = Modifier.padding(top = 4.dp)
+                            ) {
+                                Text(
+                                    text = "Cancel Transaction",
+                                    style = TextStyle(
+                                        color = Color.Red,
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        textDecoration = TextDecoration.Underline
                                     )
                                 )
                             }
-                        }*/
+                            Spacer(modifier = Modifier.height(6.dp))
+                        }
                     }
                 }
-
-
+            }
         }
     ) { innerPadding ->
         // content: cart list
@@ -1417,7 +1351,7 @@ fun CartScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
-                contentPadding = PaddingValues(bottom = 92.dp) // leave room for bottom bar
+                contentPadding = PaddingValues(bottom = 80.dp) // leave room for bottom bar
             ) {
                 //repeat(20) {
                     itemsIndexed(cartItems.reversed()) { index, productData ->
@@ -1522,7 +1456,7 @@ fun CartItemCard(
     }
     Card(
         modifier = modifier
-            .height(130.dp)
+            .height(110.dp)
             .fillMaxWidth()
             .padding(horizontal = 3.dp, vertical = 2.dp),
         shape = RoundedCornerShape(12.dp),
@@ -1622,7 +1556,7 @@ fun CartItemCard(
                         )
                     )
                 }
-
+Spacer(modifier = Modifier.height(10.dp))
                 // Final Price
                 Text(
                     text = "${Constants.currencySymbol}${"%.2f".format(productInfo.finalPrice)}",
@@ -1902,18 +1836,18 @@ fun BillRow(label: String, value: String, isBold: Boolean = false, color: Color 
             color = color,
             style = if (isBold) MaterialTheme.typography.bodyLarge.copy(
                 fontWeight = FontWeight.Medium,
-                fontSize = 33.sp
+                fontSize = 35.sp
             )
-            else MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
+            else MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold,fontSize = 20.sp)
         )
         Text(
             text = value,
             color = color,
             style = if (isBold) MaterialTheme.typography.bodyLarge.copy(
                 fontWeight = FontWeight.Medium,
-                fontSize = 37.sp
+                fontSize = 40.sp
             )
-            else MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
+            else MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold,fontSize = 20.sp)
         )
     }
 }

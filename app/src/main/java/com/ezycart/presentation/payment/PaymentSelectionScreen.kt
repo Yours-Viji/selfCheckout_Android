@@ -139,19 +139,24 @@ fun BitesHeaderPayment(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color.White)
-                .padding(vertical = 12.dp, horizontal = 16.dp),
-            contentAlignment = Alignment.Center
+
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Replace with your actual logo resource
+            Column (
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = Modifier.height(20.dp))
                 Image(
                     painter = painterResource(id = R.drawable.ic_bites_logo),
                     contentDescription = "Bites Logo",
-                    modifier = Modifier.height(80.dp),
+                    modifier = Modifier
+                        .height(70.dp),
+
                     contentScale = ContentScale.Fit
                 )
-
-
             }
         }
 
