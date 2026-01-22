@@ -110,6 +110,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.graphics.Brush
@@ -220,6 +221,7 @@ fun HomeScreen(
     val showWalletScanner = remember { mutableStateOf(false) }
     var showTerminal = remember { mutableStateOf(false) }
     var clearTransAction = remember { mutableStateOf(false) }
+    var showMainLogs = remember { mutableStateOf(false) }
     val context = LocalContext.current
     val weightBuffer = remember { StringBuilder() }
     val commonListener = remember {
@@ -270,33 +272,7 @@ fun HomeScreen(
         DynamicToast.makeError(context, showErrorMessage.value).show()
     }
     LaunchedEffect(Unit) {
-        /*LoginWeightScaleSerialPort.connectScale(context, object : SerialInputOutputManager.Listener {
-            override fun onNewData(data: ByteArray) {
-                val chunk = String(data)
-                weightBuffer.append(chunk)
 
-                while (weightBuffer.contains("\n")) {
-                    val indexOfNewline = weightBuffer.indexOf("\n")
-                    val fullMessage = weightBuffer.substring(0, indexOfNewline).trim()
-
-                    if (fullMessage.isNotEmpty()) {
-                        DynamicToast.makeError(context, fullMessage).show()
-                        // viewModel.setErrorMessage(fullMessage)
-                        try {
-                            viewModel.handleRawUsbData(fullMessage)
-                        } catch (e: Exception) {
-                            Log.e("USB", "Parse error: ${e.message}")
-                        }
-                    }
-                    weightBuffer.delete(0, indexOfNewline + 1)
-                }
-            }
-
-            override fun onRunError(e: Exception) {
-                Log.e("USB_ERROR", "Serial error: ${e.message}")
-                viewModel.setErrorMessage("Serial error: ${e.message}")
-            }
-        })*/
         try {
             LoginWeightScaleSerialPort.connectScale(context, commonListener)
         } catch (e: Exception) {
@@ -420,10 +396,11 @@ fun HomeScreen(
             .onKeyEvent { keyEvent ->
                 if (keyEvent.type == androidx.compose.ui.input.key.KeyEventType.KeyUp) {
                     when (keyEvent.key) {
-                        androidx.compose.ui.input.key.Key.Enter -> {
+                        androidx.compose.ui.input.key.Key.Enter,androidx.compose.ui.input.key.Key.NumPadEnter -> {
                             if (scanBuffer.value.isNotBlank()) {
                                 viewModel.resetProductInfoDetails()
                                 viewModel.getProductDetails(scanBuffer.value)
+                                focusRequester.requestFocus()
 
                                 scanBuffer.value = ""
                             }
@@ -438,7 +415,10 @@ fun HomeScreen(
                             false
                         }
                     }
-                } else false
+                } else {
+                    // Also consume KeyDown for Enter to prevent the "pressed" state on buttons
+                    keyEvent.key == androidx.compose.ui.input.key.Key.Enter
+                }
             }
     ) {
         Column(
@@ -480,16 +460,21 @@ fun HomeScreen(
                 )
             }
         ) {*/
-            BitesHeaderNew (cartCount = cartCount.value,onHelpClick = { showTerminal.value =true })
-            Text(
-                text = loadCellValidationLog.value,
-                color = Color.Red,
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 20.sp
-                )
+            BitesHeaderNew (cartCount = cartCount.value,onHelpClick = { showTerminal.value =true },
+                onTitleClick = {showMainLogs.value = false
+                    viewModel.clearLog()})
+            if(showMainLogs.value){
+                Text(
+                    text = loadCellValidationLog.value,
+                    color = Color.Red,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 20.sp
+                    )
 
-            )
+                )
+            }
+
            /* Scaffold(
                *//* topBar = {
                     MyTopAppBar(
@@ -567,7 +552,8 @@ fun HomeScreen(
 @Composable
 fun BitesHeaderNew(
     cartCount: Int = 0,
-    onHelpClick: () -> Unit
+    onHelpClick: () -> Unit,
+    onTitleClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -618,7 +604,9 @@ fun BitesHeaderNew(
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp
-                )
+                ),
+                modifier = Modifier.clickable{onTitleClick()}
+
             )
 
             // Help Button Section
@@ -1212,15 +1200,14 @@ fun CartScreen(
                         ) {
                             Row(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(24.dp), // Spacious padding for large screen
+                                    .fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(32.dp)
+                                horizontalArrangement = Arrangement.spacedBy(50.dp)
                             ) {
                                 // Left Side: Camera Preview with a "Mirror" border
                                 Box(
                                     modifier = Modifier
-                                        .size(220.dp)
+                                        .size(240.dp)
                                         .clip(RoundedCornerShape(20.dp))
                                         .background(Color.Black)
                                         .border(4.dp, Color(0xFFF2F2F2), RoundedCornerShape(20.dp))
@@ -1253,8 +1240,9 @@ fun CartScreen(
                                         onClick = onPayNowClick,
                                         modifier = Modifier
                                             .fillMaxWidth(0.85f)
-                                            .height(90.dp) // Large touch target for kiosk
-                                            .shadow(12.dp, RoundedCornerShape(16.dp)),
+                                            .height(75.dp) // Large touch target for kiosk
+                                            .shadow(12.dp, RoundedCornerShape(16.dp))
+                                            .focusProperties { canFocus = false },
                                         colors = ButtonDefaults.buttonColors(
                                             containerColor = Color(0xFF7CB342) // Professional Leaf Green
                                         ),
@@ -1288,7 +1276,8 @@ fun CartScreen(
                                     ) {
                                         Text(
                                             text = "Cancel Transaction",
-                                            modifier = Modifier.padding(8.dp),
+                                            modifier = Modifier.padding(8.dp)
+                                                .focusProperties { canFocus = false },
                                             style = TextStyle(
                                                 color = Color.Gray.copy(alpha = 0.8f),
                                                 fontSize = 22.sp,
@@ -1533,6 +1522,121 @@ fun CartItemCard(
     }
     Card(
         modifier = modifier
+            .height(130.dp)
+            .fillMaxWidth()
+            .padding(horizontal = 3.dp, vertical = 2.dp),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically // Keeps everything aligned in the middle vertically
+        ) {
+            // --- 1. LEFT: IMAGE ---
+            Box(
+                modifier = Modifier
+                    .size(90.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xFFF2F2F2)),
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = productInfo.imageUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                    placeholder = painterResource(R.drawable.ic_no_product_image),
+                    error = painterResource(R.drawable.ic_no_product_image)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // --- 2. CENTER: PRODUCT NAME & DISCOUNT ---
+            Column(
+                modifier = Modifier.weight(1f), // Takes up all available middle space
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = productInfo.productName,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 20.sp
+                    ),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Discount Row
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_discount_icon),
+                        contentDescription = "discount",
+                        tint = colorResource(R.color.colorOrange),
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Buy One Get One",
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = colorResource(R.color.colorOrange)
+                        )
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // --- 3. RIGHT: PRICE DETAILS ---
+            Column(
+                horizontalAlignment = Alignment.End, // Aligns text to the right
+                verticalArrangement = Arrangement.Center
+            ) {
+                // Quantity x Unit Price
+                Text(
+                    text = "${productInfo.displayQty} x ${Constants.currencySymbol}${ "%.2f".format(productInfo.unitPrice) }",
+                    style = TextStyle(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp,
+                        color = Color.Gray
+                    )
+                )
+
+                // Strikethrough Price (if discount exists)
+                if (productInfo.finalPriceBeforeDiscount != productInfo.finalPrice) {
+                    Text(
+                        text = "${Constants.currencySymbol}${"%.2f".format(productInfo.finalPriceBeforeDiscount)}",
+                        style = TextStyle(
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 16.sp,
+                            textDecoration = TextDecoration.LineThrough,
+                            color = Color.Red
+                        )
+                    )
+                }
+
+                // Final Price
+                Text(
+                    text = "${Constants.currencySymbol}${"%.2f".format(productInfo.finalPrice)}",
+                    style = TextStyle(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp, // Made slightly larger for prominence
+                        color = colorResource(R.color.colorPrimary)
+                    )
+                )
+            }
+        }
+    }
+    /*Card(
+        modifier = modifier
             .then(
 
 
@@ -1556,6 +1660,7 @@ fun CartItemCard(
                 .padding(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Spacer(modifier = Modifier.width(4.dp))
             // Image
             Box(
                 modifier = Modifier
@@ -1610,7 +1715,7 @@ fun CartItemCard(
                     ) {
                         Spacer(modifier = Modifier.width(3.dp))
                         // Item 1
-                        Text(
+                        *//*Text(
                             text = "${productInfo.displayQty} x ${Constants.currencySymbol} ${
                                 "%.2f".format(
                                     productInfo.unitPrice
@@ -1645,7 +1750,7 @@ fun CartItemCard(
                             )
                         )
                     }
-                    Spacer(modifier = Modifier.height(3.dp))
+                    Spacer(modifier = Modifier.height(3.dp))*//*
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
@@ -1673,7 +1778,7 @@ fun CartItemCard(
 
             Spacer(Modifier.width( 3.dp))
             // Delete icon
-            Icon(
+            *//*Icon(
                 painter = painterResource(id = R.drawable.ic_box_delete),
                 contentDescription = "Delete ${productInfo.id}",
                 tint = Color.Unspecified,
@@ -1698,11 +1803,47 @@ fun CartItemCard(
                         selectedCartItem.value = productInfo
                         showEditDialog.value = true
                     }
-            )
+            )*//*
+                Text(
+                    text = "${productInfo.displayQty} x ${Constants.currencySymbol} ${
+                        "%.2f".format(
+                            productInfo.unitPrice
+                        )
+                    }",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 18.sp
+                    ),
+                    color = Color.Gray
+                )
 
+                // Item 2 (Conditional)
+                if (productInfo.finalPriceBeforeDiscount != productInfo.finalPrice) {
+                    Text(
+                        text = "${Constants.currencySymbol} ${"%.2f".format(productInfo.finalPriceBeforeDiscount)}",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        ),
+                        textDecoration = TextDecoration.LineThrough
+                    )
+                }
+
+                // Item 3
+                Text(
+                    text = "${Constants.currencySymbol} ${"%.2f".format(productInfo.finalPrice)}",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = colorResource(R.color.colorPrimary)
+                    )
+                )
+            }
+            Spacer(modifier = Modifier.height(3.dp))
 
         }
-    }
+    }*/
+
 }
 
 @Composable

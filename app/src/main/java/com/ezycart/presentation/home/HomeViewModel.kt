@@ -127,7 +127,9 @@ class HomeViewModel @Inject constructor(
         }
        // observeUsbData()
     }
-
+    fun clearLog(){
+        _loadCellValidationLog.value = ">>Loadcell Validation"
+    }
     fun setErrorMessage(data : String){
         _errorMessage.value = "New Data ==>>: $data"
     }
@@ -343,7 +345,7 @@ class HomeViewModel @Inject constructor(
                         isLoading = false
                     )
                     _productInfo.value = result.data
-                   // addProductToShoppingCart(productInfo.value!!.barcode,1)
+                   addProductToShoppingCart(productInfo.value!!.barcode,1)
                     getPriceDetails(barCode)
                 }
 
