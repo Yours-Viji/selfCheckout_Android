@@ -1420,7 +1420,7 @@ fun CartScreen(
                 contentPadding = PaddingValues(bottom = 92.dp) // leave room for bottom bar
             ) {
                 //repeat(20) {
-                    itemsIndexed(cartItems) { index, productData ->
+                    itemsIndexed(cartItems.reversed()) { index, productData ->
                         CartItemCard(
                             productInfo = cartItems[index],
                             onRemove = { onRemoveItem(it) },
