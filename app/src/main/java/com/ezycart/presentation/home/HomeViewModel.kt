@@ -702,9 +702,9 @@ class HomeViewModel @Inject constructor(
         if (productToRemove > 10.0 && product != null) {
 
             val item = _cartDataList.value.find { it.barcode == product!!.barcode }
-            val productIdToDelete = item?.id ?: -1
+            val productIdToDelete = item?.id ?: 0
 
-            if (productIdToDelete > -1) {
+            if (productIdToDelete > 0) {
 
                 val result =
                     validationManager.validateRemoval(product, productToRemove.toDouble())

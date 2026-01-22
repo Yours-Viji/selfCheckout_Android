@@ -122,7 +122,7 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteProductFromShoppingCart(barCode: String,id:Int): NetworkResponse<ShoppingCartDetails> {
-        return safeApiCallRaw { authApi.deleteProductFromCart(preferencesManager.getShoppingCartId(),DeleteProductInCartRequest(id,barCode)) }
+        return safeApiCallRaw { authApi.deleteProductFromCart(DeleteProductInCartRequest(id,barCode)) }
             .also { result ->
                 if (result is NetworkResponse.Success) {
                 }

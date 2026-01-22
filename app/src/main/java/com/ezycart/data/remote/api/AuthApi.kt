@@ -90,12 +90,15 @@ interface AuthApi {
     suspend fun getPaymentSummary(
         @Path(value = "cart_id", encoded = true) cartId: String): Response<ShoppingCartDetails>
 
+    @HTTP(method = "DELETE", path = "/v2/ezyCart/cart/item", hasBody = true)
+    suspend fun deleteProductFromCart(@Body deleteProductInCartRequest: DeleteProductInCartRequest): Response<ShoppingCartDetails>
 
-    @HTTP(method = "DELETE", path = "/v1/ezyCart/support/cart/{cart_Id}", hasBody = true)
+
+   /* @HTTP(method = "DELETE", path = "/v1/ezyCart/support/cart/{cart_Id}", hasBody = true)
     suspend fun deleteProductFromCart(
         @Path(value = "cart_Id", encoded = true) cartId: String,
         @Body deleteProductInCartRequest: DeleteProductInCartRequest
-    ): Response<ShoppingCartDetails>
+    ): Response<ShoppingCartDetails>*/
 
     @PUT("/v1/ezyCart/support/cart/{cart_Id}")
     suspend fun editProductQuantity(
