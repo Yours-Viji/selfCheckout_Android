@@ -3,8 +3,8 @@ package com.ezycart.services.usb
 import com.ezycart.model.ProductInfo
 
 class WeightValidationManager {
-    private val THRESHOLD = 30 // Grams for Dry products
-    private val FRESH_THRESHOLD = 10 // Grams for Fresh products
+    private val THRESHOLD = 40 // Grams for Dry products
+    private val FRESH_THRESHOLD = 40 // Grams for Fresh products
 
     // Store weights for fresh items to validate during removal later
     private val freshItemWeights = mutableMapOf<String, Double>()
