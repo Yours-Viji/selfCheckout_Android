@@ -215,6 +215,7 @@ fun HomeScreen(
     var showQrDialog = viewModel.canShowQrPaymentDialog.collectAsState()
     var showPaymentSuccessDialog = viewModel.canShowPaymentSuccessDialog.collectAsState()
     var showPaymentErrorDialog = viewModel.canShowPaymentErrorDialog.collectAsState()
+    var canMakePayment = viewModel.canMakePayment.collectAsState()
     var proceedTapToPay = remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     val showErrorMessage = remember { mutableStateOf("") }
@@ -387,7 +388,9 @@ fun HomeScreen(
         focusRequester.requestFocus()
         viewModel.initNewShopping()
     }
-
+if(canMakePayment.value){
+    goToPaymentScreen()
+}
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -540,7 +543,8 @@ fun HomeScreen(
                             // viewModel.initWavPayQrPayment()
 
                         },
-                        onTapToPayClick = goToPaymentScreen,
+                        onTapToPayClick = {viewModel.requestTotalWeightFromLoadCell()},
+                        //onTapToPayClick = goToPaymentScreen,
                         onLogout = { clearTransAction.value = true },
                     )
 

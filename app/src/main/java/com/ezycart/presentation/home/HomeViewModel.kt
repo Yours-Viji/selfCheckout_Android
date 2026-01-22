@@ -22,6 +22,7 @@ import com.ezycart.presentation.WeightUpdate
 import com.ezycart.presentation.common.data.Constants
 import com.ezycart.services.usb.WeightValidationManager
 import com.ezycart.services.usb.WeightValidationManager.ValidationResult
+import com.ezycart.services.usb.com.LoginWeightScaleSerialPort
 import com.ezycart.services.usb.com.UsbSerialManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -35,6 +36,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import javax.inject.Inject
+import kotlin.math.abs
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -93,8 +95,10 @@ class HomeViewModel @Inject constructor(
     private val validationManager = WeightValidationManager()
     private var weightAtRemovalW1: Double = 0.0
     private var weightAtRemovalDeltaW2: Double = 0.0
-    private val _isDeleteProcess = MutableStateFlow<Boolean>(false)
-    val isDeleteProcess: StateFlow<Boolean> = _isDeleteProcess.asStateFlow()
+
+    private val _canMakePayment = MutableStateFlow<Boolean>(false)
+    val canMakePayment: StateFlow<Boolean> = _canMakePayment.asStateFlow()
+
     private var loadCellOneTotalWeight  : Double = 0.0
 
     private val _errorMessage = MutableStateFlow("")
@@ -106,6 +110,7 @@ class HomeViewModel @Inject constructor(
     private val _loadCellValidationLog = MutableStateFlow(">>Loadcell Validation")
     val loadCellValidationLog: StateFlow<String> = _loadCellValidationLog.asStateFlow()
 
+    private val productWeightsMap = HashMap<String, MutableList<Double>>()
     sealed class PaymentStatusState {
         object Idle : PaymentStatusState()
         object Loading : PaymentStatusState()
@@ -169,6 +174,7 @@ class HomeViewModel @Inject constructor(
         _shoppingCartInfo.value = null
         _cartDataList.value = emptyList()
         _cartCount.value = 0
+        productWeightsMap.clear()
     }
 
     private fun createNewShoppingCart() {
@@ -264,6 +270,7 @@ class HomeViewModel @Inject constructor(
                     _cartDataList.value = result.data.cartItems
                     _cartCount.value = result.data.totalItems
                     loadingManager.hide()
+                    storeProductWeight(barCode,weightAtRemovalDeltaW2)
                     getPaymentSummary()
 
                 }
@@ -320,6 +327,7 @@ class HomeViewModel @Inject constructor(
                     _cartDataList.value = result.data.cartItems
                     _cartCount.value = result.data.totalItems
                     loadingManager.hide()
+                    deleteOneWeightEntry(barCode)
                     getPaymentSummary()
                 }
 
@@ -345,7 +353,7 @@ class HomeViewModel @Inject constructor(
                         isLoading = false
                     )
                     _productInfo.value = result.data
-                    addProductToShoppingCart(productInfo.value!!.barcode,1)
+                   // addProductToShoppingCart(productInfo.value!!.barcode,1)
                     getPriceDetails(barCode)
                 }
 
@@ -643,8 +651,41 @@ class HomeViewModel @Inject constructor(
     private fun getTapToPayPaymentRequest(): PaymentRequest {
         return PaymentRequest("HLB", "HLB@123456789")
     }
+    fun storeProductWeight(barcode: String, weight: Double) {
+        if (productWeightsMap.containsKey(barcode)) {
+            // Barcode exists, add to existing list
+            productWeightsMap[barcode]?.add(weight)
+        } else {
+            // New barcode, create a new list with the first weight
+            productWeightsMap[barcode] = mutableListOf(weight)
+        }
+    }
 
-
+    /**
+     * Calculates the total sum of all weights currently stored in the map.
+     */
+    fun getTotalWeightOfAllItems(): Double {
+        return productWeightsMap.values.flatten().sum()
+    }
+    fun deleteWeightsByBarcode(barcode: String) {
+        productWeightsMap.remove(barcode)
+    }
+    fun deleteOneWeightEntry(barcode: String) {
+        val list = productWeightsMap[barcode]
+        if (!list.isNullOrEmpty()) {
+            list.removeAt(list.size - 1) // Removes only the last added weight
+            if (list.isEmpty()) productWeightsMap.remove(barcode)
+        }
+    }
+    fun resetLoadCell(){
+        sendMessageToLoadCell("2")
+    }
+    fun requestTotalWeightFromLoadCell(){
+        sendMessageToLoadCell("80")
+    }
+   private fun sendMessageToLoadCell(message: String){
+        LoginWeightScaleSerialPort.sendMessageToWeightScale("$message\r\n")
+    }
     fun handleWeightUpdate(update: WeightUpdate) {
         val message = "${update.status} - w1=${update.w1} - w2=${update.w2} - deltaw1=${update.delta_w1}-deltaw2=${update.delta_w2}"
         _errorMessage.value = message
@@ -680,6 +721,7 @@ class HomeViewModel @Inject constructor(
 
                         if (result is ValidationResult.Success) {
                             //addToCart(product)
+                            weightAtRemovalDeltaW2 = update.delta_w2
                             _errorMessage.value = result.toString()
                             _loadCellValidationLog.value += "> ${result.toString()}\n"
                             addProductToShoppingCart(product.barcode, 1)
@@ -690,6 +732,22 @@ class HomeViewModel @Inject constructor(
                             _errorMessage.value = (result as ValidationResult.Error).message
                             _loadCellValidationLog.value += "> ${errorMessage.value}\n"
                         }
+                    }
+                }
+                10 ->{
+                   val loadCellTotalWeight =  update.w2
+                    val threshold = 30.0
+
+                    if (abs(loadCellTotalWeight - getTotalWeightOfAllItems()) <= threshold) {
+                        // Weights are considered "the same" within the 30g margin
+                        _canMakePayment.value = true
+                        println("Weight is stable and within range.")
+                        _errorMessage.value = "Weight is stable and within range."
+                    } else {
+                        _canMakePayment.value = false
+                        _errorMessage.value = "Weight mismatch detected!"
+                        // Weight difference is greater than 30g
+                        println("Weight mismatch detected!")
                     }
                 }
             }
