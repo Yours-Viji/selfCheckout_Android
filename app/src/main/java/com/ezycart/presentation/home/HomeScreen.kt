@@ -461,7 +461,7 @@ fun HomeScreen(
             }
         ) {*/
             BitesHeaderNew (cartCount = cartCount.value,onHelpClick = { showTerminal.value =true },
-                onTitleClick = {showMainLogs.value = false
+                onTitleClick = {showMainLogs.value = !showMainLogs.value
                     viewModel.clearLog()})
             if(showMainLogs.value){
                 Text(
@@ -1207,7 +1207,7 @@ fun CartScreen(
                                 // Left Side: Camera Preview with a "Mirror" border
                                 Box(
                                     modifier = Modifier
-                                        .size(240.dp)
+                                        .size(210.dp)
                                         .clip(RoundedCornerShape(20.dp))
                                         .background(Color.Black)
                                         .border(4.dp, Color(0xFFF2F2F2), RoundedCornerShape(20.dp))
