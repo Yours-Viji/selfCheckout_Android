@@ -356,7 +356,7 @@ class HomeViewModel @Inject constructor(
                         isLoading = false
                     )
                     _productInfo.value = result.data
-                   // addProductToShoppingCart(productInfo.value!!.barcode,1)
+                   addProductToShoppingCart(productInfo.value!!.barcode,1)
                     getPriceDetails(barCode)
                 }
 
@@ -779,10 +779,10 @@ class HomeViewModel @Inject constructor(
             if (finalWeightOfLc1 <= 15.0 && difference <= threshold){
                 _canMakePayment.value = true
                 println("Weight is stable and within range.")
-                _errorMessage.value = "Weight is stable and within range."
+              //  _errorMessage.value = "Weight is stable and within range."
             }else{
                 _canMakePayment.value = false
-                _errorMessage.value = "Weight mismatch detected!"
+              //  _errorMessage.value = "Weight mismatch detected!"
                 // Weight difference is greater than 30g
                 println("Weight mismatch detected!")
             }

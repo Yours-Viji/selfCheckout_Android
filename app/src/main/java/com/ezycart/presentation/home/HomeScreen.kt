@@ -164,6 +164,7 @@ import com.ezycart.presentation.landing.BitesHeader
 import com.ezycart.services.usb.SensorSerialPortCommunication
 
 import com.ezycart.services.usb.com.LoginWeightScaleSerialPort
+import com.ezycart.services.usb.com.WeightScaleManager
 import com.google.accompanist.web.rememberWebViewState
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
@@ -182,7 +183,7 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    viewModel: HomeViewModel = hiltViewModel(),
+    viewModel: HomeViewModel,
     //sensorSerialPortViewModel: SensorSerialPortViewModel = hiltViewModel(),
     onThemeChange: () -> Unit,
     onPaymentInitialize: () -> Unit,
@@ -224,10 +225,9 @@ fun HomeScreen(
     var clearTransAction = remember { mutableStateOf(false) }
     var showMainLogs = remember { mutableStateOf(false) }
     val context = LocalContext.current
-    val weightBuffer = remember { StringBuilder() }
-    val commonListener = remember {
-        LoginWeightScaleSerialPort.createCommonListener(context, viewModel)
-    }
+   /* val commonListener = remember {
+        LoginWeightScaleSerialPort.createCommonListener(viewModel)
+    }*/
     val loadCellValidationLog = viewModel.loadCellValidationLog.collectAsState()
 
     LockScreenOrientation(context,ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
@@ -272,7 +272,7 @@ fun HomeScreen(
     if (showErrorMessage.value.isNotEmpty()) {
         DynamicToast.makeError(context, showErrorMessage.value).show()
     }
-    LaunchedEffect(Unit) {
+   /* LaunchedEffect(Unit) {
 
         try {
             LoginWeightScaleSerialPort.connectScale(context, commonListener)
@@ -280,14 +280,15 @@ fun HomeScreen(
             TODO("Not yet implemented")
         }
 
-    }
+    }*/
     if (showTerminal.value) {
-        try {
+       /* try {
             LoginWeightScaleSerialPort.connectScale(context, commonListener)
         } catch (e: Exception) {
             TODO("Not yet implemented")
-        }
-
+        }*/
+        WeightScaleManager.initOnce(viewModel)
+        WeightScaleManager.connectSafe(context)
         UsbTerminalDialog(
             onDismiss = { showTerminal.value = false },
             viewModel = viewModel,
@@ -564,7 +565,7 @@ fun BitesHeaderNew(
     val showManualBarCode = remember { mutableStateOf(false) }
     val scannedCode = remember { mutableStateOf<String?>(null) }
     if (showManualBarCode.value) {
-        ManualBarcodeEntryDialog(
+        /*ManualBarcodeEntryDialog(
             onProceed = { barcode ->
                 viewModel.resetProductInfoDetails()
                 viewModel.getProductDetails(barcode)
@@ -578,8 +579,8 @@ fun BitesHeaderNew(
             onDismiss = {
                 showManualBarCode.value = false
             }
-        )
-       /* BarcodeScannerDialog(
+        )*/
+        BarcodeScannerDialog(
             onDismiss = { showManualBarCode.value = false },
             onBarcodeScanned = {
                 scannedCode.value = it
@@ -587,7 +588,7 @@ fun BitesHeaderNew(
                 viewModel.getProductDetails(scannedCode.value.toString())
                 showManualBarCode.value = false
             }
-        )*/
+        )
     }
     Column(
         modifier = Modifier
@@ -2396,7 +2397,7 @@ fun BarcodeScannerDialog(
 
 @Composable
 fun ProductPriceAlert(
-    viewModel: HomeViewModel = hiltViewModel(),
+    viewModel: HomeViewModel,
     onDismiss: () -> Unit
 ) {
     val priceInfo by viewModel.priceDetails.collectAsState()

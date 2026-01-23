@@ -44,7 +44,7 @@ fun PaymentSelectionScreen(
 
     ) {
     //val total = viewModel.totalAmount.collectAsStateWithLifecycle()
-    val formattedAmount = String.format("%.2f", shoppingCartInfo!!.finalAmount)
+    val formattedAmount = String.format("%.2f", shoppingCartInfo?.finalAmount ?: 0.0)
 
     Column(
         modifier = Modifier

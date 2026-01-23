@@ -350,7 +350,7 @@ object LoginWeightScaleSerialPort {
    private val weightBuffer = StringBuilder()
 
     // 1. Common Method: The actual parsing logic used everywhere
-    fun createCommonListener(context: Context, viewModel: HomeViewModel): SerialInputOutputManager.Listener {
+    fun createCommonListener(viewModel: HomeViewModel): SerialInputOutputManager.Listener {
         return object : SerialInputOutputManager.Listener {
             override fun onNewData(data: ByteArray) {
                 val chunk = String(data)

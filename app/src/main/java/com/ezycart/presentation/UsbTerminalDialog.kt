@@ -69,7 +69,7 @@ fun UsbTerminalDialog(
         viewModel.logStatus("Initializing Scale Connection...")
 
         // Use the common listener we created in previous step
-        val listener = LoginWeightScaleSerialPort.createCommonListener(context, viewModel)
+        val listener = LoginWeightScaleSerialPort.createCommonListener(viewModel)
         LoginWeightScaleSerialPort.connectScale(context, listener)
     }
 

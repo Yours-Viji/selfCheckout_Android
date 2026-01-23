@@ -6,7 +6,9 @@ import android.util.Log
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -36,6 +38,7 @@ import com.ezycart.presentation.home.WebViewScreen
 import com.ezycart.presentation.landing.LandingScreen
 import com.ezycart.presentation.payment.PaymentSelectionScreen
 import com.ezycart.services.usb.SensorSerialPortCommunication
+import com.ezycart.services.usb.com.WeightScaleManager
 import com.meticha.permissions_compose.PermissionManagerConfig
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.HiltAndroidApp
@@ -57,7 +60,7 @@ class MainActivity : ComponentActivity(){
     lateinit var loadingManager: LoadingManager
     @Inject
     lateinit var nearPayService: NearPayService
-
+    private val homeViewModel: HomeViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
@@ -75,6 +78,8 @@ class MainActivity : ComponentActivity(){
                 onConfirm = onConfirm
             )
         }
+        WeightScaleManager.init(homeViewModel)
+        WeightScaleManager.connect(this)
        /* lifecycleScope.launch {
             SensorSerialPortCommunication.sensorMessage.collect { data ->
                 Log.i("--->>","LOG RECEIVED: $data")
@@ -149,6 +154,7 @@ class MainActivity : ComponentActivity(){
                                 }
                                 composable("home") {
                                     HomeScreen(
+                                        homeViewModel,
                                         onThemeChange = {
                                             // 🔹 Handle theme change
                                             //  Toast.makeText(this, "Theme change clicked", Toast.LENGTH_SHORT).show()
@@ -171,9 +177,10 @@ class MainActivity : ComponentActivity(){
                                             }
                                         },
                                         goToPaymentScreen ={
-                                            navController.navigate("payment") {
-                                                popUpTo("home") { inclusive = false }
-                                            }
+                                            /*navController.navigate("payment") {
+                                                popUpTo("home") { inclusive = true }
+                                            }*/
+                                            navController.navigate("payment")
                                         },
                                         onTransactionCalled = {
                                             navController.navigateToWebView(Constants.EZY_LITE_TRANSACTION_URL)
@@ -181,14 +188,12 @@ class MainActivity : ComponentActivity(){
                                     )
                                 }
                                 composable("payment") { backStackEntry ->
-                                    // Get the HomeViewModel using the "home" destination as the parent
-                                    val parentEntry = remember(backStackEntry) {
-                                        navController.getBackStackEntry("home")
-                                    }
-                                    val homeViewModel: HomeViewModel = hiltViewModel(parentEntry)
+
                                     val count = homeViewModel.cartCount.collectAsStateWithLifecycle()
                                     val shoppingCartInfo = homeViewModel.shoppingCartInfo.collectAsStateWithLifecycle()
-
+                                    BackHandler {
+                                        navController.popBackStack()
+                                    }
                                     PaymentSelectionScreen(
                                         cartCount = count.value,
                                         shoppingCartInfo = shoppingCartInfo.value,
