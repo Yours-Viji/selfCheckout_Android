@@ -101,6 +101,7 @@ class HomeViewModel @Inject constructor(
 
     private var initialTotalWeight  : Double = 0.0
     private var finalTotalWeight  : Double = 0.0
+    private var finalWeightOfLc1 : Double = 0.0
 
     private val _errorMessage = MutableStateFlow("")
     val errorMessage: StateFlow<String> = _errorMessage.asStateFlow()
@@ -701,6 +702,7 @@ class HomeViewModel @Inject constructor(
                     initialTotalWeight = update.w1
                     weightAtRemovalW1 = 0.0
                     weightAtRemovalDeltaW2 =0.0
+                    finalWeightOfLc1 =update.w1
                 }
 
                 -1 -> {
@@ -708,11 +710,13 @@ class HomeViewModel @Inject constructor(
                     finalTotalWeight = update.w2
                     weightAtRemovalW1 = Math.abs(update.delta_w1)
                     weightAtRemovalDeltaW2 = Math.abs(update.delta_w2)
+                    finalWeightOfLc1 =update.w1
                 }
 
                 1 -> {
                     // Customer placed item in LC2
-                   // weightAtRemovalW1 = 0.0
+                    weightAtRemovalW1 = update.w1
+                    finalWeightOfLc1 =update.w1
                   //  weightAtRemovalDeltaW2 =0.0
                     val product = _productInfo.value
                     finalTotalWeight = update.w2
@@ -755,16 +759,28 @@ class HomeViewModel @Inject constructor(
         try {
             val loadCellTotalWeight =  finalTotalWeight
             val threshold = 50.0
-           // val cartTotalWeight = getTotalWeightOfAllItems()
-            val cartTotalWeight = initialTotalWeight
+            /*
+            val cartTotalWeight = getTotalWeightOfAllItems()
             val difference = abs(loadCellTotalWeight - cartTotalWeight)
-            _loadCellValidationLog.value= "DeltaW1 = ${initialTotalWeight} - DeltaW2 - $loadCellTotalWeight = cartTotal - $cartTotalWeight || Total Products ${productWeightsMap.size}- CartWeightDifference - $difference"
+            _loadCellValidationLog.value= "W1 = ${initialTotalWeight} - W2 - $loadCellTotalWeight = cartTotal - $cartTotalWeight || Total Products ${productWeightsMap.size}- CartWeightDifference - $difference"
             if (difference <= threshold) {
                 // Weights are considered "the same" within the 30g margin
                 _canMakePayment.value = true
                 println("Weight is stable and within range.")
                 _errorMessage.value = "Weight is stable and within range."
             } else {
+                _canMakePayment.value = false
+                _errorMessage.value = "Weight mismatch detected!"
+                // Weight difference is greater than 30g
+                println("Weight mismatch detected!")
+            }*/
+            val difference = abs(loadCellTotalWeight - initialTotalWeight)
+            _loadCellValidationLog.value= "W1 = ${initialTotalWeight} // w2 = $loadCellTotalWeight // Final W1 = $finalWeightOfLc1 // Difference =  $difference"
+            if (finalWeightOfLc1 <= 15.0 && difference <= threshold){
+                _canMakePayment.value = true
+                println("Weight is stable and within range.")
+                _errorMessage.value = "Weight is stable and within range."
+            }else{
                 _canMakePayment.value = false
                 _errorMessage.value = "Weight mismatch detected!"
                 // Weight difference is greater than 30g
