@@ -28,13 +28,18 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,7 +62,16 @@ import com.ezycart.presentation.home.CartIconWithBadge
 fun LandingScreen(viewModel: LandingViewModel = viewModel(),
                   goToHomeScreen: () -> Unit) {
     val uiState = viewModel.uiState.collectAsStateWithLifecycle()
-
+    var showGuidelines = remember { mutableStateOf(false) }
+    if (showGuidelines.value) {
+        GuidelinesDialog(
+            onDismiss = { showGuidelines.value = false },
+            onConfirm = {
+                showGuidelines.value = false
+                goToHomeScreen()
+            }
+        )
+    }
     Column(modifier = Modifier.fillMaxSize().background(Color.Black)) {
 
         // 1. Dynamic Content Area (Banner or Language Selection)
@@ -77,7 +91,8 @@ fun LandingScreen(viewModel: LandingViewModel = viewModel(),
                     // Replace with Language Selection after click
                     LanguageSelectionScreen(onLanguageSelected = { lang ->
                         Log.d("Kiosk", "Selected: $lang")
-                        goToHomeScreen()
+                        showGuidelines.value = true
+
                         // Proceed to next step
                     })
                 }
@@ -303,5 +318,81 @@ fun BitesHeader(
 
             }
         }
+    }
+}
+
+@Composable
+fun GuidelinesDialog(
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(16.dp),
+        containerColor = Color.White,
+        title = {
+            Text(
+                text = "Guidelines to follow",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+        },
+        text = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Please follow these instructions for a smooth checkout.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // The three rounded corner images in a row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    GuidelineImage(resId = R.drawable.ic_guideline_1, label = "Load all in Entry Basket ")
+                    GuidelineImage(resId = R.drawable.ic_guideline_2, label = "Scan a Product")
+                    GuidelineImage(resId = R.drawable.ic_guideline_3, label = "Drop in Exit Basket")
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                modifier = Modifier.padding(8.dp)
+            ) {
+                Text(
+                    "I Understand",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 18.sp,
+                    color = Color(0xFF007BFF) // Kiosk Blue
+                )
+            }
+        }
+    )
+}
+
+@Composable
+fun GuidelineImage(resId: Int, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Image(
+            painter = painterResource(id = resId),
+            contentDescription = label,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .size(110.dp)
+                .clip(RoundedCornerShape(12.dp)) // Rounded corners for images
+                .background(Color.LightGray)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(text = label, style = MaterialTheme.typography.bodyMedium)
     }
 }
