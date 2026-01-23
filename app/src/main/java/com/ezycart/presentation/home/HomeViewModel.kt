@@ -267,10 +267,11 @@ class HomeViewModel @Inject constructor(
                     _stateFlow.value = _stateFlow.value.copy(
                         isLoading = false
                     )
+                    storeProductWeight(barCode,weightAtRemovalDeltaW2)
+                    weightAtRemovalDeltaW2 = 0.0
                     _cartDataList.value = result.data.cartItems
                     _cartCount.value = result.data.totalItems
                     loadingManager.hide()
-                    storeProductWeight(barCode,weightAtRemovalDeltaW2)
                     getPaymentSummary()
 
                 }
@@ -727,7 +728,7 @@ class HomeViewModel @Inject constructor(
                             addProductToShoppingCart(product.barcode, 1)
                             _productInfo.value = null
                             weightAtRemovalW1 = 0.0
-                            weightAtRemovalDeltaW2 =0.0 // Clear for next scan
+                          //  weightAtRemovalDeltaW2 =0.0 // Clear for next scan
                         } else {
                             _errorMessage.value = (result as ValidationResult.Error).message
                             _loadCellValidationLog.value += "> ${errorMessage.value}\n"
@@ -736,9 +737,11 @@ class HomeViewModel @Inject constructor(
                 }
                 10 ->{
                    val loadCellTotalWeight =  update.w2
-                    val threshold = 30.0
-
-                    if (abs(loadCellTotalWeight - getTotalWeightOfAllItems()) <= threshold) {
+                    val threshold = 50.0
+                    val cartTotalWeight = getTotalWeightOfAllItems()
+                    val difference = abs(loadCellTotalWeight - cartTotalWeight)
+                    _loadCellValidationLog.value= "DeltaW1 = ${update.w1} - DeltaW2 - $loadCellTotalWeight = cartTotal - $cartTotalWeight || Total Products ${productWeightsMap.size}- CartWeightDifference - $difference"
+                    if (difference <= threshold) {
                         // Weights are considered "the same" within the 30g margin
                         _canMakePayment.value = true
                         println("Weight is stable and within range.")
