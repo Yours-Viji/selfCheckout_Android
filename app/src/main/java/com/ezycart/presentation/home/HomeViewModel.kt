@@ -737,6 +737,11 @@ class HomeViewModel @Inject constructor(
                             _errorMessage.value = (result as ValidationResult.Error).message
                             _loadCellValidationLog.value += "> ${errorMessage.value}\n"
                         }
+                    }else{
+                        if (update.delta_w2 >15.0){
+                            // Added without scan
+                            _errorMessage.value = "Please scan and to add!"
+                        }
                     }
                 }
                 10 ->{
