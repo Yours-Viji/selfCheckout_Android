@@ -755,7 +755,8 @@ class HomeViewModel @Inject constructor(
         try {
             val loadCellTotalWeight =  finalTotalWeight
             val threshold = 50.0
-            val cartTotalWeight = getTotalWeightOfAllItems()
+           // val cartTotalWeight = getTotalWeightOfAllItems()
+            val cartTotalWeight = initialTotalWeight
             val difference = abs(loadCellTotalWeight - cartTotalWeight)
             _loadCellValidationLog.value= "DeltaW1 = ${initialTotalWeight} - DeltaW2 - $loadCellTotalWeight = cartTotal - $cartTotalWeight || Total Products ${productWeightsMap.size}- CartWeightDifference - $difference"
             if (difference <= threshold) {
