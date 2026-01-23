@@ -543,7 +543,7 @@ if(canMakePayment.value){
                             // viewModel.initWavPayQrPayment()
 
                         },
-                        onTapToPayClick = {viewModel.requestTotalWeightFromLoadCell()},
+                        onTapToPayClick = {viewModel.checkPaymentWeightValidation()},
                         //onTapToPayClick = goToPaymentScreen,
                         onLogout = { clearTransAction.value = true },
                     )

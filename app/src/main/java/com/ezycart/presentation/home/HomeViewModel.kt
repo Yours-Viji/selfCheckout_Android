@@ -99,7 +99,8 @@ class HomeViewModel @Inject constructor(
     private val _canMakePayment = MutableStateFlow<Boolean>(false)
     val canMakePayment: StateFlow<Boolean> = _canMakePayment.asStateFlow()
 
-    private var loadCellOneTotalWeight  : Double = 0.0
+    private var initialTotalWeight  : Double = 0.0
+    private var finalTotalWeight  : Double = 0.0
 
     private val _errorMessage = MutableStateFlow("")
     val errorMessage: StateFlow<String> = _errorMessage.asStateFlow()
@@ -697,13 +698,14 @@ class HomeViewModel @Inject constructor(
                 0 -> {
 
                 /* Initial load - Save baseline w1 if needed */
-                    loadCellOneTotalWeight = update.w1
+                    initialTotalWeight = update.w1
                     weightAtRemovalW1 = 0.0
                     weightAtRemovalDeltaW2 =0.0
                 }
 
                 -1 -> {
                     // Customer picked up an item
+                    finalTotalWeight = update.w2
                     weightAtRemovalW1 = Math.abs(update.delta_w1)
                     weightAtRemovalDeltaW2 = Math.abs(update.delta_w2)
                 }
@@ -713,6 +715,7 @@ class HomeViewModel @Inject constructor(
                    // weightAtRemovalW1 = 0.0
                   //  weightAtRemovalDeltaW2 =0.0
                     val product = _productInfo.value
+                    finalTotalWeight = update.w2
                     if (product != null) {
                         val result = validationManager.validateAddition(
                             product = product,
@@ -722,6 +725,7 @@ class HomeViewModel @Inject constructor(
 
                         if (result is ValidationResult.Success) {
                             //addToCart(product)
+
                             weightAtRemovalDeltaW2 = update.delta_w2
                             _errorMessage.value = result.toString()
                             _loadCellValidationLog.value += "> ${result.toString()}\n"
@@ -736,27 +740,30 @@ class HomeViewModel @Inject constructor(
                     }
                 }
                 10 ->{
-                   val loadCellTotalWeight =  update.w2
-                    val threshold = 50.0
-                    val cartTotalWeight = getTotalWeightOfAllItems()
-                    val difference = abs(loadCellTotalWeight - cartTotalWeight)
-                    _loadCellValidationLog.value= "DeltaW1 = ${update.w1} - DeltaW2 - $loadCellTotalWeight = cartTotal - $cartTotalWeight || Total Products ${productWeightsMap.size}- CartWeightDifference - $difference"
-                    if (difference <= threshold) {
-                        // Weights are considered "the same" within the 30g margin
-                        _canMakePayment.value = true
-                        println("Weight is stable and within range.")
-                        _errorMessage.value = "Weight is stable and within range."
-                    } else {
-                        _canMakePayment.value = false
-                        _errorMessage.value = "Weight mismatch detected!"
-                        // Weight difference is greater than 30g
-                        println("Weight mismatch detected!")
-                    }
+                    finalTotalWeight = update.w2
+                    checkPaymentWeightValidation()
                 }
             }
         }
     }
-
+    fun checkPaymentWeightValidation(){
+        val loadCellTotalWeight =  finalTotalWeight
+        val threshold = 50.0
+        val cartTotalWeight = getTotalWeightOfAllItems()
+        val difference = abs(loadCellTotalWeight - cartTotalWeight)
+        _loadCellValidationLog.value= "DeltaW1 = ${initialTotalWeight} - DeltaW2 - $loadCellTotalWeight = cartTotal - $cartTotalWeight || Total Products ${productWeightsMap.size}- CartWeightDifference - $difference"
+        if (difference <= threshold) {
+            // Weights are considered "the same" within the 30g margin
+            _canMakePayment.value = true
+            println("Weight is stable and within range.")
+            _errorMessage.value = "Weight is stable and within range."
+        } else {
+            _canMakePayment.value = false
+            _errorMessage.value = "Weight mismatch detected!"
+            // Weight difference is greater than 30g
+            println("Weight mismatch detected!")
+        }
+    }
     fun handleProductRemoval() {
         val product = _productInfo.value
         val productToRemove = weightAtRemovalDeltaW2
