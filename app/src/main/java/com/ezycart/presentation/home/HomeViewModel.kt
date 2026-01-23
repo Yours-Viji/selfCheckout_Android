@@ -747,21 +747,25 @@ class HomeViewModel @Inject constructor(
         }
     }
     fun checkPaymentWeightValidation(){
-        val loadCellTotalWeight =  finalTotalWeight
-        val threshold = 50.0
-        val cartTotalWeight = getTotalWeightOfAllItems()
-        val difference = abs(loadCellTotalWeight - cartTotalWeight)
-        _loadCellValidationLog.value= "DeltaW1 = ${initialTotalWeight} - DeltaW2 - $loadCellTotalWeight = cartTotal - $cartTotalWeight || Total Products ${productWeightsMap.size}- CartWeightDifference - $difference"
-        if (difference <= threshold) {
-            // Weights are considered "the same" within the 30g margin
-            _canMakePayment.value = true
-            println("Weight is stable and within range.")
-            _errorMessage.value = "Weight is stable and within range."
-        } else {
-            _canMakePayment.value = false
-            _errorMessage.value = "Weight mismatch detected!"
-            // Weight difference is greater than 30g
-            println("Weight mismatch detected!")
+        try {
+            val loadCellTotalWeight =  finalTotalWeight
+            val threshold = 50.0
+            val cartTotalWeight = getTotalWeightOfAllItems()
+            val difference = abs(loadCellTotalWeight - cartTotalWeight)
+            _loadCellValidationLog.value= "DeltaW1 = ${initialTotalWeight} - DeltaW2 - $loadCellTotalWeight = cartTotal - $cartTotalWeight || Total Products ${productWeightsMap.size}- CartWeightDifference - $difference"
+            if (difference <= threshold) {
+                // Weights are considered "the same" within the 30g margin
+                _canMakePayment.value = true
+                println("Weight is stable and within range.")
+                _errorMessage.value = "Weight is stable and within range."
+            } else {
+                _canMakePayment.value = false
+                _errorMessage.value = "Weight mismatch detected!"
+                // Weight difference is greater than 30g
+                println("Weight mismatch detected!")
+            }
+        } catch (e: Exception) {
+            TODO("Not yet implemented")
         }
     }
     fun handleProductRemoval() {
