@@ -3,10 +3,14 @@ package com.ezycart.presentation.home
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.ContentValues
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Environment
+import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
 import android.view.KeyEvent
@@ -21,10 +25,18 @@ import androidx.camera.core.ExperimentalLensFacing
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.video.MediaStoreOutputOptions
+import androidx.camera.video.Quality
+import androidx.camera.video.QualitySelector
+import androidx.camera.video.Recorder
+import androidx.camera.video.Recording
+import androidx.camera.video.VideoCapture
+import androidx.camera.video.VideoRecordEvent
 import androidx.camera.view.PreviewView
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -139,6 +151,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -194,7 +207,7 @@ fun HomeScreen(
 ) {
     // val loadCellState by sensorSerialPortViewModel.usbData.collectAsStateWithLifecycle()
     //val weightData by sensorSerialPortViewModel.connectionLog.collectAsStateWithLifecycle()
-   // val weightState by sensorSerialPortViewModel.weightState.collectAsStateWithLifecycle()
+    // val weightState by sensorSerialPortViewModel.weightState.collectAsStateWithLifecycle()
 
 
     val state by viewModel.stateFlow.collectAsStateWithLifecycle()
@@ -225,12 +238,12 @@ fun HomeScreen(
     var clearTransAction = remember { mutableStateOf(false) }
     var showMainLogs = remember { mutableStateOf(false) }
     val context = LocalContext.current
-   /* val commonListener = remember {
-        LoginWeightScaleSerialPort.createCommonListener(viewModel)
-    }*/
+    /* val commonListener = remember {
+         LoginWeightScaleSerialPort.createCommonListener(viewModel)
+     }*/
     val loadCellValidationLog = viewModel.loadCellValidationLog.collectAsState()
 
-    LockScreenOrientation(context,ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
+    LockScreenOrientation(context, ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
 
     LaunchedEffect(state.error) {
         state.error?.let { errorMessage ->
@@ -257,10 +270,10 @@ fun HomeScreen(
     }
     LaunchedEffect(priceInfo) {
         if (priceInfo != null) {
-           // showDialog.value = true
+            // showDialog.value = true
         }
     }
-    if(clearTransAction.value){
+    if (clearTransAction.value) {
         CancelConfirmationDialog(
             onConfirm = {
                 clearTransAction.value = false
@@ -272,21 +285,21 @@ fun HomeScreen(
     if (showErrorMessage.value.isNotEmpty()) {
         DynamicToast.makeError(context, showErrorMessage.value).show()
     }
-   /* LaunchedEffect(Unit) {
+    /* LaunchedEffect(Unit) {
 
-        try {
-            LoginWeightScaleSerialPort.connectScale(context, commonListener)
-        } catch (e: Exception) {
-            TODO("Not yet implemented")
-        }
+         try {
+             LoginWeightScaleSerialPort.connectScale(context, commonListener)
+         } catch (e: Exception) {
+             TODO("Not yet implemented")
+         }
 
-    }*/
+     }*/
     if (showTerminal.value) {
-       /* try {
-            LoginWeightScaleSerialPort.connectScale(context, commonListener)
-        } catch (e: Exception) {
-            TODO("Not yet implemented")
-        }*/
+        /* try {
+             LoginWeightScaleSerialPort.connectScale(context, commonListener)
+         } catch (e: Exception) {
+             TODO("Not yet implemented")
+         }*/
         WeightScaleManager.initOnce(viewModel)
         WeightScaleManager.connectSafe(context)
         UsbTerminalDialog(
@@ -389,9 +402,9 @@ fun HomeScreen(
         focusRequester.requestFocus()
         viewModel.initNewShopping()
     }
-if(canMakePayment.value){
-    goToPaymentScreen()
-}
+    if (canMakePayment.value) {
+        goToPaymentScreen()
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -400,7 +413,7 @@ if(canMakePayment.value){
             .onKeyEvent { keyEvent ->
                 if (keyEvent.type == androidx.compose.ui.input.key.KeyEventType.KeyUp) {
                     when (keyEvent.key) {
-                        androidx.compose.ui.input.key.Key.Enter,androidx.compose.ui.input.key.Key.NumPadEnter -> {
+                        androidx.compose.ui.input.key.Key.Enter, androidx.compose.ui.input.key.Key.NumPadEnter -> {
                             if (scanBuffer.value.isNotBlank()) {
                                 viewModel.resetProductInfoDetails()
                                 viewModel.getProductDetails(scanBuffer.value)
@@ -430,44 +443,47 @@ if(canMakePayment.value){
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-        /*ModalNavigationDrawer(
-            drawerState = drawerState,
-            drawerContent = {
-                DrawerContent(
-                    appMode = appMode,
-                    onTransActionSelected = {
-                        scope.launch {
-                            scope.launch { drawerState.close() }
-                            onTransactionCalled()
-                            delay(100)
-                            focusRequester.requestFocus()
-                        }
-                    },
-                    onAppModeUpdated = { appMode ->
-                        scope.launch {
-                            drawerState.close()
-                            delay(100)
-                            focusRequester.requestFocus()
-                        }
-                        viewModel.onAppModeChange(appMode)
+            /*ModalNavigationDrawer(
+                drawerState = drawerState,
+                drawerContent = {
+                    DrawerContent(
+                        appMode = appMode,
+                        onTransActionSelected = {
+                            scope.launch {
+                                scope.launch { drawerState.close() }
+                                onTransactionCalled()
+                                delay(100)
+                                focusRequester.requestFocus()
+                            }
+                        },
+                        onAppModeUpdated = { appMode ->
+                            scope.launch {
+                                drawerState.close()
+                                delay(100)
+                                focusRequester.requestFocus()
+                            }
+                            viewModel.onAppModeChange(appMode)
 
-                    },
-                    isChecked = canShowPriceChecker.value,
-                    onCheckedChange = {
-                        scope.launch {
-                            drawerState.close()
-                            delay(100)
-                            focusRequester.requestFocus()
+                        },
+                        isChecked = canShowPriceChecker.value,
+                        onCheckedChange = {
+                            scope.launch {
+                                drawerState.close()
+                                delay(100)
+                                focusRequester.requestFocus()
+                            }
+                            viewModel.setPriceCheckerView(it)
                         }
-                        viewModel.setPriceCheckerView(it)
-                    }
-                )
-            }
-        ) {*/
-            BitesHeaderNew (viewModel,cartCount = cartCount.value,onHelpClick = { showTerminal.value =true },
-                onTitleClick = {showMainLogs.value = !showMainLogs.value
-                    viewModel.clearLog()})
-            if(showMainLogs.value){
+                    )
+                }
+            ) {*/
+            BitesHeaderNew(
+                viewModel, cartCount = cartCount.value, onHelpClick = { showTerminal.value = true },
+                onTitleClick = {
+                    showMainLogs.value = !showMainLogs.value
+                    viewModel.clearLog()
+                })
+            if (showMainLogs.value) {
                 Text(
                     text = loadCellValidationLog.value,
                     color = Color.Red,
@@ -479,8 +495,8 @@ if(canMakePayment.value){
                 )
             }
 
-           /* Scaffold(
-               *//* topBar = {
+            /* Scaffold(
+                *//* topBar = {
                     MyTopAppBar(
 
                         employeeName = employeeName.value,
@@ -496,60 +512,60 @@ if(canMakePayment.value){
                     )
                 }*//*
             ) { innerPadding ->*/
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        //.padding(innerPadding)
-                        .background(Color.White)
-                        .focusRequester(focusRequester) // Add focus requester here too
-                        .focusTarget(),
-                    contentAlignment = Alignment.Center
-                ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    //.padding(innerPadding)
+                    .background(Color.White)
+                    .focusRequester(focusRequester) // Add focus requester here too
+                    .focusTarget(),
+                contentAlignment = Alignment.Center
+            ) {
 
-                    /* Button(
-                         onClick = {
-                             // Mock scanner input
-                             scanBuffer.value = "6936489101973"
+                /* Button(
+                     onClick = {
+                         // Mock scanner input
+                         scanBuffer.value = "6936489101973"
 
-                             // Request focus and dispatch with delay
-                             focusRequester.requestFocus()
+                         // Request focus and dispatch with delay
+                         focusRequester.requestFocus()
 
-                             // Use coroutine to ensure proper timing
-                             CoroutineScope(Dispatchers.Main).launch {
-                                 delay(50) // Small delay to ensure focus is acquired
+                         // Use coroutine to ensure proper timing
+                         CoroutineScope(Dispatchers.Main).launch {
+                             delay(50) // Small delay to ensure focus is acquired
 
-                                 val mockKeyEvent = android.view.KeyEvent(
-                                     android.view.KeyEvent.ACTION_DOWN, // Try ACTION_DOWN first
-                                     android.view.KeyEvent.KEYCODE_ENTER
-                                 )
-                                 localView.dispatchKeyEvent(mockKeyEvent)
+                             val mockKeyEvent = android.view.KeyEvent(
+                                 android.view.KeyEvent.ACTION_DOWN, // Try ACTION_DOWN first
+                                 android.view.KeyEvent.KEYCODE_ENTER
+                             )
+                             localView.dispatchKeyEvent(mockKeyEvent)
 
-                                 // Also send ACTION_UP
-                                 val upEvent = android.view.KeyEvent(
-                                     android.view.KeyEvent.ACTION_UP,
-                                     android.view.KeyEvent.KEYCODE_ENTER
-                                 )
-                                 localView.dispatchKeyEvent(upEvent)
-                             }
-                         },
-                         modifier = Modifier.align(Alignment.Center)
-                     ) {
-                         Text("Mock Enter Key")
-                     }*/
+                             // Also send ACTION_UP
+                             val upEvent = android.view.KeyEvent(
+                                 android.view.KeyEvent.ACTION_UP,
+                                 android.view.KeyEvent.KEYCODE_ENTER
+                             )
+                             localView.dispatchKeyEvent(upEvent)
+                         }
+                     },
+                     modifier = Modifier.align(Alignment.Center)
+                 ) {
+                     Text("Mock Enter Key")
+                 }*/
 
-                    PickersShoppingScreen(
-                        viewModel,
-                        onQrPaymentClick = {
-                            showWalletScanner.value = true
-                            // viewModel.initWavPayQrPayment()
+                PickersShoppingScreen(
+                    viewModel,
+                    onQrPaymentClick = {
+                        showWalletScanner.value = true
+                        // viewModel.initWavPayQrPayment()
 
-                        },
-                        onTapToPayClick = {viewModel.checkPaymentWeightValidation()},
-                        //onTapToPayClick = goToPaymentScreen,
-                        onLogout = { clearTransAction.value = true },
-                    )
+                    },
+                    onTapToPayClick = { viewModel.checkPaymentWeightValidation() },
+                    //onTapToPayClick = goToPaymentScreen,
+                    onLogout = { clearTransAction.value = true },
+                )
 
-                }
+            }
             //}
         }
     }
@@ -602,10 +618,10 @@ fun BitesHeaderNew(
                 .background(Color.White)
 
         ) {
-            Column (
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(100.dp),
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -620,37 +636,37 @@ fun BitesHeaderNew(
                 )
             }
 
-           /* Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(80.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
+            /* Row(
+                 modifier = Modifier
+                     .fillMaxWidth()
+                     .height(80.dp),
+                 verticalAlignment = Alignment.CenterVertically,
+                 horizontalArrangement = Arrangement.Center
+             ) {
 
-                Text(
-                    text = "ezy",
-                    style = TextStyle(
-                        color = Color.Red,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    ),
-                    modifier = Modifier.clickable{onTitleClick()}
+                 Text(
+                     text = "ezy",
+                     style = TextStyle(
+                         color = Color.Red,
+                         fontSize = 20.sp,
+                         fontWeight = FontWeight.Bold,
+                         letterSpacing = 1.sp
+                     ),
+                     modifier = Modifier.clickable{onTitleClick()}
 
-                )
-                Text(
-                    text = "Express",
-                    style = TextStyle(
-                        color = Color.Black,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 1.sp
-                    ),
-                    modifier = Modifier.clickable{onTitleClick()}
+                 )
+                 Text(
+                     text = "Express",
+                     style = TextStyle(
+                         color = Color.Black,
+                         fontSize = 20.sp,
+                         fontWeight = FontWeight.ExtraBold,
+                         letterSpacing = 1.sp
+                     ),
+                     modifier = Modifier.clickable{onTitleClick()}
 
-                )
-            }*/
+                 )
+             }*/
 
         }
 
@@ -717,7 +733,7 @@ fun BitesHeaderNew(
     }
 }
 
-@androidx.annotation.OptIn(ExperimentalLensFacing::class)
+/*@androidx.annotation.OptIn(ExperimentalLensFacing::class)
 @Composable
 fun CameraPreview(modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -765,7 +781,146 @@ fun CameraPreview(modifier: Modifier = Modifier) {
         factory = { previewView },
         modifier = modifier.clip(RoundedCornerShape(12.dp))
     )
+}*/
+@androidx.annotation.OptIn(ExperimentalLensFacing::class)
+@Composable
+fun CameraPreview(
+    modifier: Modifier = Modifier,
+    onRecordingStarted: () -> Unit = {},
+    onRecordingFinished: (Uri?) -> Unit = {},
+    onCaptureReady: (start: () -> Unit, stop: () -> Unit) -> Unit
+) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val previewView = remember { PreviewView(context) }
+
+    // Use cases and recording state
+    val videoCapture = remember {
+        val recorder = Recorder.Builder()
+            .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
+            .build()
+        VideoCapture.withOutput(recorder)
+    }
+
+    // Keep track of the active recording
+    var currentRecording = remember { mutableStateOf<Recording?>(null) }
+
+    LaunchedEffect(Unit) {
+        val cameraProvider = ProcessCameraProvider.getInstance(context).get()
+        val preview = androidx.camera.core.Preview.Builder().build().also {
+            it.setSurfaceProvider(previewView.surfaceProvider)
+        }
+
+        try {
+            cameraProvider.unbindAll()
+            val cameraInfoList = cameraProvider.availableCameraInfos
+            val selectedCameraInfo = cameraInfoList.firstOrNull { info ->
+                info.lensFacing == CameraSelector.LENS_FACING_EXTERNAL ||
+                        info.lensFacing == CameraSelector.LENS_FACING_BACK
+            } ?: cameraInfoList.firstOrNull()
+
+            if (selectedCameraInfo != null) {
+                // Bind BOTH preview and videoCapture
+                cameraProvider.bindToLifecycle(
+                    lifecycleOwner,
+                    selectedCameraInfo.cameraSelector,
+                    preview,
+                    videoCapture
+                )
+            }
+            try {
+                val fileName = "SelfCheckout_${System.currentTimeMillis()}.mp4"
+                val contentValues = ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                    put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
+                    put(
+                        MediaStore.Video.Media.RELATIVE_PATH,
+                        Environment.DIRECTORY_MOVIES + "/CheckoutVideos"
+                    )
+                }
+
+                val mediaStoreOutputOptions = MediaStoreOutputOptions
+                    .Builder(context.contentResolver, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
+                    .setContentValues(contentValues)
+                    .build()
+
+                currentRecording.value = videoCapture.output
+                    .prepareRecording(context, mediaStoreOutputOptions)
+                    .apply {
+                        if (PermissionChecker.checkSelfPermission(
+                                context,
+                                android.Manifest.permission.RECORD_AUDIO
+                            ) == PermissionChecker.PERMISSION_GRANTED
+                        ) withAudioEnabled()
+                    }
+                    .start(ContextCompat.getMainExecutor(context)) { event ->
+                        when (event) {
+                            is VideoRecordEvent.Start -> onRecordingStarted()
+                            is VideoRecordEvent.Finalize -> {
+                                if (!event.hasError()) {
+                                    onRecordingFinished(event.outputResults.outputUri)
+                                } else {
+                                    currentRecording.value?.close()
+                                    currentRecording.value = null
+                                }
+                            }
+                        }
+                    }
+            } catch (e: Exception) {
+                Log.e("Camera Start recording", "Recording failed", e)
+            }
+        } catch (e: Exception) {
+            Log.e("Camera", "Binding failed", e)
+        }
+    }
+
+    // --- Start Recording Function ---
+    val startRecordingAction = {
+        /* val fileName = "SelfCheckout_${System.currentTimeMillis()}.mp4"
+         val contentValues = ContentValues().apply {
+             put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+             put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
+             put(MediaStore.Video.Media.RELATIVE_PATH, Environment.DIRECTORY_MOVIES + "/CheckoutVideos")
+         }
+
+         val mediaStoreOutputOptions = MediaStoreOutputOptions
+             .Builder(context.contentResolver, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
+             .setContentValues(contentValues)
+             .build()
+
+         currentRecording.value = videoCapture.output
+             .prepareRecording(context, mediaStoreOutputOptions)
+             .apply { if (PermissionChecker.checkSelfPermission(context, android.Manifest.permission.RECORD_AUDIO) == PermissionChecker.PERMISSION_GRANTED) withAudioEnabled() }
+             .start(ContextCompat.getMainExecutor(context)) { event ->
+                 when (event) {
+                     is VideoRecordEvent.Start -> onRecordingStarted()
+                     is VideoRecordEvent.Finalize -> {
+                         if (!event.hasError()) {
+                             onRecordingFinished(event.outputResults.outputUri)
+                         } else {
+                             currentRecording.value?.close()
+                             currentRecording.value = null
+                         }
+                     }
+                 }
+             }*/
+    }
+
+    // --- Stop Recording Function ---
+    val stopRecordingAction = {
+        currentRecording.value?.stop()
+        currentRecording.value = null
+    }
+    LaunchedEffect(Unit) {
+        onCaptureReady(startRecordingAction, stopRecordingAction)
+    }
+    // For demonstration: You can trigger these from UI Buttons
+    AndroidView(
+        factory = { previewView },
+        modifier = modifier.clip(RoundedCornerShape(12.dp))
+    )
 }
+
 @Composable
 fun EmptyCartScreen(
 
@@ -787,7 +942,7 @@ fun EmptyCartScreen(
             modifier = Modifier
                 .size(
                     width = 200.dp,
-                    height =  200.dp
+                    height = 200.dp
                 )
                 .graphicsLayer(
                     scaleX = -1f
@@ -795,29 +950,29 @@ fun EmptyCartScreen(
         )
         Text(
             text = "Cart is Empty",
-            fontSize = 33.sp ,
+            fontSize = 33.sp,
             color = MaterialTheme.colorScheme.tertiary
         )
         Spacer(modifier = Modifier.height(20.dp))
         Text(
             text = "Scan a product barcode to begin shopping",
-            fontSize = 28.sp ,
+            fontSize = 28.sp,
             color = MaterialTheme.colorScheme.primary
         )
         Spacer(modifier = Modifier.height(35.dp))
-       /* ManualBarcodeEntryButton(
-            onEnterBarcodeManually, modifier = Modifier
-                .width(230.dp)
-                .height(48.dp), 20f
-        )
-        Spacer(modifier = Modifier.height(20.dp))
-        if (!isPickerModel) {
-            ScannerButton(
-                onScanBarcode, Modifier
-                    .width(230.dp)
-                    .height(48.dp), 20f
-            )
-        }*/
+        /* ManualBarcodeEntryButton(
+             onEnterBarcodeManually, modifier = Modifier
+                 .width(230.dp)
+                 .height(48.dp), 20f
+         )
+         Spacer(modifier = Modifier.height(20.dp))
+         if (!isPickerModel) {
+             ScannerButton(
+                 onScanBarcode, Modifier
+                     .width(230.dp)
+                     .height(48.dp), 20f
+             )
+         }*/
 
     }
 }
@@ -875,7 +1030,7 @@ fun PickersShoppingScreen(
             modifier = Modifier
                 .then(
 
-                        Modifier.fillMaxWidth()
+                    Modifier.fillMaxWidth()
 
                 )
                 .fillMaxHeight()
@@ -1215,14 +1370,19 @@ fun CartScreen(
     onPayNowClick: () -> Unit,
     onLogout: () -> Unit,
 ) {
+    var isRecording = remember { mutableStateOf(false) }
+    var startFunc = remember { mutableStateOf<(() -> Unit)?>(null) }
+    var stopFunc = remember { mutableStateOf<(() -> Unit)?>(null) }
     val paymentSummary = shoppingCartInfo.value
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = Color.White,
         bottomBar = {
             Surface(
-                modifier = Modifier.fillMaxWidth().height(550.dp),
-                    /*.navigationBarsPadding(),*/
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(550.dp),
+                /*.navigationBarsPadding(),*/
                 color = Color.White,
                 shadowElevation = 8.dp,
                 shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
@@ -1241,17 +1401,20 @@ fun CartScreen(
                     )
 
                     summaryRows.forEach { (label, value) ->
-                        BillRow(label, "${Constants.currencySymbol} ${getFormattedPrice(value)}", color = Color.Black)
+                        BillRow(
+                            label,
+                            "${Constants.currencySymbol} ${getFormattedPrice(value)}",
+                            color = Color.Black
+                        )
                     }
 
-                    Divider(modifier = Modifier.padding(vertical = 12.dp), thickness = 1.dp, color = Color.LightGray)
-
-                    BillRow(
-                        "Grand Total",
-                        "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.finalAmount ?: 0.0)}",
-                        isBold = true,
-                        color = MaterialTheme.colorScheme.primary,
+                    Divider(
+                        modifier = Modifier.padding(vertical = 12.dp),
+                        thickness = 1.dp,
+                        color = Color.LightGray
                     )
+
+
 
                     Spacer(modifier = Modifier.weight(1f)) // Pushes content to the bottom
 
@@ -1264,13 +1427,27 @@ fun CartScreen(
                         // LEFT: Camera Preview
                         Box(
                             modifier = Modifier
-                                .size(width = 240.dp, height = 170.dp) // Fixed Aspect Ratio for Camera
+                                .size(
+                                    width = 270.dp,
+                                    height = 220.dp
+                                ) // Fixed Aspect Ratio for Camera
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(Color.Black)
                                 .border(2.dp, Color(0xFFE0E0E0), RoundedCornerShape(16.dp))
                         ) {
-                            CameraPreview(modifier = Modifier.fillMaxSize())
+                            // CameraPreview(modifier = Modifier.fillMaxSize())
+                            CameraPreview(
+                                onRecordingStarted = { isRecording.value = true },
+                                onRecordingFinished = { uri ->
+                                    isRecording.value = false
+                                    Log.d("Video", "Video saved at: $uri")
+                                },
+                                onCaptureReady = { start, stop ->
+                                    startFunc.value = start
+                                    stopFunc.value = stop
+                                }
 
+                            )
                             // Live Badge
                             Row(
                                 modifier = Modifier
@@ -1280,9 +1457,18 @@ fun CartScreen(
                                     .padding(horizontal = 6.dp, vertical = 2.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Box(modifier = Modifier.size(6.dp).background(Color.Red, CircleShape))
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .background(Color.Red, CircleShape)
+                                )
                                 Spacer(Modifier.width(4.dp))
-                                Text("LIVE", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                Text(
+                                    "LIVE",
+                                    color = Color.White,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
                             }
                         }
 
@@ -1292,30 +1478,56 @@ fun CartScreen(
                             horizontalAlignment = Alignment.End,
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
+                            BillRow(
+                                "Grand Total",
+                                "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.finalAmount ?: 0.0)}",
+                                isBold = true,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
                             // APPLY VOUCHER BUTTON
                             OutlinedButton(
                                 onClick = { /* Add your logic */ },
-                                modifier = Modifier.fillMaxWidth().height(50.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(50.dp),
                                 shape = RoundedCornerShape(12.dp),
                                 border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
                                 colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
                             ) {
-                                Text("APPLY VOUCHER", style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold))
+                                Text(
+                                    "APPLY VOUCHER",
+                                    style = TextStyle(
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                )
                             }
                             Spacer(modifier = Modifier.height(4.dp))
                             // PAY NOW BUTTON
                             Button(
-                                onClick = onPayNowClick,
+                                onClick = {
+                                    onPayNowClick()
+                                    stopFunc?.value?.invoke()
+                                    isRecording.value = false
+                                },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(50.dp)
                                     .shadow(8.dp, RoundedCornerShape(12.dp)),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8BC34A)), // Light Green
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(
+                                        0xFF8BC34A
+                                    )
+                                ), // Light Green
                                 shape = RoundedCornerShape(12.dp)
                             ) {
                                 Text(
                                     text = "PAY NOW",
-                                    style = TextStyle(color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Black)
+                                    style = TextStyle(
+                                        color = Color.White,
+                                        fontSize = 28.sp,
+                                        fontWeight = FontWeight.Black
+                                    )
                                 )
                             }
 
@@ -1352,6 +1564,10 @@ fun CartScreen(
                 Text("Your cart is empty", color = Color.Gray)
             }
         } else {
+            if (!isRecording.value) {
+                startFunc?.value?.invoke()
+                isRecording.value = true
+            }
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -1359,20 +1575,21 @@ fun CartScreen(
                 contentPadding = PaddingValues(bottom = 80.dp) // leave room for bottom bar
             ) {
                 //repeat(20) {
-                    itemsIndexed(cartItems.reversed()) { index, productData ->
-                        CartItemCard(
-                            productInfo = cartItems[index],
-                            onRemove = { onRemoveItem(it) },
-                            onEditProduct = { barCode, id, updatedQuantity ->
-                                onEditProduct(barCode, id, updatedQuantity)
-                            },
-                        )
-                    }
+                itemsIndexed(cartItems.reversed()) { index, productData ->
+                    CartItemCard(
+                        productInfo = cartItems[index],
+                        onRemove = { onRemoveItem(it) },
+                        onEditProduct = { barCode, id, updatedQuantity ->
+                            onEditProduct(barCode, id, updatedQuantity)
+                        },
+                    )
+                }
                 //}
             }
         }
     }
 }
+
 @Composable
 fun ActionButton(
     modifier: Modifier,
@@ -1410,6 +1627,7 @@ fun ActionButton(
         }
     }
 }
+
 @Composable
 fun CartItemCard(
     productInfo: CartItem,
@@ -1541,7 +1759,11 @@ fun CartItemCard(
             ) {
                 // Quantity x Unit Price
                 Text(
-                    text = "${productInfo.displayQty} x ${Constants.currencySymbol}${ "%.2f".format(productInfo.unitPrice) }",
+                    text = "${productInfo.displayQty} x ${Constants.currencySymbol}${
+                        "%.2f".format(
+                            productInfo.unitPrice
+                        )
+                    }",
                     style = TextStyle(
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 16.sp,
@@ -1561,7 +1783,7 @@ fun CartItemCard(
                         )
                     )
                 }
-Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(10.dp))
                 // Final Price
                 Text(
                     text = "${Constants.currencySymbol}${"%.2f".format(productInfo.finalPrice)}",
@@ -1809,7 +2031,9 @@ fun CancelConfirmationDialog(
         confirmButton = {
             Button(
                 onClick = onConfirm,
-                modifier = Modifier.padding(8.dp).height(60.dp),
+                modifier = Modifier
+                    .padding(8.dp)
+                    .height(60.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
             ) {
                 Text("YES, CANCEL", color = Color.White, fontSize = 18.sp)
@@ -1818,7 +2042,9 @@ fun CancelConfirmationDialog(
         dismissButton = {
             OutlinedButton(
                 onClick = onDismiss,
-                modifier = Modifier.padding(8.dp).height(60.dp)
+                modifier = Modifier
+                    .padding(8.dp)
+                    .height(60.dp)
             ) {
                 Text("NO, GO BACK", fontSize = 18.sp)
             }
@@ -1830,6 +2056,21 @@ fun CancelConfirmationDialog(
 
 @Composable
 fun BillRow(label: String, value: String, isBold: Boolean = false, color: Color = Color.Gray) {
+    val scale by animateFloatAsState(
+        targetValue = if (isBold) 1.2f else 1.0f, // Zooms to 120% when bold
+        animationSpec = if (isBold) {
+            // Continuous pulsing effect (Zoom in/out)
+            infiniteRepeatable(
+                animation = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse
+            )
+        } else {
+            // Smooth transition back to normal
+            tween(durationMillis = 300)
+        },
+        label = "AmountZoom"
+    )
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1841,18 +2082,28 @@ fun BillRow(label: String, value: String, isBold: Boolean = false, color: Color 
             color = color,
             style = if (isBold) MaterialTheme.typography.bodyLarge.copy(
                 fontWeight = FontWeight.Medium,
-                fontSize = 35.sp
+                fontSize = 27.sp
             )
-            else MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold,fontSize = 20.sp)
+            else MaterialTheme.typography.bodyMedium.copy(
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 20.sp
+            )
         )
         Text(
             text = value,
             color = color,
+            modifier = Modifier.graphicsLayer(
+                scaleX = scale,
+                scaleY = scale
+            ),
             style = if (isBold) MaterialTheme.typography.bodyLarge.copy(
                 fontWeight = FontWeight.Medium,
-                fontSize = 40.sp
+                fontSize = 30.sp
             )
-            else MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold,fontSize = 20.sp)
+            else MaterialTheme.typography.bodyMedium.copy(
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 20.sp
+            )
         )
     }
 }
@@ -1874,7 +2125,7 @@ fun MyTopAppBar(
                 text = "Hi, WELCOME",
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontWeight = FontWeight.Medium,
-                    fontSize =  12.sp,
+                    fontSize = 12.sp,
                     color = Color.White
                 )
             )
@@ -1896,21 +2147,21 @@ fun MyTopAppBar(
         actions = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy( 5.dp)
+                horizontalArrangement = Arrangement.spacedBy(5.dp)
             ) {
-               /* IconButton(
-                    onClick = {
-                        onRefresh()
-                    }
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.outline_autorenew_24),
-                        contentDescription = "Refresh",
-                        tint = Color.White,
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-                Spacer(Modifier.width(3.dp))*/
+                /* IconButton(
+                     onClick = {
+                         onRefresh()
+                     }
+                 ) {
+                     Icon(
+                         painter = painterResource(id = R.drawable.outline_autorenew_24),
+                         contentDescription = "Refresh",
+                         tint = Color.White,
+                         modifier = Modifier.size(28.dp)
+                     )
+                 }
+                 Spacer(Modifier.width(3.dp))*/
                 CartIconWithBadge(count = cartCount)
                 Spacer(Modifier.width(3.dp))
                 IconButton(
@@ -1926,7 +2177,7 @@ fun MyTopAppBar(
                     )
                 }
 
-                Spacer(Modifier.width( 5.dp))
+                Spacer(Modifier.width(5.dp))
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
@@ -2460,7 +2711,7 @@ fun ProductPriceAlert(
                                 modifier = Modifier.fillMaxWidth()
                             )
 
-                            Spacer(Modifier.height( 8.dp))
+                            Spacer(Modifier.height(8.dp))
 
                             if (priceInfo!!.price != priceInfo!!.originalPrice) {
                                 Text(
@@ -2516,7 +2767,7 @@ fun ProductPriceAlert(
                                 style = MaterialTheme.typography.headlineMedium.copy(
                                     color = Color.White,
                                     fontWeight = FontWeight.Bold,
-                                    fontSize =  10.sp,
+                                    fontSize = 10.sp,
                                 ),
                             )
                         }
@@ -2556,7 +2807,7 @@ fun ProductPriceAlert(
             },
             shape = RoundedCornerShape(24.dp),
             modifier = Modifier
-                .padding( 8.dp)
+                .padding(8.dp)
                 .fillMaxWidth(),
             containerColor = Color.White
         )
@@ -2586,7 +2837,7 @@ fun DeleteProductDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(colorResource(R.color.colorPrimary))
-                        .padding(horizontal =  8.dp, vertical = 9.dp)
+                        .padding(horizontal = 8.dp, vertical = 9.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -2599,7 +2850,7 @@ fun DeleteProductDialog(
                             tint = Color.White,
                             modifier = Modifier.size(15.dp)
                         )
-                        Spacer(modifier = Modifier.width( 5.dp))
+                        Spacer(modifier = Modifier.width(5.dp))
                         Text(
                             text = "Are you sure want to delete this product?",
                             color = Color.White,
@@ -2609,7 +2860,7 @@ fun DeleteProductDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height( 8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 // Product area
                 Row(
@@ -2640,7 +2891,7 @@ fun DeleteProductDialog(
 
                     }
 
-                    Spacer(modifier = Modifier.width( 7.dp))
+                    Spacer(modifier = Modifier.width(7.dp))
 
                     // Product info
                     Column(modifier = Modifier.weight(1f)) {
@@ -2669,7 +2920,7 @@ fun DeleteProductDialog(
                                     textDecoration = TextDecoration.LineThrough
                                 )
                             )
-                            Spacer(modifier = Modifier.width( 5.dp))
+                            Spacer(modifier = Modifier.width(5.dp))
                             Text(
                                 text = newPrice,
                                 style = MaterialTheme.typography.titleMedium.copy(
@@ -2687,7 +2938,7 @@ fun DeleteProductDialog(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 25.dp, vertical =  4.dp),
+                        .padding(horizontal = 25.dp, vertical = 4.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp) // spacing between buttons
                 ) {
                     // Cancel button
@@ -2762,7 +3013,7 @@ fun EditProductDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(colorResource(R.color.colorPrimary))
-                        .padding(horizontal = 8.dp, vertical =  9.dp)
+                        .padding(horizontal = 8.dp, vertical = 9.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -2773,19 +3024,19 @@ fun EditProductDialog(
                             painter = painterResource(R.drawable.ic_cart),
                             contentDescription = null,
                             tint = Color.White,
-                            modifier = Modifier.size( 10.dp)
+                            modifier = Modifier.size(10.dp)
                         )
                         Spacer(modifier = Modifier.width(5.dp))
                         Text(
                             text = "Edit Product",
                             color = Color.White,
-                            fontSize =  10.sp,
+                            fontSize = 10.sp,
                             fontWeight = FontWeight.Medium
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height( 8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 // Product area
                 Row(
@@ -2815,7 +3066,7 @@ fun EditProductDialog(
                         }
                     }
 
-                    Spacer(modifier = Modifier.width( 7.dp))
+                    Spacer(modifier = Modifier.width(7.dp))
 
                     // Product info
                     Column(modifier = Modifier.weight(1f)) {
@@ -2834,7 +3085,7 @@ fun EditProductDialog(
                             style = MaterialTheme.typography.bodySmall.copy(color = Color.Gray)
                         )
 
-                        Spacer(modifier = Modifier.height( 5.dp))
+                        Spacer(modifier = Modifier.height(5.dp))
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
@@ -2856,7 +3107,7 @@ fun EditProductDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height( 8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 // Quantity selector
                 Row(
@@ -2876,7 +3127,7 @@ fun EditProductDialog(
                             painter = painterResource(R.drawable.outline_remove_24),
                             contentDescription = "Decrease",
                             tint = Color.White,
-                            modifier = Modifier.size( 10.dp)
+                            modifier = Modifier.size(10.dp)
                         )
 
                     }
@@ -2893,14 +3144,14 @@ fun EditProductDialog(
                     IconButton(
                         onClick = { quantity.value++ },
                         modifier = Modifier
-                            .size( 25.dp)
+                            .size(25.dp)
                             .background(colorResource(R.color.colorPrimary), CircleShape)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Add,
                             contentDescription = "Increase",
                             tint = Color.White,
-                            modifier = Modifier.size( 10.dp)
+                            modifier = Modifier.size(10.dp)
                         )
 
                     }
@@ -2912,8 +3163,8 @@ fun EditProductDialog(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 15.dp, vertical =  4.dp),
-                    horizontalArrangement = Arrangement.spacedBy( 7.dp)
+                        .padding(horizontal = 15.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(7.dp)
                 ) {
                     OutlinedButton(
                         onClick = onDismiss,
@@ -3074,7 +3325,7 @@ fun DrawerContent(
     Column(
         modifier = Modifier
             .fillMaxHeight()
-            .width( 300.dp)
+            .width(300.dp)
             .background(MaterialTheme.colorScheme.surface),
         verticalArrangement = Arrangement.Top
     ) {
@@ -3101,7 +3352,7 @@ fun DrawerContent(
                 painter = painterResource(id = R.drawable.transaction),
                 contentDescription = "transaction",
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size( 22.dp)
+                modifier = Modifier.size(22.dp)
             )
             Spacer(modifier = Modifier.width(10.dp))
             Text(
@@ -3138,7 +3389,7 @@ fun DrawerContent(
                  tint = MaterialTheme.colorScheme.primary,
                  modifier = Modifier.size(24.dp)
              )*/
-            Spacer(modifier = Modifier.width( 10.dp))
+            Spacer(modifier = Modifier.width(10.dp))
             Text(
                 text = "Show Price Checker",
                 style = MaterialTheme.typography.bodyLarge.copy(
@@ -3487,7 +3738,7 @@ fun PaymentSuccessAlert(
         ) {
             // Lottie Animation
             Box(
-                modifier = Modifier.size( 85.dp),
+                modifier = Modifier.size(85.dp),
                 contentAlignment = Alignment.Center
             ) {
                 LottieAnimation(
@@ -3498,7 +3749,7 @@ fun PaymentSuccessAlert(
 
             }
 
-            Spacer(modifier = Modifier.height( 8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Success Text
             Text(
@@ -3515,12 +3766,12 @@ fun PaymentSuccessAlert(
             Text(
                 text = "Your payment has been processed successfully",
                 style = MaterialTheme.typography.bodyMedium,
-                fontSize =  8.sp,
+                fontSize = 8.sp,
                 color = Color.Gray,
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height( 10.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // Send Receipt Button
             Button(
@@ -3537,11 +3788,11 @@ fun PaymentSuccessAlert(
                 Text(
                     text = "Send Receipt",
                     fontWeight = FontWeight.Medium,
-                    fontSize =  10.sp,
+                    fontSize = 10.sp,
                 )
             }
 
-            Spacer(modifier = Modifier.height( 6.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
         }
     }
@@ -3569,18 +3820,18 @@ fun PaymentFailureAlert(
         ) {
             // Lottie Animation
             Box(
-                modifier = Modifier.size( 85.dp),
+                modifier = Modifier.size(85.dp),
                 contentAlignment = Alignment.Center
             ) {
                 LottieAnimation(
                     composition = timerComposition,
                     iterations = LottieConstants.IterateForever,
-                    modifier = Modifier.size( 60.dp)
+                    modifier = Modifier.size(60.dp)
                 )
 
             }
 
-            Spacer(modifier = Modifier.height( 8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Success Text
             Text(

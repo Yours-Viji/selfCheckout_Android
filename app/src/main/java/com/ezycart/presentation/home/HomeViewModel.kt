@@ -356,7 +356,7 @@ class HomeViewModel @Inject constructor(
                         isLoading = false
                     )
                     _productInfo.value = result.data
-                   //addProductToShoppingCart(productInfo.value!!.barcode,1)
+                   addProductToShoppingCart(productInfo.value!!.barcode,1)
                     getPriceDetails(barCode)
                 }
 
