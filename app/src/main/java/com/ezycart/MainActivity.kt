@@ -129,8 +129,11 @@ class MainActivity : ComponentActivity(){
                                 }
                                 composable("landing") {
                                     LandingScreen(goToHomeScreen={
-
-                                            navController.navigate("home") {
+                                        try {
+                                            homeViewModel.requestTotalWeightFromLoadCell()
+                                        } catch (e: Exception) {
+                                        }
+                                        navController.navigate("home") {
                                                 popUpTo("landing") { inclusive = true }
                                             }
 

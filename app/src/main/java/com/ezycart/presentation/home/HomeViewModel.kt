@@ -714,6 +714,11 @@ class HomeViewModel @Inject constructor(
                 }
 
                 1 -> {
+                    if (cartId.isEmpty()){
+                        // Updating before create cart // before start shopping  // New SOP
+                        initialTotalWeight = update.w1
+                        finalWeightOfLc1 =update.w1
+                    }
                     // Customer placed item in LC2
                     weightAtRemovalW1 = update.w1
                     finalWeightOfLc1 =update.w1
@@ -721,7 +726,8 @@ class HomeViewModel @Inject constructor(
                     val product = _productInfo.value
                     finalTotalWeight = update.w2
                     if (product != null) {
-                        val result = validationManager.validateAddition(
+                        // Product add validation removed // New SOP
+                       /* val result = validationManager.validateAddition(
                             product = product,
                             deltaW1 = weightAtRemovalW1,
                             deltaW2 = update.delta_w2
@@ -740,7 +746,7 @@ class HomeViewModel @Inject constructor(
                         } else {
                             _errorMessage.value = (result as ValidationResult.Error).message
                             _loadCellValidationLog.value += "> ${errorMessage.value}\n"
-                        }
+                        }*/
                     }else{
                         if (update.delta_w2 >15.0){
                             // Added without scan
@@ -749,8 +755,14 @@ class HomeViewModel @Inject constructor(
                     }
                 }
                 10 ->{
-                    finalTotalWeight = update.w2
-                    checkPaymentWeightValidation()
+                    if (cartId.isEmpty()){
+                        // Updating before create cart // before start shopping  // New SOP
+                        initialTotalWeight = update.w1
+                        finalWeightOfLc1 =update.w1
+                    }else{
+                        finalTotalWeight = update.w2
+                        checkPaymentWeightValidation()
+                    }
                 }
             }
         }
@@ -759,7 +771,7 @@ class HomeViewModel @Inject constructor(
         try {
             val loadCellTotalWeight =  finalTotalWeight
             val threshold = 50.0
-            /*
+            /* // Cart Validation removed  // New SOP
             val cartTotalWeight = getTotalWeightOfAllItems()
             val difference = abs(loadCellTotalWeight - cartTotalWeight)
             _loadCellValidationLog.value= "W1 = ${initialTotalWeight} - W2 - $loadCellTotalWeight = cartTotal - $cartTotalWeight || Total Products ${productWeightsMap.size}- CartWeightDifference - $difference"
@@ -774,6 +786,7 @@ class HomeViewModel @Inject constructor(
                 // Weight difference is greater than 30g
                 println("Weight mismatch detected!")
             }*/
+
             val difference = abs(loadCellTotalWeight - initialTotalWeight)
             _loadCellValidationLog.value= "W1 = ${initialTotalWeight} // w2 = $loadCellTotalWeight // Final W1 = $finalWeightOfLc1 // Difference =  $difference"
             if (finalWeightOfLc1 <= 15.0 && difference <= threshold){
