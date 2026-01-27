@@ -725,7 +725,10 @@ class HomeViewModel @Inject constructor(
                   //  weightAtRemovalDeltaW2 =0.0
                     val product = _productInfo.value
                     finalTotalWeight = update.w2
-                    if (product != null) {
+                    if (product != null && update.delta_w2 > 20.0) {
+                        addProductToShoppingCart(product.barcode, 1)
+                        _productInfo.value = null
+                        weightAtRemovalW1 = 0.0
                         // Product add validation removed // New SOP
                        /* val result = validationManager.validateAddition(
                             product = product,
