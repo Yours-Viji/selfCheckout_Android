@@ -713,7 +713,7 @@ class HomeViewModel @Inject constructor(
                     finalWeightOfLc1 =update.w1
                 }
 
-                1 -> {
+               /* 1 -> {
                     if (cartId.isEmpty()){
                         // Updating before create cart // before start shopping  // New SOP
                         initialTotalWeight = update.w1
@@ -730,7 +730,7 @@ class HomeViewModel @Inject constructor(
                         _productInfo.value = null
                         weightAtRemovalW1 = 0.0
                         // Product add validation removed // New SOP
-                       /* val result = validationManager.validateAddition(
+                       *//* val result = validationManager.validateAddition(
                             product = product,
                             deltaW1 = weightAtRemovalW1,
                             deltaW2 = update.delta_w2
@@ -749,7 +749,30 @@ class HomeViewModel @Inject constructor(
                         } else {
                             _errorMessage.value = (result as ValidationResult.Error).message
                             _loadCellValidationLog.value += "> ${errorMessage.value}\n"
-                        }*/
+                        }*//*
+                    }else{
+                        if (update.delta_w2 >15.0){
+                            // Added without scan
+                            _errorMessage.value = "Please scan and to add!"
+                        }
+                    }
+                }*/
+                2->{
+                    if (cartId.isEmpty()){
+                        // Updating before create cart // before start shopping  // New SOP
+                        initialTotalWeight = update.w1
+                        finalWeightOfLc1 =update.w1
+                    }
+                    // Customer placed item in LC2
+                    weightAtRemovalW1 = update.w1
+                    finalWeightOfLc1 =update.w1
+                    //  weightAtRemovalDeltaW2 =0.0
+                    val product = _productInfo.value
+                    finalTotalWeight = update.w2
+                    if (product != null && update.delta_w2 > 20.0) {
+                        addProductToShoppingCart(product.barcode, 1)
+                        _productInfo.value = null
+                        weightAtRemovalW1 = 0.0
                     }else{
                         if (update.delta_w2 >15.0){
                             // Added without scan
