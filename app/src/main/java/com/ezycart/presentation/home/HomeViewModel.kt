@@ -22,7 +22,9 @@ import com.ezycart.presentation.WeightUpdate
 import com.ezycart.presentation.common.data.Constants
 import com.ezycart.services.usb.WeightValidationManager
 import com.ezycart.services.usb.WeightValidationManager.ValidationResult
+import com.ezycart.services.usb.com.LedPattern
 import com.ezycart.services.usb.com.LoginWeightScaleSerialPort
+import com.ezycart.services.usb.com.UsbLedManager
 import com.ezycart.services.usb.com.UsbSerialManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -45,6 +47,7 @@ class HomeViewModel @Inject constructor(
     private val getCartIdUseCase: GetCartIdUseCase,
     private val preferencesManager: PreferencesManager,
     private val loadingManager: LoadingManager,
+   // private val ledManager: UsbLedManager
 ) : ViewModel() {
     private val _stateFlow = MutableStateFlow(HomeState())
     val stateFlow: StateFlow<HomeState> = _stateFlow.asStateFlow()
@@ -680,6 +683,49 @@ class HomeViewModel @Inject constructor(
             if (list.isEmpty()) productWeightsMap.remove(barcode)
         }
     }
+
+   /* fun sendLedCommand(ledNumbers: List<Int>) {
+        try {
+            var bitmask = 0
+
+            for (led in ledNumbers) {
+                if (led in 1..6) {
+                    // Subtract 1 because bit shifting is 0-indexed (0 to 5)
+                    bitmask = bitmask or (1 shl (led - 1))
+                }
+            }
+
+            // Convert to 2-character Hex (e.g., 23 -> "17")
+            val hexValue = String.format("%02X", bitmask)
+
+            // Wrap in the protocol characters
+            val finalCommand = "@O$hexValue*"
+
+            Log.d("USB_CMD", "Sending Message: $finalCommand")
+
+            // Call your existing background sender
+            // sendCustomCommand(finalCommand)
+            LoginWeightScaleSerialPort.sendMessageToLED(finalCommand)
+        } catch (e: Exception) {
+        }
+    }*/
+
+     /*fun switchOnAllLed()= ledManager.sendLedCommand(listOf(1, 2, 3, 4, 5, 6))
+     fun switchOffAllLed()= ledManager.sendLedCommand(emptyList())
+    fun switchPaymentLed()= ledManager.sendLedCommand(listOf(1, 2, 3))
+     fun switchErrorLed()= ledManager.sendLedCommand(listOf(1, 2, 4))
+    fun switchStartShoppingLed()= ledManager.sendLedCommand(listOf(1, 2, 3, 5))*/
+
+    fun switchOnAllLed() = LoginWeightScaleSerialPort.sendLedCommand(LedPattern.ON_ALL)
+
+    fun switchOffAllLed() = LoginWeightScaleSerialPort.sendLedCommand(LedPattern.OFF)
+
+    fun switchPaymentLed() = LoginWeightScaleSerialPort.sendLedCommand(LedPattern.PAYMENT)
+
+    fun switchErrorLed() = LoginWeightScaleSerialPort.sendLedCommand(LedPattern.ERROR)
+
+    fun switchStartShoppingLed() = LoginWeightScaleSerialPort.sendLedCommand(LedPattern.START_SHOPPING)
+
     fun resetLoadCell(){
         sendMessageToLoadCell("2")
     }
@@ -697,7 +743,7 @@ class HomeViewModel @Inject constructor(
            // _errorMessage.value = "Weight Data Old: $update"
             when (update.status) {
                 0 -> {
-
+                    switchOnAllLed()
                 /* Initial load - Save baseline w1 if needed */
                     initialTotalWeight = update.w1
                     weightAtRemovalW1 = 0.0
@@ -820,6 +866,7 @@ class HomeViewModel @Inject constructor(
                 println("Weight is stable and within range.")
                 _errorMessage.value = "Weight is stable and within range."
             }else{
+                switchErrorLed()
                 _canMakePayment.value = false
                 _errorMessage.value = "Weight mismatch detected!"
                 // Weight difference is greater than 30g

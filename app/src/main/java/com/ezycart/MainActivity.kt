@@ -38,6 +38,7 @@ import com.ezycart.presentation.home.WebViewScreen
 import com.ezycart.presentation.landing.LandingScreen
 import com.ezycart.presentation.payment.PaymentSelectionScreen
 import com.ezycart.services.usb.SensorSerialPortCommunication
+import com.ezycart.services.usb.com.UsbLedManager
 import com.ezycart.services.usb.com.WeightScaleManager
 import com.meticha.permissions_compose.PermissionManagerConfig
 import dagger.hilt.android.AndroidEntryPoint
@@ -61,6 +62,8 @@ class MainActivity : ComponentActivity(){
     @Inject
     lateinit var nearPayService: NearPayService
     private val homeViewModel: HomeViewModel by viewModels()
+    //private lateinit var ledManager: UsbLedManager
+    //@Inject lateinit var ledManager: UsbLedManager
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
@@ -80,6 +83,8 @@ class MainActivity : ComponentActivity(){
         }
         WeightScaleManager.init(homeViewModel)
         WeightScaleManager.connect(this)
+        //ledManager = UsbLedManager.getInstance(this)
+      //  ledManager.connectAndPrepare()
        /* lifecycleScope.launch {
             SensorSerialPortCommunication.sensorMessage.collect { data ->
                 Log.i("--->>","LOG RECEIVED: $data")
@@ -131,6 +136,7 @@ class MainActivity : ComponentActivity(){
                                     LandingScreen(goToHomeScreen={
                                         try {
                                             homeViewModel.requestTotalWeightFromLoadCell()
+                                            homeViewModel.switchStartShoppingLed()
                                         } catch (e: Exception) {
                                         }
                                         navController.navigate("home") {
@@ -171,7 +177,10 @@ class MainActivity : ComponentActivity(){
                                         },
 
                                         onLogout = {
-
+                                            try {
+                                                homeViewModel.resetLoadCell()
+                                            } catch (e: Exception) {
+                                            }
                                             navController.navigate("landing") {
                                                 popUpTo("home") { inclusive = true } // remove home from back stack
                                             }
@@ -180,6 +189,10 @@ class MainActivity : ComponentActivity(){
                                             }
                                         },
                                         goToPaymentScreen ={
+                                            try {
+                                               homeViewModel.switchPaymentLed()
+                                            } catch (e: Exception) {
+                                            }
                                             /*navController.navigate("payment") {
                                                 popUpTo("home") { inclusive = true }
                                             }*/

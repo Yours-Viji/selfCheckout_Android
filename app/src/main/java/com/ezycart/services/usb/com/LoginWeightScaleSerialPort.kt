@@ -27,11 +27,11 @@ object LoginWeightScaleSerialPort {
     private var mUsbManager: UsbManager? = null
 
     var mSerialIoManager: SerialInputOutputManager? = null
-    //var ledSerialIoManager: SerialInputOutputManager? = null
+    var ledSerialIoManager: SerialInputOutputManager? = null
     private val TAG: String = "--Shopping--"
     private val ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION"
     var serialPort: UsbSerialPort? = null
-    //private var ledSerialPort: UsbSerialPort? = null
+    private var ledSerialPort: UsbSerialPort? = null
     //private var scannerSerialPort: UsbSerialPort? = null
     private var weightScaleConnectionCount = 0
 
@@ -60,6 +60,8 @@ object LoginWeightScaleSerialPort {
                                     .contains("newland")
                             ) {
                                // scannerSerialPort = driver.ports[port]
+                            } else  if (device.vendorId == 0x04D8 && device.productId == 0x003A) {
+                                ledSerialPort = driver.ports[port]
                             } else {
                                 serialPort = driver.ports[port]
                             }
@@ -98,7 +100,7 @@ object LoginWeightScaleSerialPort {
                     // initHardwareIssue(context)
                 }
                 doWeightScaleConnectionTask(context, listener)
-                //initLEDSerialPort(context, listener)
+                initLEDSerialPort(context, listener)
               //  initScannerPermission(context)
             }
         } catch (e: Exception) {
@@ -212,7 +214,7 @@ object LoginWeightScaleSerialPort {
         }
     }
 
-    /*private fun initLEDSerialPort(context: Context, listener: SerialInputOutputManager.Listener) {
+    private fun initLEDSerialPort(context: Context, listener: SerialInputOutputManager.Listener) {
         if (ledSerialPort == null) {
             //initWeightScaleSerialPort(context, listener)
         } else {
@@ -222,12 +224,13 @@ object LoginWeightScaleSerialPort {
                 val device = ledSerialPort?.driver?.device
 
                 if (connection == null) {
-                    *//*if (!mUsbManager!!.hasPermission(device)) {
+                    if (!mUsbManager!!.hasPermission(device)) {
                         val mPermissionIntent: PendingIntent =
-                            PendingIntent.getBroadcast(context, 0, Intent(ACTION_USB_PERMISSION), 0)
+                            PendingIntent.getBroadcast(context, 0, Intent(ACTION_USB_PERMISSION),
+                                PendingIntent.FLAG_IMMUTABLE)
                         val filter = IntentFilter(ACTION_USB_PERMISSION)
                         mUsbManager?.requestPermission(device, mPermissionIntent)
-                    }*//*
+                    }
                     return
                 }
 
@@ -267,7 +270,7 @@ object LoginWeightScaleSerialPort {
                 Log.e(TAG, "Error init LED SerialPort --2" + e.message)
             }
         }
-    }*/
+    }
 
      fun stopIoManager() {
         try {
@@ -301,7 +304,7 @@ object LoginWeightScaleSerialPort {
         }
     }
 
-    /*fun startLedIoManager(listener: SerialInputOutputManager.Listener) {
+    fun startLedIoManager(listener: SerialInputOutputManager.Listener) {
         if (ledSerialPort != null) {
             try {
                 //  stopLEDIoManager()
@@ -318,9 +321,9 @@ object LoginWeightScaleSerialPort {
                 Log.e(TAG, "startLEDIoManager-->>" + e.message)
             }
         }
-    }*/
+    }
 
-   /* fun stopLEDIoManager() {
+    fun stopLEDIoManager() {
         try {
             if (ledSerialIoManager != null) {
                 ledSerialIoManager!!.stop()
@@ -329,7 +332,7 @@ object LoginWeightScaleSerialPort {
         } catch (e: Exception) {
             //showToast("stopIoManager" + e.message)
         }
-    }*/
+    }
 
     fun sendMessageToWeightScale(message: String) {
         try {
@@ -338,9 +341,27 @@ object LoginWeightScaleSerialPort {
         }
 
     }
+    fun sendLedCommand(pattern: LedPattern) {
+        try {
+            if (ledSerialPort == null || mSerialIoManager == null) {
+                Log.e("USB_LED", "Connection not ready. Cannot send ${pattern.name}")
+                return
+            }
+
+            val command = pattern.command
+            val buffer = command.toByteArray()
+
+            mSerialIoManager!!.writeAsync(buffer)
+
+            Log.d("USB_LED", "Sent Pattern: ${pattern.name} ($command)")
+        } catch (e: Exception) {
+            Log.e("USB_LED", "Error sending LED command: ${e.message}")
+        }
+    }
 
    /* fun sendMessageToLED(message: String) {
         try {
+            //val encodedMessage = "@I${message}*"
             ledSerialIoManager!!.writeAsync(message.toByteArray())
         } catch (e: Exception) {
         }
@@ -418,6 +439,22 @@ object LoginWeightScaleSerialPort {
                         .contains("newland")
                 ) {
                     // scannerSerialPort = driver.ports[port]
+                }else  if (driver.device.vendorId == 0x04D8 && driver.device.productId == 0x003A) {
+                    ledSerialPort = driver.ports[port]
+                    try {
+                        val connection = mUsbManager?.openDevice(driver.device)
+                        ledSerialPort = driver.ports[port]
+                        ledSerialPort!!.open(connection)
+
+                        ledSerialPort!!.setParameters(115200, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE)
+                        ledSerialPort!!.dtr = true
+                        ledSerialPort!!.rts = true
+                        ledSerialIoManager = SerialInputOutputManager(ledSerialPort, listener)
+                        ledSerialIoManager?.start()
+                        ledSerialIoManager = SerialInputOutputManager(ledSerialPort, listener)
+                        ledSerialIoManager?.start()
+                    } catch (e: Exception) {
+                    }
                 } else {
 
                     try {
@@ -464,5 +501,11 @@ object LoginWeightScaleSerialPort {
     }*/
 }
 
-
+enum class LedPattern(val command: String) {
+    OFF("@I00*"),
+    ON_ALL("@I03*"),
+    PAYMENT("@I07*"),
+    ERROR("@I08*"),
+    START_SHOPPING("@I13*")
+}
 
