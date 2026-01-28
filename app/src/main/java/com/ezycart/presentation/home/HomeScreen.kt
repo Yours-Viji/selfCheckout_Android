@@ -1437,6 +1437,10 @@ fun CartScreen(
                         ) {
                             // CameraPreview(modifier = Modifier.fillMaxSize())
                             CameraPreview(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    // 1. Rotate 90 degrees clockwise
+                                    .graphicsLayer(rotationZ = 90f),
                                 onRecordingStarted = { isRecording.value = true },
                                 onRecordingFinished = { uri ->
                                     isRecording.value = false
@@ -1446,7 +1450,6 @@ fun CartScreen(
                                     startFunc.value = start
                                     stopFunc.value = stop
                                 }
-
                             )
                             // Live Badge
                             Row(
