@@ -69,6 +69,9 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.platform.LocalContext
+import com.ezycart.AlertState
+import com.ezycart.AlertType
+import com.ezycart.CommonAlertView
 import com.ezycart.services.usb.com.AppScenario
 
 @Composable
@@ -159,6 +162,7 @@ fun LandingScreen(viewModel: LandingViewModel = viewModel(),
 
 @Composable
 fun LanguageSelectionScreen(onLanguageSelected: (String) -> Unit) {
+    var currentSystemAlert = remember { mutableStateOf<AlertState?>(null)}
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -180,7 +184,13 @@ fun LanguageSelectionScreen(onLanguageSelected: (String) -> Unit) {
             contentScale = ContentScale.Inside,
             alpha = 0.6f
         )*/
-        BitesHeader(onHelpClick = { /* Show Help Dialog */ })
+        BitesHeader(onHelpClick = {  currentSystemAlert.value = AlertState(
+            title = "Help is on the way",
+            message = "Please wait for our Staff to assist you.",
+            lottieFileName = "anim_warning_circle.json",
+            type = AlertType.INFO,
+            isDismissible = true
+        ) })
 
             Column(
                 modifier = Modifier.fillMaxSize().padding(horizontal = 40.dp),
@@ -201,6 +211,12 @@ fun LanguageSelectionScreen(onLanguageSelected: (String) -> Unit) {
                     Spacer(modifier = Modifier.height(24.dp))
                 }
 
+        }
+    }
+
+    currentSystemAlert.value?.let { alert ->
+        CommonAlertView(state = alert) {
+            currentSystemAlert.value = null
         }
     }
 }
