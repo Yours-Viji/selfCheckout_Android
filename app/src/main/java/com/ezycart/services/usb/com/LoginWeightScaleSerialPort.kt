@@ -179,11 +179,4 @@ object LoginWeightScaleSerialPort {
 
 }
 
-enum class LedPattern(val command: String) {
-    OFF("@I00*"),
-    ON_ALL("@I03*"),
-    PAYMENT("@I07*"),
-    ERROR("@I08*"),
-    START_SHOPPING("@I13*")
-}
 

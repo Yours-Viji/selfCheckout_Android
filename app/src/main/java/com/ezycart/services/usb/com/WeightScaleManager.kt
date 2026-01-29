@@ -7,15 +7,24 @@ import com.hoho.android.usbserial.util.SerialInputOutputManager
 object WeightScaleManager {
     private var isInitialized = false
     private var commonListener: SerialInputOutputManager.Listener? = null
+    private var commonLedListener: SerialInputOutputManager.Listener? = null
 
     fun init(viewModel: HomeViewModel) {
-        if (commonListener == null) {
-            commonListener = LoginWeightScaleSerialPort.createCommonListener(viewModel)
+        try {
+            if (commonListener == null) {
+                commonListener = LoginWeightScaleSerialPort.createCommonListener(viewModel)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
+
     }
+
+
 
     fun connect(context: Context) {
         try {
+            connectLed(context)
             commonListener?.let {listener ->
                 LoginWeightScaleSerialPort.connectPicoScaleDirectly(
                     context,
@@ -23,12 +32,19 @@ object WeightScaleManager {
                 )
             }
 
+
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
-
+    fun connectLed(context: Context){
+        try {
+            LedSerialConnection.connect(context)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 
     fun initOnce(viewModel: HomeViewModel) {
         if (!isInitialized) {

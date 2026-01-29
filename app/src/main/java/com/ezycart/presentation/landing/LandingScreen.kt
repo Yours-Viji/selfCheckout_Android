@@ -14,19 +14,24 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -34,7 +39,9 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -53,16 +60,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ezycart.R
-import com.ezycart.presentation.home.CartIconWithBadge
+import com.ezycart.services.usb.com.LedSerialConnection
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun LandingScreen(viewModel: LandingViewModel = viewModel(),
                   goToHomeScreen: () -> Unit) {
     val uiState = viewModel.uiState.collectAsStateWithLifecycle()
     var showGuidelines = remember { mutableStateOf(false) }
+    var showLedDialog = remember { mutableStateOf(false) }
+
+    if (showLedDialog.value) {
+        LedControlDialog(onDismiss = { showLedDialog.value = false })
+    }
     if (showGuidelines.value) {
         GuidelinesDialog(
             onDismiss = { showGuidelines.value = false },
@@ -91,7 +108,12 @@ fun LandingScreen(viewModel: LandingViewModel = viewModel(),
                     // Replace with Language Selection after click
                     LanguageSelectionScreen(onLanguageSelected = { lang ->
                         Log.d("Kiosk", "Selected: $lang")
-                        showGuidelines.value = true
+                        if(lang == "中文"){
+                            showLedDialog.value = true
+                        }else{
+                            showGuidelines.value = true
+                        }
+
 
                         // Proceed to next step
                     })
@@ -394,5 +416,91 @@ fun GuidelineImage(resId: Int, label: String) {
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(text = label, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+
+@Composable
+fun LedControlDialog(onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    // State to keep track of 6 buttons
+    val ledStates = remember { mutableStateListOf(false, false, false, false, false, false) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(28.dp),
+            color = Color(0xFFF1F3F5),
+            modifier = Modifier.fillMaxWidth().padding(12.dp)
+        ) {
+            Column(modifier = Modifier.padding(24.dp)) {
+                Text("Output Controls", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+
+                Button(
+                    onClick = { LedSerialConnection.connect(context) },
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
+                ) { Text("CONNECT DEVICE") }
+
+                // Grid for the 6 outputs
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.height(220.dp)
+                ) {
+                    items(6) { index ->
+                        val isOn = ledStates[index]
+                        Card(
+                            onClick = {
+                                val newState = !isOn
+                                ledStates[index] = newState
+                                LedSerialConnection.updateOutput(index, newState)
+                            },
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text("OUT ${index + 1}", fontSize = 12.sp, color = Color.Gray)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                // Status Circle
+                                Box(
+                                    modifier = Modifier
+                                        .size(20.dp)
+                                        .background(if (isOn) Color(0xFF4CAF50) else Color(0xFFF44336), CircleShape)
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(if (isOn) "ON" else "OFF", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Button(
+                        onClick = {
+                            LedSerialConnection.setAll(true)
+                            for(i in 0..5) ledStates[i] = true
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                    ) { Text("ALL ON") }
+
+                    Button(
+                        onClick = {
+                            LedSerialConnection.setAll(false)
+                            for(i in 0..5) ledStates[i] = false
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF44336))
+                    ) { Text("ALL OFF") }
+                }
+            }
+        }
     }
 }

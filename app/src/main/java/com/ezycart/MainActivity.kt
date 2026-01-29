@@ -149,7 +149,7 @@ class MainActivity : ComponentActivity() {
                                     LandingScreen(goToHomeScreen = {
                                         try {
                                             homeViewModel.requestTotalWeightFromLoadCell()
-                                            //homeViewModel.switchStartShoppingLed()
+                                            //homeViewModel.switchOnAllLed()
                                         } catch (e: Exception) {
                                         }
                                         navController.navigate("home") {
