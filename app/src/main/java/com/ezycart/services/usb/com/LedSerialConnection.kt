@@ -1,20 +1,14 @@
 package com.ezycart.services.usb.com
 
 import android.annotation.SuppressLint
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
 import android.hardware.usb.UsbConstants
 import android.hardware.usb.UsbDeviceConnection
 import android.hardware.usb.UsbEndpoint
 import android.hardware.usb.UsbManager
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
-import com.ezycart.presentation.home.HomeViewModel
-import com.ezycart.services.weightScaleService.CustomSerialProber
-import com.hoho.android.usbserial.driver.UsbSerialPort
-import com.hoho.android.usbserial.driver.UsbSerialProber
-import com.hoho.android.usbserial.util.SerialInputOutputManager
-import kotlin.text.contains
 import kotlin.text.toByteArray
 @SuppressLint("StaticFieldLeak")
 object LedSerialConnection {
@@ -25,6 +19,16 @@ object LedSerialConnection {
     @Volatile private var isSendingUsbCommand = false
     @Volatile private var pendingUsbCommand: String? = null
     private var currentOutputBitmask = 0
+
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var pulseRunnable: Runnable? = null
+    private var isPulseActive = false
+    private var pulseState = false
+
+    const val MASK_PRINTER = 0x01
+    const val MASK_SCANNER = 0x02
+    const val MASK_GREEN_LED = 0x04
+    const val MASK_RED_LED = 0x08
 
     fun connect(context: Context) {
         val usbManager = context.getSystemService(Context.USB_SERVICE) as UsbManager
@@ -126,6 +130,43 @@ object LedSerialConnection {
         currentOutputBitmask = mask
         processOutput()
     }
+
+   private fun startPulse(targetMask: Int, interval: Long = 600L) {
+        if (isPulseActive) stopPulse() // Reset if already running
+
+        isPulseActive = true
+        pulseRunnable = object : Runnable {
+            override fun run() {
+                if (!isPulseActive) return
+
+                if (pulseState) {
+                    // Turn TARGET LEDs ON (using OR)
+                    currentOutputBitmask = currentOutputBitmask or targetMask
+                } else {
+                    // Turn TARGET LEDs OFF (using AND NOT)
+                    currentOutputBitmask = currentOutputBitmask and targetMask.inv()
+                }
+
+                processOutput()
+                pulseState = !pulseState
+                mainHandler.postDelayed(this, interval)
+            }
+        }
+        mainHandler.post(pulseRunnable!!)
+    }
+
+    fun stopPulse() {
+        isPulseActive = false
+        pulseRunnable?.let { mainHandler.removeCallbacks(it) }
+        pulseRunnable = null
+
+    }
+
+    fun startAnimate(target: Int) {
+        startPulse(targetMask = target, interval = 600L)
+    }
+
+
 }
 
 enum class AppScenario {
