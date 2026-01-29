@@ -161,6 +161,9 @@ import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
+import com.ezycart.AlertState
+import com.ezycart.AlertType
+import com.ezycart.CommonAlertView
 import com.ezycart.R
 import com.ezycart.data.remote.dto.CartItem
 import com.ezycart.data.remote.dto.ShoppingCartDetails
@@ -238,12 +241,48 @@ fun HomeScreen(
     var clearTransAction = remember { mutableStateOf(false) }
     var showMainLogs = remember { mutableStateOf(false) }
     val context = LocalContext.current
+    var currentSystemAlert = remember { mutableStateOf<AlertState?>(null)}
+    var canShowProductNotScannedDialog = viewModel.canShowProductNotScannedDialog.collectAsState()
+    var canShowProductNotFoundDialog = viewModel.canShowProductNotFoundDialog.collectAsState()
+    var canShowValidationErrorDialog = viewModel.canShowValidationErrorDialog.collectAsState()
     /* val commonListener = remember {
          LoginWeightScaleSerialPort.createCommonListener(viewModel)
      }*/
     val loadCellValidationLog = viewModel.loadCellValidationLog.collectAsState()
 
     LockScreenOrientation(context, ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
+
+    if(canShowProductNotFoundDialog.value) {
+
+        currentSystemAlert.value = AlertState(
+            title = "Product Not Found",
+            message = "Please try again or Call for Help.",
+            lottieFileName = "anim_warning_circle.json",
+            type = AlertType.INFO,
+            isDismissible = true
+        )
+    }
+    if (canShowProductNotScannedDialog.value){
+
+        currentSystemAlert.value = AlertState(
+            title = "Product Not Scanned",
+            message = "Please remove and scan the product.",
+            lottieFileName = "anim_wrong.json",
+            type = AlertType.WARNING,
+            isDismissible = false
+        )
+    }
+    if(canShowValidationErrorDialog.value) {
+
+        currentSystemAlert.value = AlertState(
+            title = "Validation Error",
+            message = "Please Call for Help.",
+            lottieFileName = "anim_wrong.json",
+            type = AlertType.ERROR,
+            isDismissible = false
+        )
+    }
+
 
     LaunchedEffect(state.error) {
         state.error?.let { errorMessage ->
@@ -296,11 +335,7 @@ fun HomeScreen(
 
      }*/
     if (showTerminal.value) {
-        /* try {
-             LoginWeightScaleSerialPort.connectScale(context, commonListener)
-         } catch (e: Exception) {
-             TODO("Not yet implemented")
-         }*/
+
         WeightScaleManager.initOnce(viewModel)
         WeightScaleManager.connectSafe(context)
         UsbTerminalDialog(
@@ -340,7 +375,7 @@ fun HomeScreen(
         }
     }
     if (showPaymentSuccessDialog.value) {
-        PaymentSuccessAlert(
+       /* PaymentSuccessAlert(
 
             onSendReceipt = {
                 // Handle send receipt logic
@@ -351,10 +386,17 @@ fun HomeScreen(
             onDismiss = {
                 viewModel.hidePaymentSuccessAlertView()
             }
+        )*/
+        currentSystemAlert.value = AlertState(
+            title = "Payment Success",
+            message = "Please collect your receipt.\nThank you for your purchase!",
+            lottieFileName = "anim_success_cart.json",
+            type = AlertType.SUCCESS,
+            isDismissible = false
         )
     }
     if (showPaymentErrorDialog.value) {
-        PaymentFailureAlert(
+       /* PaymentFailureAlert(
 
             onRetry = {
                 viewModel.hidePaymentSuccessAlertView()
@@ -365,6 +407,13 @@ fun HomeScreen(
             onDismiss = {
                 viewModel.hidePaymentErrorAlertView()
             }
+        )*/
+        currentSystemAlert.value = AlertState(
+            title = "Payment was not successful",
+            message = "Please try again or choose another payment method",
+            lottieFileName = "anim_wrong.json",
+            type = AlertType.ERROR,
+            isDismissible = false
         )
     }
     if (showDialog.value) {
@@ -479,7 +528,16 @@ fun HomeScreen(
                 }
             ) {*/
             BitesHeaderNew(
-                viewModel, cartCount = cartCount.value, onHelpClick = { showTerminal.value = true },
+                viewModel, cartCount = cartCount.value, onHelpClick = {
+                   // showTerminal.value = true
+                    currentSystemAlert.value = AlertState(
+                        title = "Help is on the way",
+                        message = "Please wait for our Staff to assist you.",
+                        lottieFileName = "anim_warning_circle.json",
+                        type = AlertType.INFO,
+                        isDismissible = true
+                    )
+                                                                      },
                 onTitleClick = {
                     showMainLogs.value = !showMainLogs.value
                     viewModel.clearLog()
@@ -568,6 +626,13 @@ fun HomeScreen(
 
             }
             //}
+        }
+    }
+
+    currentSystemAlert.value?.let { alert ->
+        CommonAlertView(state = alert) {
+            viewModel.clearSystemAlert()
+            currentSystemAlert.value = null
         }
     }
 }

@@ -130,6 +130,15 @@ class HomeViewModel @Inject constructor(
     var cartId = ""
     var isJwtTokenCreated = false
 
+
+    private val _canShowProductNotScannedDialog = MutableStateFlow<Boolean>(false)
+    val canShowProductNotScannedDialog: StateFlow<Boolean> = _canShowProductNotScannedDialog.asStateFlow()
+
+    private val _canShowProductNotFoundDialog = MutableStateFlow<Boolean>(false)
+    val canShowProductNotFoundDialog: StateFlow<Boolean> = _canShowProductNotFoundDialog.asStateFlow()
+
+    private val _canShowValidationErrorDialog = MutableStateFlow<Boolean>(false)
+    val canShowValidationErrorDialog: StateFlow<Boolean> = _canShowValidationErrorDialog.asStateFlow()
     init {
         viewModelScope.launch {
             val savedAppMode = preferencesManager.getAppMode()
@@ -140,7 +149,13 @@ class HomeViewModel @Inject constructor(
         }
         // observeUsbData()
     }
-
+    fun clearSystemAlert(){
+        _canShowValidationErrorDialog.value = false
+        _canShowProductNotFoundDialog.value = false
+        _canShowProductNotScannedDialog.value = false
+        _canShowPaymentErrorDialog.value = false
+        _canShowPaymentSuccessDialog.value = false
+    }
     fun clearLog() {
         _loadCellValidationLog.value = ">>Loadcell Validation"
     }
@@ -360,6 +375,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun getProductDetails(barCode: String) {
+        _canShowProductNotFoundDialog.value = false
         loadingManager.show()
         viewModelScope.launch {
             _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
@@ -383,6 +399,7 @@ class HomeViewModel @Inject constructor(
                         isLoading = false,
                         error = message
                     )
+                    _canShowProductNotFoundDialog.value = true
                     loadingManager.hide()
                     //End of input at line 1 column 1 path
                 }
@@ -759,9 +776,15 @@ class HomeViewModel @Inject constructor(
                     } else {
                         if (update.delta_w2 > 20.0) {
                             // Added without scan
-                            _errorMessage.value = "Please scan and to add!"
+                            _canShowProductNotScannedDialog.value = true
+                            //_errorMessage.value = "Please scan and to add!"
                             LedSerialConnection.setScenario(AppScenario.ERROR)
                         }
+                    }
+                }
+                -2->{
+                    if (canShowProductNotScannedDialog.value){
+                        _canShowProductNotScannedDialog.value = false
                     }
                 }
                 10 -> {
@@ -910,12 +933,14 @@ class HomeViewModel @Inject constructor(
                 "W1 = ${initialTotalWeight} // w2 = $loadCellTotalWeight // Final W1 = $finalWeightOfLc1 // Difference =  $difference"
             if (finalWeightOfLc1 <= 30.0 && difference <= threshold) {
                 _canMakePayment.value = true
-                println("Weight is stable and within range.")
-                _errorMessage.value = "Weight is stable and within range."
+                _canShowValidationErrorDialog.value = false
+                    println("Weight is stable and within range.")
+               // _errorMessage.value = "Weight is stable and within range."
             } else {
                 //switchErrorLed()
                 _canMakePayment.value = false
-                _errorMessage.value = "Weight mismatch detected!"
+                _canShowValidationErrorDialog.value = true
+               // _errorMessage.value = "Weight mismatch detected!"
                 // Weight difference is greater than 30g
                 println("Weight mismatch detected!")
                 LedSerialConnection.setScenario(AppScenario.ERROR)
