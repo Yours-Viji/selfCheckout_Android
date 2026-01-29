@@ -22,6 +22,8 @@ import com.ezycart.presentation.WeightUpdate
 import com.ezycart.presentation.common.data.Constants
 import com.ezycart.services.usb.WeightValidationManager
 import com.ezycart.services.usb.WeightValidationManager.ValidationResult
+import com.ezycart.services.usb.com.AppScenario
+import com.ezycart.services.usb.com.LedSerialConnection
 import com.ezycart.services.usb.com.LoginWeightScaleSerialPort
 import com.ezycart.services.usb.com.PrinterManager
 import com.ezycart.services.usb.com.UsbSerialManager
@@ -758,6 +760,7 @@ class HomeViewModel @Inject constructor(
                         if (update.delta_w2 > 20.0) {
                             // Added without scan
                             _errorMessage.value = "Please scan and to add!"
+                            LedSerialConnection.setScenario(AppScenario.ERROR)
                         }
                     }
                 }
@@ -915,6 +918,7 @@ class HomeViewModel @Inject constructor(
                 _errorMessage.value = "Weight mismatch detected!"
                 // Weight difference is greater than 30g
                 println("Weight mismatch detected!")
+                LedSerialConnection.setScenario(AppScenario.ERROR)
             }
         } catch (e: Exception) {
             TODO("Not yet implemented")

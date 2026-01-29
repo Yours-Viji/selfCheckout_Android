@@ -69,6 +69,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.platform.LocalContext
+import com.ezycart.services.usb.com.AppScenario
 
 @Composable
 fun LandingScreen(viewModel: LandingViewModel = viewModel(),
@@ -131,6 +132,7 @@ fun LandingScreen(viewModel: LandingViewModel = viewModel(),
                     // ADD THIS: It pushes the content up away from the system navigation buttons
                     .navigationBarsPadding()
                     .clickable(enabled = !uiState.value.isStarted) {
+                        LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
                         viewModel.onStartClicked()
                     },
                 contentAlignment = Alignment.Center

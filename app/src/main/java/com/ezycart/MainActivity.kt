@@ -40,6 +40,8 @@ import com.ezycart.presentation.home.WebViewScreen
 import com.ezycart.presentation.landing.LandingScreen
 import com.ezycart.presentation.payment.PaymentSelectionScreen
 import com.ezycart.services.usb.SensorSerialPortCommunication
+import com.ezycart.services.usb.com.AppScenario
+import com.ezycart.services.usb.com.LedSerialConnection
 import com.ezycart.services.usb.com.WeightScaleManager
 import com.meticha.permissions_compose.PermissionManagerConfig
 import dagger.hilt.android.AndroidEntryPoint
@@ -189,6 +191,7 @@ class MainActivity : ComponentActivity() {
                                         onLogout = {
                                             try {
                                                 homeViewModel.resetLoadCell()
+                                                LedSerialConnection.setScenario(AppScenario.ALL_OFF)
                                             } catch (e: Exception) {
                                             }
                                             navController.navigate("landing") {
@@ -202,7 +205,7 @@ class MainActivity : ComponentActivity() {
                                         },
                                         goToPaymentScreen = {
                                             try {
-                                                // homeViewModel.switchPaymentLed()
+                                                LedSerialConnection.setScenario(AppScenario.PAYMENT_SUCCESS)
                                             } catch (e: Exception) {
                                             }
                                             /*navController.navigate("payment") {

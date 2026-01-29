@@ -101,4 +101,33 @@ object LedSerialConnection {
             }
         }.start()
     }
+
+    fun setScenario(scenario: AppScenario) {
+        val mask = when (scenario) {
+            AppScenario.START_SHOPPING -> {
+                // LEDs 2,3,4,5 -> Bits 1,2,3,4
+                (1 shl 1) or (1 shl 2) or (1 shl 3) or (1 shl 4)
+            }
+            AppScenario.ERROR -> {
+                // LEDs 2,4 -> Bits 1,3
+                (1 shl 1) or (1 shl 3)
+            }
+            AppScenario.PAYMENT_SUCCESS -> {
+                // LED 3 -> Bit 2
+                (1 shl 2)
+            }
+            AppScenario.PRINTING -> {
+                // LEDs 1,3 -> Bits 0,2
+                (1 shl 0) or (1 shl 2)
+            }
+            AppScenario.ALL_OFF -> 0x00
+        }
+
+        currentOutputBitmask = mask
+        processOutput()
+    }
+}
+
+enum class AppScenario {
+    START_SHOPPING, ERROR, PAYMENT_SUCCESS, PRINTING, ALL_OFF
 }
