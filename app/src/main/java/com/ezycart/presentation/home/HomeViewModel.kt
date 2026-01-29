@@ -24,7 +24,6 @@ import com.ezycart.services.usb.WeightValidationManager
 import com.ezycart.services.usb.WeightValidationManager.ValidationResult
 import com.ezycart.services.usb.com.LoginWeightScaleSerialPort
 import com.ezycart.services.usb.com.PrinterManager
-import com.ezycart.services.usb.com.UsbLedManager
 import com.ezycart.services.usb.com.UsbSerialManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers

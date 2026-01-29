@@ -4,7 +4,6 @@ import android.content.Context
 import com.ezycart.data.datastore.PreferencesManager
 import com.ezycart.services.usb.UsbListener
 import com.ezycart.services.usb.com.PrinterManager
-import com.ezycart.services.usb.com.UsbLedManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -25,11 +24,6 @@ object UsbModule {
         return UsbListener(context, preferencesManager)
     }
 
-    @Provides
-    @Singleton
-    fun provideUsbLedManager(@ApplicationContext context: Context): UsbLedManager {
-        return UsbLedManager.getInstance(context)
-    }
 
     @Provides
     @Singleton

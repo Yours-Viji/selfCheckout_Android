@@ -40,7 +40,6 @@ import com.ezycart.presentation.home.WebViewScreen
 import com.ezycart.presentation.landing.LandingScreen
 import com.ezycart.presentation.payment.PaymentSelectionScreen
 import com.ezycart.services.usb.SensorSerialPortCommunication
-import com.ezycart.services.usb.com.UsbLedManager
 import com.ezycart.services.usb.com.WeightScaleManager
 import com.meticha.permissions_compose.PermissionManagerConfig
 import dagger.hilt.android.AndroidEntryPoint
@@ -66,8 +65,6 @@ class MainActivity : ComponentActivity() {
     lateinit var nearPayService: NearPayService
     private val homeViewModel: HomeViewModel by viewModels()
 
-    //private lateinit var ledManager: UsbLedManager
-    //@Inject lateinit var ledManager: UsbLedManager
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
