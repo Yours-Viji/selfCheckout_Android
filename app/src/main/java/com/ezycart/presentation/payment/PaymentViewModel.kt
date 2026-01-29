@@ -1,6 +1,7 @@
 package com.ezycart.presentation.payment
 
 import android.util.Log
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.ezycart.presentation.SensorSerialPortViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -11,16 +12,26 @@ import javax.inject.Inject
 @HiltViewModel
 class PaymentViewModel @Inject constructor(
 ) : ViewModel() {
+    // State for payment amounts
+    var totalAmount = mutableStateOf("0.00")
+        private set
 
-    private val _totalAmount = MutableStateFlow(33.90)
-    val totalAmount = _totalAmount.asStateFlow()
+    var amountToBePaid = mutableStateOf("0.00")
+        private set
+
+    // State for tracking if a process is running
+    var isProcessing = mutableStateOf(false)
+        private set
 
     fun onPaymentMethodSelected(method: String) {
-        // According to your flow, clicking Pay Now should verify weight
-        // Sending CMD 80 to get Status 10 from the load cell
-        //sensorViewModel.sendCommand("80")
-
-        // Navigate to specific payment processing logic here
-        Log.d("Payment", "Selected: $method. Triggering Weight Verification...")
+        isProcessing.value = true
+        // Add your logic to trigger hardware LEDs here
+        // Example: LedSerialConnection.startPulse(0x10) // Blue LED for processing
     }
+
+    fun updateAmounts(total: String, toBePaid: String) {
+        totalAmount.value = total
+        amountToBePaid.value = toBePaid
+    }
+
 }

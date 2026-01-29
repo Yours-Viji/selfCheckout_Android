@@ -182,27 +182,6 @@ fun BitesHeaderPayment(
                 )
             )
 
-            // Help Button Section
-           /* Row(
-                modifier = Modifier
-                    .clickable { onHelpClick() }
-                    .padding(4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Help",
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "Help",
-                    color = Color.White,
-                    fontSize = 16.sp
-                )
-
-            }*/
         }
     }
 }

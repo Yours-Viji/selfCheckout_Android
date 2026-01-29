@@ -211,14 +211,14 @@ class MainActivity : ComponentActivity() {
                                             /*navController.navigate("payment") {
                                                 popUpTo("home") { inclusive = true }
                                             }*/
-                                            navController.navigate("payment")
+                                           // navController.navigate("payment")
                                         },
                                         onTransactionCalled = {
                                             navController.navigateToWebView(Constants.EZY_LITE_TRANSACTION_URL)
                                         }
                                     )
                                 }
-                                composable("payment") { backStackEntry ->
+                               /* composable("payment") { backStackEntry ->
 
                                     val count =
                                         homeViewModel.cartCount.collectAsStateWithLifecycle()
@@ -232,7 +232,7 @@ class MainActivity : ComponentActivity() {
                                         shoppingCartInfo = shoppingCartInfo.value,
                                         onBackClick = { navController.popBackStack() }
                                     )
-                                }
+                                }*/
                                 composable("webview/{url}") { backStackEntry ->
                                     val encodedUrl =
                                         backStackEntry.arguments?.getString("url") ?: ""

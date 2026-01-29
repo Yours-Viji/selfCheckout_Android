@@ -163,7 +163,9 @@ class HomeViewModel @Inject constructor(
     fun setErrorMessage(data: String) {
         _errorMessage.value = "New Data ==>>: $data"
     }
-
+    fun hidePaymentView() {
+        _canMakePayment.value = false
+    }
     private fun observeUsbData() {
         viewModelScope.launch {
             // This 'calls' the flow to start receiving data from the manager

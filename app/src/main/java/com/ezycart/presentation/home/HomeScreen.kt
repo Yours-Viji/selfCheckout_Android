@@ -177,6 +177,7 @@ import com.ezycart.presentation.alertview.QrPaymentAlertView
 import com.ezycart.presentation.common.components.BarcodeScannerListener
 import com.ezycart.presentation.common.data.Constants
 import com.ezycart.presentation.landing.BitesHeader
+import com.ezycart.presentation.payment.BitesPaymentDialog
 import com.ezycart.services.usb.SensorSerialPortCommunication
 
 import com.ezycart.services.usb.com.LoginWeightScaleSerialPort
@@ -453,7 +454,22 @@ fun HomeScreen(
         viewModel.initNewShopping()
     }
     if (canMakePayment.value) {
-        goToPaymentScreen()
+       // goToPaymentScreen()
+        BitesPaymentDialog(
+            viewModel,
+            onDismiss = {
+                viewModel.hidePaymentView()
+                        },
+            onHelpClicked = {
+                currentSystemAlert.value = AlertState(
+                    title = "Help is on the way",
+                    message = "Please wait for our Staff to assist you.",
+                    lottieFileName = "anim_warning_circle.json",
+                    type = AlertType.INFO,
+                    isDismissible = true
+                )
+            }
+        )
     }
     Box(
         modifier = Modifier
@@ -552,6 +568,7 @@ fun HomeScreen(
                     )
 
                 )
+
             }
 
             /* Scaffold(
