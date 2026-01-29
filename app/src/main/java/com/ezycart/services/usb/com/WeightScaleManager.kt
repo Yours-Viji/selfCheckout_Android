@@ -17,7 +17,7 @@ object WeightScaleManager {
     fun connect(context: Context) {
         try {
             commonListener?.let {listener ->
-                LoginWeightScaleSerialPort.connectScale(
+                LoginWeightScaleSerialPort.connectPicoScaleDirectly(
                     context,
                     listener
                 )

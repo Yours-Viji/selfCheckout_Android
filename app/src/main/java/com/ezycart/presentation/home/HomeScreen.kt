@@ -276,6 +276,7 @@ fun HomeScreen(
     if (clearTransAction.value) {
         CancelConfirmationDialog(
             onConfirm = {
+                viewModel.clearCartDetails()
                 clearTransAction.value = false
                 onLogout()
             },
@@ -807,10 +808,17 @@ fun CameraPreview(
 
     LaunchedEffect(Unit) {
         val cameraProvider = ProcessCameraProvider.getInstance(context).get()
-        val preview = androidx.camera.core.Preview.Builder().build().also {
+        /*val preview = androidx.camera.core.Preview.Builder().build().also {
             it.setSurfaceProvider(previewView.surfaceProvider)
-        }
+        }*/
+        val preview = Preview.Builder()
+            .setTargetRotation(android.view.Surface.ROTATION_90) // Force 90 degrees
+            .build().also {
+                it.setSurfaceProvider(previewView.surfaceProvider)
+            }
 
+        // FIX 2: Do the same for VideoCapture so the saved file isn't sideways
+        videoCapture.targetRotation = android.view.Surface.ROTATION_90
         try {
             cameraProvider.unbindAll()
             val cameraInfoList = cameraProvider.availableCameraInfos
@@ -1438,9 +1446,9 @@ fun CartScreen(
                             // CameraPreview(modifier = Modifier.fillMaxSize())
                             CameraPreview(
                                 modifier = Modifier
-                                    .fillMaxSize()
+                                    .fillMaxSize(),
                                     // 1. Rotate 90 degrees clockwise
-                                    .graphicsLayer(rotationZ = 90f),
+                                   // .graphicsLayer(rotationZ = 90f),
                                 onRecordingStarted = { isRecording.value = true },
                                 onRecordingFinished = { uri ->
                                     isRecording.value = false

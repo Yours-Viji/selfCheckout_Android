@@ -70,7 +70,7 @@ fun UsbTerminalDialog(
 
         // Use the common listener we created in previous step
         val listener = LoginWeightScaleSerialPort.createCommonListener(viewModel)
-        LoginWeightScaleSerialPort.connectScale(context, listener)
+        LoginWeightScaleSerialPort.connectPicoScaleDirectly(context, listener)
     }
 
     // 2. AUTO-SCROLL: Keep the green text moving up as new data arrives
@@ -152,9 +152,11 @@ fun UsbTerminalDialog(
                         onClick = {
                             if (inputText.value.isNotBlank()) {
                                 // Send to hardware
+
                                 LoginWeightScaleSerialPort.sendMessageToWeightScale("${inputText.value}\r\n")
                                 // Log the sent command to the screen
                                 viewModel.logStatus("TX: ${inputText.value}")
+                                viewModel.sendMessageToLoadCell(inputText.value)
                                 inputText.value = ""
                             }
                         }

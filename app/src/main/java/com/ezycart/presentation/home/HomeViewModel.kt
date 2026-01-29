@@ -24,6 +24,7 @@ import com.ezycart.services.usb.WeightValidationManager
 import com.ezycart.services.usb.WeightValidationManager.ValidationResult
 import com.ezycart.services.usb.com.LedPattern
 import com.ezycart.services.usb.com.LoginWeightScaleSerialPort
+import com.ezycart.services.usb.com.PrinterManager
 import com.ezycart.services.usb.com.UsbLedManager
 import com.ezycart.services.usb.com.UsbSerialManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -47,7 +48,8 @@ class HomeViewModel @Inject constructor(
     private val getCartIdUseCase: GetCartIdUseCase,
     private val preferencesManager: PreferencesManager,
     private val loadingManager: LoadingManager,
-   // private val ledManager: UsbLedManager
+    // private val ledManager: UsbLedManager
+    private val printerManager: PrinterManager
 ) : ViewModel() {
     private val _stateFlow = MutableStateFlow(HomeState())
     val stateFlow: StateFlow<HomeState> = _stateFlow.asStateFlow()
@@ -102,9 +104,9 @@ class HomeViewModel @Inject constructor(
     private val _canMakePayment = MutableStateFlow<Boolean>(false)
     val canMakePayment: StateFlow<Boolean> = _canMakePayment.asStateFlow()
 
-    private var initialTotalWeight  : Double = 0.0
-    private var finalTotalWeight  : Double = 0.0
-    private var finalWeightOfLc1 : Double = 0.0
+    private var initialTotalWeight: Double = 0.0
+    private var finalTotalWeight: Double = 0.0
+    private var finalWeightOfLc1: Double = 0.0
 
     private val _errorMessage = MutableStateFlow("")
     val errorMessage: StateFlow<String> = _errorMessage.asStateFlow()
@@ -116,6 +118,7 @@ class HomeViewModel @Inject constructor(
     val loadCellValidationLog: StateFlow<String> = _loadCellValidationLog.asStateFlow()
 
     private val productWeightsMap = HashMap<String, MutableList<Double>>()
+
     sealed class PaymentStatusState {
         object Idle : PaymentStatusState()
         object Loading : PaymentStatusState()
@@ -135,24 +138,28 @@ class HomeViewModel @Inject constructor(
             _employeeName.update { preferencesManager.getEmployeeName() }
             _canShowPriceChecker.update { preferencesManager.canShowPriceChecker() }
         }
-       // observeUsbData()
+        // observeUsbData()
     }
-    fun clearLog(){
+
+    fun clearLog() {
         _loadCellValidationLog.value = ">>Loadcell Validation"
     }
-    fun setErrorMessage(data : String){
+
+    fun setErrorMessage(data: String) {
         _errorMessage.value = "New Data ==>>: $data"
     }
+
     private fun observeUsbData() {
         viewModelScope.launch {
             // This 'calls' the flow to start receiving data from the manager
             UsbSerialManager.serialData.collect { rawJson ->
                 _errorMessage.value = "Data: $rawJson"
                 // Parse and handle your business logic (Status 0, -1, 1, 10)
-               // handleLoadCellLogic(rawJson)
+                // handleLoadCellLogic(rawJson)
             }
         }
     }
+
     fun setPriceCheckerView(canShow: Boolean) {
         viewModelScope.launch {
             preferencesManager.setPriceCheckerStatus(canShow)
@@ -168,11 +175,13 @@ class HomeViewModel @Inject constructor(
     }
 
     fun initNewShopping() {
+        cartId = ""
         clearCartDetails()
         createNewShoppingCart()
     }
 
-    private fun clearCartDetails() {
+     fun clearCartDetails() {
+         cartId = ""
         isJwtTokenCreated = false
         _productInfo.value = null
         _priceDetails.value = null
@@ -264,7 +273,7 @@ class HomeViewModel @Inject constructor(
 
     fun addProductToShoppingCart(barCode: String, quantity: Int) {
         loadingManager.show()
-        resetProductInfoDetails()
+       // resetProductInfoDetails()
         viewModelScope.launch {
             _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
             when (val result = shoppingUseCase.addToCart(barCode, quantity)) {
@@ -272,7 +281,7 @@ class HomeViewModel @Inject constructor(
                     _stateFlow.value = _stateFlow.value.copy(
                         isLoading = false
                     )
-                    storeProductWeight(barCode,weightAtRemovalDeltaW2)
+                    storeProductWeight(barCode, weightAtRemovalDeltaW2)
                     weightAtRemovalDeltaW2 = 0.0
                     _cartDataList.value = result.data.cartItems
                     _cartCount.value = result.data.totalItems
@@ -289,6 +298,8 @@ class HomeViewModel @Inject constructor(
                     loadingManager.hide()
                 }
             }
+            _productInfo.value = null
+            resetProductInfoDetails()
         }
     }
 
@@ -359,7 +370,7 @@ class HomeViewModel @Inject constructor(
                         isLoading = false
                     )
                     _productInfo.value = result.data
-                   //addProductToShoppingCart(productInfo.value!!.barcode,1)
+                    //addProductToShoppingCart(productInfo.value!!.barcode,1)
                     getPriceDetails(barCode)
                 }
 
@@ -657,6 +668,7 @@ class HomeViewModel @Inject constructor(
     private fun getTapToPayPaymentRequest(): PaymentRequest {
         return PaymentRequest("HLB", "HLB@123456789")
     }
+
     fun storeProductWeight(barcode: String, weight: Double) {
         if (productWeightsMap.containsKey(barcode)) {
             // Barcode exists, add to existing list
@@ -673,9 +685,11 @@ class HomeViewModel @Inject constructor(
     fun getTotalWeightOfAllItems(): Double {
         return productWeightsMap.values.flatten().sum()
     }
+
     fun deleteWeightsByBarcode(barcode: String) {
         productWeightsMap.remove(barcode)
     }
+
     fun deleteOneWeightEntry(barcode: String) {
         val list = productWeightsMap[barcode]
         if (!list.isNullOrEmpty()) {
@@ -684,39 +698,39 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-   /* fun sendLedCommand(ledNumbers: List<Int>) {
-        try {
-            var bitmask = 0
+    /* fun sendLedCommand(ledNumbers: List<Int>) {
+         try {
+             var bitmask = 0
 
-            for (led in ledNumbers) {
-                if (led in 1..6) {
-                    // Subtract 1 because bit shifting is 0-indexed (0 to 5)
-                    bitmask = bitmask or (1 shl (led - 1))
-                }
-            }
+             for (led in ledNumbers) {
+                 if (led in 1..6) {
+                     // Subtract 1 because bit shifting is 0-indexed (0 to 5)
+                     bitmask = bitmask or (1 shl (led - 1))
+                 }
+             }
 
-            // Convert to 2-character Hex (e.g., 23 -> "17")
-            val hexValue = String.format("%02X", bitmask)
+             // Convert to 2-character Hex (e.g., 23 -> "17")
+             val hexValue = String.format("%02X", bitmask)
 
-            // Wrap in the protocol characters
-            val finalCommand = "@O$hexValue*"
+             // Wrap in the protocol characters
+             val finalCommand = "@O$hexValue*"
 
-            Log.d("USB_CMD", "Sending Message: $finalCommand")
+             Log.d("USB_CMD", "Sending Message: $finalCommand")
 
-            // Call your existing background sender
-            // sendCustomCommand(finalCommand)
-            LoginWeightScaleSerialPort.sendMessageToLED(finalCommand)
-        } catch (e: Exception) {
-        }
-    }*/
+             // Call your existing background sender
+             // sendCustomCommand(finalCommand)
+             LoginWeightScaleSerialPort.sendMessageToLED(finalCommand)
+         } catch (e: Exception) {
+         }
+     }*/
 
-     /*fun switchOnAllLed()= ledManager.sendLedCommand(listOf(1, 2, 3, 4, 5, 6))
-     fun switchOffAllLed()= ledManager.sendLedCommand(emptyList())
-    fun switchPaymentLed()= ledManager.sendLedCommand(listOf(1, 2, 3))
-     fun switchErrorLed()= ledManager.sendLedCommand(listOf(1, 2, 4))
-    fun switchStartShoppingLed()= ledManager.sendLedCommand(listOf(1, 2, 3, 5))*/
+    /*fun switchOnAllLed()= ledManager.sendLedCommand(listOf(1, 2, 3, 4, 5, 6))
+    fun switchOffAllLed()= ledManager.sendLedCommand(emptyList())
+   fun switchPaymentLed()= ledManager.sendLedCommand(listOf(1, 2, 3))
+    fun switchErrorLed()= ledManager.sendLedCommand(listOf(1, 2, 4))
+   fun switchStartShoppingLed()= ledManager.sendLedCommand(listOf(1, 2, 3, 5))*/
 
-    fun switchOnAllLed() = LoginWeightScaleSerialPort.sendLedCommand(LedPattern.ON_ALL)
+   /* fun switchOnAllLed() = LoginWeightScaleSerialPort.sendLedCommand(LedPattern.ON_ALL)
 
     fun switchOffAllLed() = LoginWeightScaleSerialPort.sendLedCommand(LedPattern.OFF)
 
@@ -724,65 +738,119 @@ class HomeViewModel @Inject constructor(
 
     fun switchErrorLed() = LoginWeightScaleSerialPort.sendLedCommand(LedPattern.ERROR)
 
-    fun switchStartShoppingLed() = LoginWeightScaleSerialPort.sendLedCommand(LedPattern.START_SHOPPING)
+    fun switchStartShoppingLed() =
+        LoginWeightScaleSerialPort.sendLedCommand(LedPattern.START_SHOPPING)*/
 
-    fun resetLoadCell(){
+    fun resetLoadCell() {
         sendMessageToLoadCell("2")
     }
-    fun requestTotalWeightFromLoadCell(){
+
+    fun requestTotalWeightFromLoadCell() {
         sendMessageToLoadCell("80")
     }
-   private fun sendMessageToLoadCell(message: String){
+
+    fun sendMessageToLoadCell(message: String) {
         LoginWeightScaleSerialPort.sendMessageToWeightScale("$message\r\n")
     }
+
     fun handleWeightUpdate(update: WeightUpdate) {
-        val message = "${update.status} - w1=${update.w1} - w2=${update.w2} - deltaw1=${update.delta_w1}-deltaw2=${update.delta_w2}"
+        val message =
+            "Status=${update.status} - w1=${update.w1} - w2=${update.w2} - deltaw1=${update.delta_w1}-deltaw2=${update.delta_w2}"
         _errorMessage.value = message
-            _loadCellValidationLog.value += "> $message\n"
+        _loadCellValidationLog.value += "> $message\n"
+        logStatus(message)
+
         viewModelScope.launch {
-           // _errorMessage.value = "Weight Data Old: $update"
             when (update.status) {
                 0 -> {
-                    switchOnAllLed()
-                /* Initial load - Save baseline w1 if needed */
+                    if (cartCount.value == 0) {
+                        initialTotalWeight = update.w1
+                        weightAtRemovalW1 = 0.0
+                        weightAtRemovalDeltaW2 = 0.0
+                        finalWeightOfLc1 = update.w1
+                    }
+                }
+                1->{
+                    finalWeightOfLc1 = update.w1
+                    finalTotalWeight = update.w2
+                }
+                2 -> {
+                    //addProductToShoppingCart("9556001601506", 1)
+                    val product = _productInfo.value
+                    //addProductToShoppingCart("9556001601506", 1)
+                    if (product != null && update.delta_w2 > 20.0) {
+                        addProductToShoppingCart(product.barcode, 1)
+                       // _productInfo.value = null
+                    } else {
+                        if (update.delta_w2 > 20.0) {
+                            // Added without scan
+                            _errorMessage.value = "Please scan and to add!"
+                        }
+                    }
+                }
+                10 -> {
+                    if (cartCount.value == 0) {
+                        // Updating before create cart // before start shopping  // New SOP
+                        initialTotalWeight = update.w1
+                        finalWeightOfLc1 = update.w1
+                    } else {
+                        finalTotalWeight = update.w2
+                        // checkPaymentWeightValidation()
+                    }
+                }
+
+            }
+        }
+        /*viewModelScope.launch {
+            // _errorMessage.value = "Weight Data Old: $update"
+            when (update.status) {
+                0 -> {
+                    // switchOnAllLed()
+                    *//* Initial load - Save baseline w1 if needed *//*
                     initialTotalWeight = update.w1
                     weightAtRemovalW1 = 0.0
-                    weightAtRemovalDeltaW2 =0.0
-                    finalWeightOfLc1 =update.w1
+                    weightAtRemovalDeltaW2 = 0.0
+                    finalWeightOfLc1 = update.w1
                 }
+
+
+
 
                 -1 -> {
                     // Customer picked up an item
                     finalTotalWeight = update.w2
                     weightAtRemovalW1 = Math.abs(update.delta_w1)
                     weightAtRemovalDeltaW2 = Math.abs(update.delta_w2)
-                    finalWeightOfLc1 =update.w1
+                    finalWeightOfLc1 = update.w1
                 }
 
-               /* 1 -> {
-                    if (cartId.isEmpty()){
+                1 -> {
+                    if (cartId.isEmpty()) {
                         // Updating before create cart // before start shopping  // New SOP
                         initialTotalWeight = update.w1
-                        finalWeightOfLc1 =update.w1
+                        finalWeightOfLc1 = update.w1
                     }
                     // Customer placed item in LC2
                     weightAtRemovalW1 = update.w1
-                    finalWeightOfLc1 =update.w1
-                  //  weightAtRemovalDeltaW2 =0.0
+                    finalWeightOfLc1 = update.w1
+                    //  weightAtRemovalDeltaW2 =0.0
                     val product = _productInfo.value
                     finalTotalWeight = update.w2
                     if (product != null && update.delta_w2 > 20.0) {
+                        //  addProductToShoppingCart(product.barcode, 1)
+                        // _productInfo.value = null
+                        weightAtRemovalW1 = 0.0
+                        //_errorMessage.value = "Scanned BarCode = ${product.barcode}"
                         addProductToShoppingCart(product.barcode, 1)
                         _productInfo.value = null
-                        weightAtRemovalW1 = 0.0
                         // Product add validation removed // New SOP
-                       *//* val result = validationManager.validateAddition(
-                            product = product,
-                            deltaW1 = weightAtRemovalW1,
-                            deltaW2 = update.delta_w2
-                        )
+                        *//* val result = validationManager.validateAddition(
+                             product = product,
+                             deltaW1 = weightAtRemovalW1,
+                             deltaW2 = update.delta_w2
+                         )*//*
 
-                        if (result is ValidationResult.Success) {
+                        *//*if (result is ValidationResult.Success) {
                             //addToCart(product)
 
                             weightAtRemovalDeltaW2 = update.delta_w2
@@ -796,52 +864,54 @@ class HomeViewModel @Inject constructor(
                             _errorMessage.value = (result as ValidationResult.Error).message
                             _loadCellValidationLog.value += "> ${errorMessage.value}\n"
                         }*//*
-                    }else{
-                        if (update.delta_w2 >15.0){
+                    } else {
+                        if (update.delta_w2 > 15.0) {
                             // Added without scan
                             _errorMessage.value = "Please scan and to add!"
                         }
                     }
-                }*/
-                2->{
-                    if (cartId.isEmpty()){
+                }
+                *//*2->{
+                    *//**//*if (cartId.isEmpty()){
                         // Updating before create cart // before start shopping  // New SOP
                         initialTotalWeight = update.w1
                         finalWeightOfLc1 =update.w1
                     }
                     // Customer placed item in LC2
                     weightAtRemovalW1 = update.w1
-                    finalWeightOfLc1 =update.w1
+                    finalWeightOfLc1 =update.w1*//**//*
                     //  weightAtRemovalDeltaW2 =0.0
                     val product = _productInfo.value
-                    finalTotalWeight = update.w2
-                    if (product != null && update.delta_w2 > 20.0) {
+                  //  finalTotalWeight = update.w2
+                    if (product != null && update.delta_w2 > 8.0) {
+                        _errorMessage.value = "Scanned BarCode = ${product.barcode}"
                         addProductToShoppingCart(product.barcode, 1)
                         _productInfo.value = null
-                        weightAtRemovalW1 = 0.0
+                       // weightAtRemovalW1 = 0.0
                     }else{
                         if (update.delta_w2 >15.0){
                             // Added without scan
                             _errorMessage.value = "Please scan and to add!"
                         }
                     }
-                }
-                10 ->{
-                    if (cartId.isEmpty()){
+                }*//*
+                10 -> {
+                    if (cartId.isEmpty()) {
                         // Updating before create cart // before start shopping  // New SOP
                         initialTotalWeight = update.w1
-                        finalWeightOfLc1 =update.w1
-                    }else{
+                        finalWeightOfLc1 = update.w1
+                    } else {
                         finalTotalWeight = update.w2
-                        checkPaymentWeightValidation()
+                        // checkPaymentWeightValidation()
                     }
                 }
             }
-        }
+        }*/
     }
-    fun checkPaymentWeightValidation(){
+
+    fun checkPaymentWeightValidation() {
         try {
-            val loadCellTotalWeight =  finalTotalWeight
+            val loadCellTotalWeight = finalTotalWeight
             val threshold = 50.0
             /* // Cart Validation removed  // New SOP
             val cartTotalWeight = getTotalWeightOfAllItems()
@@ -860,13 +930,14 @@ class HomeViewModel @Inject constructor(
             }*/
 
             val difference = abs(loadCellTotalWeight - initialTotalWeight)
-            _loadCellValidationLog.value= "W1 = ${initialTotalWeight} // w2 = $loadCellTotalWeight // Final W1 = $finalWeightOfLc1 // Difference =  $difference"
-            if (finalWeightOfLc1 <= 15.0 && difference <= threshold){
+            _loadCellValidationLog.value =
+                "W1 = ${initialTotalWeight} // w2 = $loadCellTotalWeight // Final W1 = $finalWeightOfLc1 // Difference =  $difference"
+            if (finalWeightOfLc1 <= 30.0 && difference <= threshold) {
                 _canMakePayment.value = true
                 println("Weight is stable and within range.")
                 _errorMessage.value = "Weight is stable and within range."
-            }else{
-                switchErrorLed()
+            } else {
+                //switchErrorLed()
                 _canMakePayment.value = false
                 _errorMessage.value = "Weight mismatch detected!"
                 // Weight difference is greater than 30g
@@ -876,6 +947,7 @@ class HomeViewModel @Inject constructor(
             TODO("Not yet implemented")
         }
     }
+
     fun handleProductRemoval() {
         val product = _productInfo.value
         val productToRemove = weightAtRemovalDeltaW2
@@ -905,6 +977,7 @@ class HomeViewModel @Inject constructor(
 
 
     }
+
     // Call this to add status messages like "Connecting..." or "Error"
     fun logStatus(status: String) {
         _terminalContent.value += "> $status\n"
@@ -913,6 +986,7 @@ class HomeViewModel @Inject constructor(
     fun clearLogs() {
         _terminalContent.value = ""
     }
+
     fun handleRawUsbData(jsonString: String) {
         try {
             val json = JSONObject(jsonString)
@@ -922,10 +996,21 @@ class HomeViewModel @Inject constructor(
             val w1 = json.optDouble("w1", 0.0)
             val w2 = json.optDouble("w2", 0.0)
             val id = json.optInt("loadcell_id")
+            _errorMessage.value = "Full JSON = $jsonString\n"
             _terminalContent.value += "$jsonString\n"
-            handleWeightUpdate(WeightUpdate(status = status, delta_w1 = deltaW1, delta_w2 = deltaW2, w1 = w1,w2=w2, loadcell_id = id))
-           /* when (status) {
-                0 -> { *//* Initial loading: Capture w1 baseline *//* }
+            _loadCellValidationLog.value  = "Full JSON = $jsonString\n"
+            handleWeightUpdate(
+                WeightUpdate(
+                    status = status,
+                    delta_w1 = deltaW1,
+                    delta_w2 = deltaW2,
+                    w1 = w1,
+                    w2 = w2,
+                    loadcell_id = id
+                )
+            )
+            /* when (status) {
+                 0 -> { *//* Initial loading: Capture w1 baseline *//* }
                 -1 -> {
                     // Removal from LC1: Item picked up
                    // lastRemovedWeight = Math.abs(deltaW1)
@@ -938,6 +1023,25 @@ class HomeViewModel @Inject constructor(
             }*/
         } catch (e: Exception) {
             Log.e("USB_PARSE", "Invalid JSON: $jsonString")
+        }
+    }
+
+    fun printReceipt() {
+        printerManager.connectPrinter()
+        printerManager.printTestReceipt("EZY CART\nSELF TEST SUCCESS\n")
+    }
+
+    fun printCheckoutReceipt() {
+        viewModelScope.launch {
+            try {
+                printerManager.connectPrinter()
+                printerManager.printTestReceipt("--- EZY CART ---\nItems: 5\nTotal: RM 50.00\n")
+
+                // You can even combine actions!
+                // ledManager.sendLedCommand(LedPattern.SUCCESS)
+            } catch (e: Exception) {
+                //  ledManager.sendLedCommand(LedPattern.ERROR)
+            }
         }
     }
 }

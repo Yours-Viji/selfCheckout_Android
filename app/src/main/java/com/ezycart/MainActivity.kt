@@ -13,9 +13,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -56,12 +58,14 @@ import javax.inject.Inject
 class MyApp : Application()
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity(){
+class MainActivity : ComponentActivity() {
     @Inject
     lateinit var loadingManager: LoadingManager
+
     @Inject
     lateinit var nearPayService: NearPayService
     private val homeViewModel: HomeViewModel by viewModels()
+
     //private lateinit var ledManager: UsbLedManager
     //@Inject lateinit var ledManager: UsbLedManager
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,13 +88,13 @@ class MainActivity : ComponentActivity(){
         WeightScaleManager.init(homeViewModel)
         WeightScaleManager.connect(this)
         //ledManager = UsbLedManager.getInstance(this)
-      //  ledManager.connectAndPrepare()
-       /* lifecycleScope.launch {
-            SensorSerialPortCommunication.sensorMessage.collect { data ->
-                Log.i("--->>","LOG RECEIVED: $data")
-                Toast.makeText(application,"-->>$data", Toast.LENGTH_SHORT).show()
-            }
-        }*/
+        //  ledManager.connectAndPrepare()
+        /* lifecycleScope.launch {
+             SensorSerialPortCommunication.sensorMessage.collect { data ->
+                 Log.i("--->>","LOG RECEIVED: $data")
+                 Toast.makeText(application,"-->>$data", Toast.LENGTH_SHORT).show()
+             }
+         }*/
         //enableEdgeToEdge()
         setContent {
 
@@ -105,11 +109,11 @@ class MainActivity : ComponentActivity(){
                     val isActivated = splashViewModel.isDeviceActivated.collectAsState()
                     splashViewModel.getDeviceId(this)
 
-                   /* BarcodeScannerListener(
-                        onBarcodeScanned = { code ->
-                            scannerViewModel.onScanned(code)
-                        }
-                    )*/
+                    /* BarcodeScannerListener(
+                         onBarcodeScanned = { code ->
+                             scannerViewModel.onScanned(code)
+                         }
+                     )*/
 
                     when (isActivated.value) {
                         null -> {
@@ -133,33 +137,42 @@ class MainActivity : ComponentActivity(){
                                     )
                                 }
                                 composable("landing") {
-                                    LandingScreen(goToHomeScreen={
+                                    val context = LocalContext.current
+                                    LaunchedEffect(Unit) {
+                                        try {
+                                            WeightScaleManager.initOnce(homeViewModel)
+                                            WeightScaleManager.connectSafe(context)
+
+                                        } catch (e: Exception) {
+                                        }
+                                    }
+                                    LandingScreen(goToHomeScreen = {
                                         try {
                                             homeViewModel.requestTotalWeightFromLoadCell()
-                                            homeViewModel.switchStartShoppingLed()
+                                            //homeViewModel.switchStartShoppingLed()
                                         } catch (e: Exception) {
                                         }
                                         navController.navigate("home") {
-                                                popUpTo("landing") { inclusive = true }
-                                            }
+                                            popUpTo("landing") { inclusive = true }
+                                        }
 
                                     })
-                                   /* LoginScreen(
+                                    /* LoginScreen(
 
-                                        onThemeChange = {
-                                            // 🔹 Handle theme change
-                                            //  Toast.makeText(this, "Theme change clicked", Toast.LENGTH_SHORT).show()
-                                        },
-                                        onLanguageChange = {
-                                            // 🔹 Handle language change
-                                            // Toast.makeText(this, "Language change clicked", Toast.LENGTH_SHORT).show()
-                                        },
-                                        onLoginSuccess = {
-                                            navController.navigate("home") {
-                                                popUpTo("login") { inclusive = true }
-                                            }
-                                        }
-                                    )*/
+                                         onThemeChange = {
+                                             // 🔹 Handle theme change
+                                             //  Toast.makeText(this, "Theme change clicked", Toast.LENGTH_SHORT).show()
+                                         },
+                                         onLanguageChange = {
+                                             // 🔹 Handle language change
+                                             // Toast.makeText(this, "Language change clicked", Toast.LENGTH_SHORT).show()
+                                         },
+                                         onLoginSuccess = {
+                                             navController.navigate("home") {
+                                                 popUpTo("login") { inclusive = true }
+                                             }
+                                         }
+                                     )*/
                                 }
                                 composable("home") {
                                     HomeScreen(
@@ -169,11 +182,11 @@ class MainActivity : ComponentActivity(){
                                             //  Toast.makeText(this, "Theme change clicked", Toast.LENGTH_SHORT).show()
                                         },
                                         onPaymentInitialize = {
-                                          //  nearPayService.initializeSdk(this@MainActivity)
-                                          //  nearPayService.paymentSdkSetUp()
+                                            //  nearPayService.initializeSdk(this@MainActivity)
+                                            //  nearPayService.paymentSdkSetUp()
                                         },
-                                        makeNearPayment={ reference, amount,nearPaymentListener->
-                                           // nearPayService.initTapOnPayTransaction(this@MainActivity,"1234","100","test@gmail.com","",listener = nearPaymentListener)
+                                        makeNearPayment = { reference, amount, nearPaymentListener ->
+                                            // nearPayService.initTapOnPayTransaction(this@MainActivity,"1234","100","test@gmail.com","",listener = nearPaymentListener)
                                         },
 
                                         onLogout = {
@@ -182,15 +195,17 @@ class MainActivity : ComponentActivity(){
                                             } catch (e: Exception) {
                                             }
                                             navController.navigate("landing") {
-                                                popUpTo("home") { inclusive = true } // remove home from back stack
+                                                popUpTo("home") {
+                                                    inclusive = true
+                                                } // remove home from back stack
                                             }
                                             lifecycleScope.launch {
                                                 splashViewModel.clearUserPreference()
                                             }
                                         },
-                                        goToPaymentScreen ={
+                                        goToPaymentScreen = {
                                             try {
-                                               homeViewModel.switchPaymentLed()
+                                                // homeViewModel.switchPaymentLed()
                                             } catch (e: Exception) {
                                             }
                                             /*navController.navigate("payment") {
@@ -205,8 +220,10 @@ class MainActivity : ComponentActivity(){
                                 }
                                 composable("payment") { backStackEntry ->
 
-                                    val count = homeViewModel.cartCount.collectAsStateWithLifecycle()
-                                    val shoppingCartInfo = homeViewModel.shoppingCartInfo.collectAsStateWithLifecycle()
+                                    val count =
+                                        homeViewModel.cartCount.collectAsStateWithLifecycle()
+                                    val shoppingCartInfo =
+                                        homeViewModel.shoppingCartInfo.collectAsStateWithLifecycle()
                                     BackHandler {
                                         navController.popBackStack()
                                     }
@@ -217,7 +234,8 @@ class MainActivity : ComponentActivity(){
                                     )
                                 }
                                 composable("webview/{url}") { backStackEntry ->
-                                    val encodedUrl = backStackEntry.arguments?.getString("url") ?: ""
+                                    val encodedUrl =
+                                        backStackEntry.arguments?.getString("url") ?: ""
                                     val url = URLDecoder.decode(encodedUrl, "UTF-8")
                                     WebViewScreen(
                                         url = url,
@@ -233,6 +251,7 @@ class MainActivity : ComponentActivity(){
             }
         }
     }
+
     fun NavController.navigateToWebView(url: String) {
         try {
             val encodedUrl = URLEncoder.encode(url, "UTF-8")
@@ -243,18 +262,19 @@ class MainActivity : ComponentActivity(){
             navigate("webview/error")
         }
     }
-   /* override fun onPaymentSuccess(transactionData: TransactionData) {
-        runOnUiThread {
-            nearPayResult(true, transactionData)
-        }
-    }
 
-    override fun onPaymentFailed(error: String) {
-        runOnUiThread {
-            // Handle payment failure
-            Toast.makeText(this, "Payment failed: $error", Toast.LENGTH_SHORT).show()
-        }
-    }*/
+    /* override fun onPaymentSuccess(transactionData: TransactionData) {
+         runOnUiThread {
+             nearPayResult(true, transactionData)
+         }
+     }
+
+     override fun onPaymentFailed(error: String) {
+         runOnUiThread {
+             // Handle payment failure
+             Toast.makeText(this, "Payment failed: $error", Toast.LENGTH_SHORT).show()
+         }
+     }*/
     fun nearPayResult(status: Boolean, transactionData: TransactionData) {
         CoroutineScope(Dispatchers.Main).launch {
             delay(3000)

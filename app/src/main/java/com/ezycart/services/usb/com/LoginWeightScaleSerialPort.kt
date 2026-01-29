@@ -35,7 +35,7 @@ object LoginWeightScaleSerialPort {
     //private var scannerSerialPort: UsbSerialPort? = null
     private var weightScaleConnectionCount = 0
 
-    private suspend fun doUsbManagerConnectionTask(): UsbSerialPort? {
+    /*private suspend fun doUsbManagerConnectionTask(): UsbSerialPort? {
         return GlobalScope.async(Dispatchers.IO) {
             try {
                 val usbDefaultProber = UsbSerialProber.getDefaultProber()
@@ -60,9 +60,9 @@ object LoginWeightScaleSerialPort {
                                     .contains("newland")
                             ) {
                                // scannerSerialPort = driver.ports[port]
-                            } else  if (device.vendorId == 0x04D8 && device.productId == 0x003A) {
+                            } *//*else  if (device.vendorId == 0x04D8 && device.productId == 0x003A) {
                                 ledSerialPort = driver.ports[port]
-                            } else {
+                            }*//* else {
                                 serialPort = driver.ports[port]
                             }
 
@@ -78,18 +78,18 @@ object LoginWeightScaleSerialPort {
             else return@async null
         }.await()!!
 
-    }
+    }*/
 
-    private suspend fun doWeightScaleConnectionTask(
+    /*private suspend fun doWeightScaleConnectionTask(
         context: Context,
         listener: SerialInputOutputManager.Listener
     ) {
         return GlobalScope.async(Dispatchers.IO) {
             initSerialPort(context, listener)
         }.await()
-    }
+    }*/
 
-    fun initWeightScaleSerialPort(context: Context, listener: SerialInputOutputManager.Listener) {
+  /*  fun initWeightScaleSerialPort(context: Context, listener: SerialInputOutputManager.Listener) {
         try {
             mUsbManager = context.getSystemService(Context.USB_SERVICE) as UsbManager
             // refreshDeviceList()
@@ -99,15 +99,15 @@ object LoginWeightScaleSerialPort {
                 } catch (e: Exception) {
                     // initHardwareIssue(context)
                 }
-                doWeightScaleConnectionTask(context, listener)
-                initLEDSerialPort(context, listener)
+               // doWeightScaleConnectionTask(context, listener)
+               // initLEDSerialPort(context, listener)
               //  initScannerPermission(context)
             }
         } catch (e: Exception) {
             Log.i("Weight-->>", "Init Error" + e.message)
         }
 
-    }
+    }*/
 
    /* private fun initScannerPermission(context: Context) {
         try {
@@ -139,7 +139,7 @@ object LoginWeightScaleSerialPort {
         }
     }
 
-    private fun initSerialPort(context: Context, listener: SerialInputOutputManager.Listener) {
+   /* private fun initSerialPort(context: Context, listener: SerialInputOutputManager.Listener) {
         try {
             if (serialPort == null) {
                 //initWeightScaleSerialPort(context, listener)
@@ -151,12 +151,12 @@ object LoginWeightScaleSerialPort {
                     val device = serialPort?.driver?.device
                     Log.i("3", "Step")
                     if (connection == null) {
-                        /*if (!mUsbManager!!.hasPermission(device)) {
+                        *//*if (!mUsbManager!!.hasPermission(device)) {
                         val mPermissionIntent: PendingIntent =
                             PendingIntent.getBroadcast(context, 0, Intent(ACTION_USB_PERMISSION), 0)
                         val filter = IntentFilter(ACTION_USB_PERMISSION)
                         mUsbManager?.requestPermission(device, mPermissionIntent)
-                    }*/
+                    }*//*
                         return
                     }
                     Log.i("4", "Step")
@@ -212,9 +212,9 @@ object LoginWeightScaleSerialPort {
             }
         } catch (e: Exception) {
         }
-    }
+    }*/
 
-    private fun initLEDSerialPort(context: Context, listener: SerialInputOutputManager.Listener) {
+  /*  private fun initLEDSerialPort(context: Context, listener: SerialInputOutputManager.Listener) {
         if (ledSerialPort == null) {
             //initWeightScaleSerialPort(context, listener)
         } else {
@@ -270,7 +270,7 @@ object LoginWeightScaleSerialPort {
                 Log.e(TAG, "Error init LED SerialPort --2" + e.message)
             }
         }
-    }
+    }*/
 
      fun stopIoManager() {
         try {
@@ -286,25 +286,34 @@ object LoginWeightScaleSerialPort {
     private fun startIoManager(listener: SerialInputOutputManager.Listener) {
         if (serialPort != null) {
             try {
-                // stopIoManager()
+                // 1. ALWAYS stop and nullify the old manager first
+                mSerialIoManager?.stop()
+                mSerialIoManager = null
+
+                // 2. Initialize the new manager
                 mSerialIoManager = SerialInputOutputManager(serialPort, listener)
 
-                try {
-                    mSerialIoManager!!.readBufferSize = serialPort!!.readEndpoint.maxPacketSize
-                } catch (e: Exception) {
-                }
-                mSerialIoManager!!.readTimeout = 1000
-                //mSerialIoManager.
+                // 3. Buffer and Timeout adjustments
+                // Instead of maxPacketSize, use a standard 16KB buffer for stability
+                mSerialIoManager!!.readBufferSize = 16384
+
+                // A shorter timeout (e.g., 100ms) is better for high-speed microcontrollers like Pico
+                mSerialIoManager!!.readTimeout = 100
+
+                // 4. Set Thread Priority
+                // This ensures the background listener doesn't get killed by the UI thread
+                mSerialIoManager!!.setThreadPriority(Thread.MAX_PRIORITY)
+
                 mSerialIoManager!!.start()
-                // sendMessageToWeightScale("1\r\n")
-                Log.e(TAG, "Weight Scale IoManager-->> Started")
+
+                Log.d(TAG, "Weight Scale IoManager started on Port: ${serialPort!!.portNumber}")
             } catch (e: Exception) {
-                Log.e(TAG, "Weight Scale startIoManager-->>" + e.message)
+                Log.e(TAG, "Weight Scale startIoManager Error: ${e.message}")
             }
         }
     }
 
-    fun startLedIoManager(listener: SerialInputOutputManager.Listener) {
+   /* fun startLedIoManager(listener: SerialInputOutputManager.Listener) {
         if (ledSerialPort != null) {
             try {
                 //  stopLEDIoManager()
@@ -332,7 +341,7 @@ object LoginWeightScaleSerialPort {
         } catch (e: Exception) {
             //showToast("stopIoManager" + e.message)
         }
-    }
+    }*/
 
     fun sendMessageToWeightScale(message: String) {
         try {
@@ -341,7 +350,7 @@ object LoginWeightScaleSerialPort {
         }
 
     }
-    fun sendLedCommand(pattern: LedPattern) {
+    /*fun sendLedCommand(pattern: LedPattern) {
         try {
             if (ledSerialPort == null || mSerialIoManager == null) {
                 Log.e("USB_LED", "Connection not ready. Cannot send ${pattern.name}")
@@ -357,7 +366,7 @@ object LoginWeightScaleSerialPort {
         } catch (e: Exception) {
             Log.e("USB_LED", "Error sending LED command: ${e.message}")
         }
-    }
+    }*/
 
    /* fun sendMessageToLED(message: String) {
         try {
@@ -400,7 +409,69 @@ object LoginWeightScaleSerialPort {
             }
         }
     }
+    fun connectPicoScaleDirectly(context: Context, listener: SerialInputOutputManager.Listener) {
+        // 1. Clean up any existing connection
+        stopIoManager()
 
+        mUsbManager = context.getSystemService(Context.USB_SERVICE) as UsbManager
+
+        // Hardware identifiers for your Raspberry Pi Pico
+        val PICO_VID = 11914 // 0x2E8A in decimal
+        val PICO_PID = 10    // 0x000A in decimal
+
+        // 2. Find the Pico specifically in the device list
+        val device = mUsbManager?.deviceList?.values?.find {
+            it.vendorId == PICO_VID && it.productId == PICO_PID
+        }
+
+        if (device == null) {
+            Log.e("USB_SCALE", "Raspberry Pi Pico not found on USB Hub!")
+            return
+        }
+
+        // 3. Probing the device
+        // Since it's a Pico, the default prober usually identifies it as CDC/ACM
+        val driver = UsbSerialProber.getDefaultProber().probeDevice(device)
+            ?: CustomSerialProber.getCustomSerialProber()!!.probeDevice(device)
+
+        if (driver == null) {
+            Log.e("USB_SCALE", "No serial driver found for Pico")
+            return
+        }
+
+        // 4. Request Permission if not already granted
+        if (!mUsbManager!!.hasPermission(device)) {
+            Log.d("USB_SCALE", "Requesting permission for Pico...")
+            val flags = PendingIntent.FLAG_MUTABLE
+            val intent = Intent("com.android.example.USB_PERMISSION").setPackage(context.packageName)
+            val permissionIntent = PendingIntent.getBroadcast(context, 0, intent, flags)
+            mUsbManager?.requestPermission(device, permissionIntent)
+            return
+        }
+
+        // 5. Open the specific Port
+        try {
+            val connection = mUsbManager?.openDevice(device)
+
+            // Raspberry Pi Pico usually uses the first available port (index 0)
+            serialPort = driver.ports[0]
+            serialPort!!.open(connection)
+
+            // Standard Pico/LoadCell settings: 115200 Baud, 8 Data bits, 1 Stop bit, No Parity
+            serialPort!!.setParameters(115200, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE)
+
+            // DTR and RTS are often required for Pico to start sending serial data
+            serialPort!!.dtr = true
+            serialPort!!.rts = true
+
+            // 6. Start the IO Manager to listen for weight data
+            startIoManager(listener)
+            Log.d("USB_SCALE", "Connected directly to Raspberry Pi Pico (Load Cell)")
+
+        } catch (e: Exception) {
+            Log.e("USB_SCALE", "Failed to open Pico connection: ${e.message}")
+        }
+    }
     // 2. The Connection Method (The "Dumbbell" Logic)
     fun connectScale(context: Context, listener: SerialInputOutputManager.Listener) {
         // Disconnect existing if any to avoid port busy errors
@@ -439,23 +510,7 @@ object LoginWeightScaleSerialPort {
                         .contains("newland")
                 ) {
                     // scannerSerialPort = driver.ports[port]
-                }else  if (driver.device.vendorId == 0x04D8 && driver.device.productId == 0x003A) {
-                    ledSerialPort = driver.ports[port]
-                    try {
-                        val connection = mUsbManager?.openDevice(driver.device)
-                        ledSerialPort = driver.ports[port]
-                        ledSerialPort!!.open(connection)
-
-                        ledSerialPort!!.setParameters(115200, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE)
-                        ledSerialPort!!.dtr = true
-                        ledSerialPort!!.rts = true
-                        ledSerialIoManager = SerialInputOutputManager(ledSerialPort, listener)
-                        ledSerialIoManager?.start()
-                        ledSerialIoManager = SerialInputOutputManager(ledSerialPort, listener)
-                        ledSerialIoManager?.start()
-                    } catch (e: Exception) {
-                    }
-                } else {
+                }else {
 
                     try {
                         val connection = mUsbManager?.openDevice(driver.device)
@@ -467,8 +522,9 @@ object LoginWeightScaleSerialPort {
                         serialPort!!.rts = true
                         mSerialIoManager = SerialInputOutputManager(serialPort, listener)
                         mSerialIoManager?.start()
-                        mSerialIoManager = SerialInputOutputManager(serialPort, listener)
-                        mSerialIoManager?.start()
+                        startIoManager(listener)
+                       /* mSerialIoManager = SerialInputOutputManager(serialPort, listener)
+                        mSerialIoManager?.start()*/
                     } catch (e: Exception) {
                     }
                 }
