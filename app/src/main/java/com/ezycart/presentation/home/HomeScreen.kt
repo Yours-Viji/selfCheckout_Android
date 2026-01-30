@@ -249,15 +249,26 @@ fun HomeScreen(
     var canShowProductMismatchDialog = viewModel.canShowProductMismatchDialog.collectAsState()
     var canShowProductNotFoundDialog = viewModel.canShowProductNotFoundDialog.collectAsState()
     var canShowValidationErrorDialog = viewModel.canShowValidationErrorDialog.collectAsState()
+    var resetAndGoBack = viewModel.resetAndGoBack.collectAsState()
+    var clearSystemAlert = viewModel.clearSystemAlert.collectAsState()
     /* val commonListener = remember {
          LoginWeightScaleSerialPort.createCommonListener(viewModel)
      }*/
     val loadCellValidationLog = viewModel.loadCellValidationLog.collectAsState()
 
     LockScreenOrientation(context, ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
-
+if (resetAndGoBack.value){
+    currentSystemAlert.value = null
+    viewModel.resetProductInfoDetails()
+    viewModel.resetLoadCell()
+    viewModel.clearCartDetails()
+    onLogout()
+}
+    if (clearSystemAlert.value){
+        currentSystemAlert.value = null
+    }
     if(canShowProductNotFoundDialog.value) {
-
+        currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
             title = "Product Not Found",
             message = "Please try again or Call for Help.",
@@ -267,7 +278,7 @@ fun HomeScreen(
         )
     }
     if (canShowProductNotScannedDialog.value){
-
+        currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
             title = "Product Not Scanned",
             message = "Please remove and scan the product.",
@@ -277,7 +288,7 @@ fun HomeScreen(
         )
     }
     if (canShowProductMismatchDialog.value){
-
+        currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
             title = "Product Mismatch",
             message = "Please remove, scan and add the correct product.",
@@ -287,7 +298,7 @@ fun HomeScreen(
         )
     }
     if(canShowValidationErrorDialog.value) {
-
+        currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
             title = "Validation Error",
             message = "Please Call for Help.",
@@ -401,6 +412,7 @@ fun HomeScreen(
                 viewModel.hidePaymentSuccessAlertView()
             }
         )*/
+        currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
             title = "Payment Success",
             message = "Please collect your receipt.\nThank you for your purchase!",
@@ -423,7 +435,7 @@ fun HomeScreen(
                 viewModel.hidePaymentErrorAlertView()
             }
         )*/
-
+        currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
             title = "Payment was not successful",
             message = "Please try again or choose another payment method",
@@ -477,6 +489,7 @@ fun HomeScreen(
                 viewModel.hidePaymentView()
                         },
             onHelpClicked = {
+                currentSystemAlert.value = null
                 currentSystemAlert.value = AlertState(
                     title = "Help is on the way",
                     message = "Please wait for our Staff to assist you.",
@@ -567,6 +580,7 @@ fun HomeScreen(
             BitesHeaderNew(
                 viewModel, cartCount = cartCount.value, onHelpClick = {
                    // showTerminal.value = true
+                    currentSystemAlert.value = null
                     currentSystemAlert.value = AlertState(
                         title = "Help is on the way",
                         message = "Please wait for our Staff to assist you.",

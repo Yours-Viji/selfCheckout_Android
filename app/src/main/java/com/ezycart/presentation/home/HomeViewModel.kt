@@ -143,6 +143,12 @@ class HomeViewModel @Inject constructor(
     private val _canShowProductMismatchDialog = MutableStateFlow<Boolean>(false)
     val canShowProductMismatchDialog: StateFlow<Boolean> = _canShowProductMismatchDialog.asStateFlow()
 
+    private val _resetAndGoBack = MutableStateFlow<Boolean>(false)
+    val resetAndGoBack: StateFlow<Boolean> = _resetAndGoBack.asStateFlow()
+
+    private val _clearSystemAlert = MutableStateFlow<Boolean>(false)
+    val clearSystemAlert: StateFlow<Boolean> = _clearSystemAlert.asStateFlow()
+
     init {
         viewModelScope.launch {
             val savedAppMode = preferencesManager.getAppMode()
@@ -154,6 +160,7 @@ class HomeViewModel @Inject constructor(
         // observeUsbData()
     }
     fun clearSystemAlert(){
+        _clearSystemAlert.value = true
         _canShowValidationErrorDialog.value = false
         _canShowProductNotFoundDialog.value = false
         _canShowProductNotScannedDialog.value = false
@@ -834,8 +841,19 @@ class HomeViewModel @Inject constructor(
                         }
                     }
                 }*/
-                -2->{
-                    resetProductInfoDetails()
+               -1, -2->{
+                   if (update.delta_w2 <=50 && canShowProductNotScannedDialog.value){
+                       LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
+                       clearSystemAlert()
+                   }
+                   if (update.w2 <=50 && canShowPaymentSuccessDialog.value){
+                       clearSystemAlert()
+                       _canShowPaymentSuccessDialog.value = false
+                       _resetAndGoBack.value = true
+                       LedSerialConnection.setScenario(AppScenario.PRINTING)
+                       //LedSerialConnection.setScenario(AppScenario.ALL_OFF)
+                   }
+
                    /* if (canShowProductNotScannedDialog.value){
                         _canShowProductNotScannedDialog.value = false
                     }*/
