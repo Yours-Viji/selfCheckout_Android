@@ -936,7 +936,6 @@ class HomeViewModel @Inject constructor(
             if (finalWeightOfLc1 <= 30.0 && difference <= threshold) {
                 _canMakePayment.value = true
                 _canShowValidationErrorDialog.value = false
-                    println("Weight is stable and within range.")
                // _errorMessage.value = "Weight is stable and within range."
             } else {
                 //switchErrorLed()
@@ -944,7 +943,6 @@ class HomeViewModel @Inject constructor(
                 _canShowValidationErrorDialog.value = true
                // _errorMessage.value = "Weight mismatch detected!"
                 // Weight difference is greater than 30g
-                println("Weight mismatch detected!")
                 LedSerialConnection.setScenario(AppScenario.ERROR)
             }
         } catch (e: Exception) {

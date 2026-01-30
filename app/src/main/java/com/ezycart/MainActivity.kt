@@ -191,7 +191,7 @@ class MainActivity : ComponentActivity() {
                                         onLogout = {
                                             try {
                                                 homeViewModel.resetLoadCell()
-                                                LedSerialConnection.setScenario(AppScenario.ALL_OFF)
+                                               LedSerialConnection.setScenario(AppScenario.ALL_OFF)
                                             } catch (e: Exception) {
                                             }
                                             navController.navigate("landing") {
@@ -205,7 +205,7 @@ class MainActivity : ComponentActivity() {
                                         },
                                         goToPaymentScreen = {
                                             try {
-                                                LedSerialConnection.setScenario(AppScenario.PAYMENT_SUCCESS)
+                                               // LedSerialConnection.setScenario(AppScenario.PAYMENT_SUCCESS)
                                             } catch (e: Exception) {
                                             }
                                             /*navController.navigate("payment") {
