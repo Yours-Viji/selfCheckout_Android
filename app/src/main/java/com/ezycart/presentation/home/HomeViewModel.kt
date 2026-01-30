@@ -399,7 +399,7 @@ class HomeViewModel @Inject constructor(
 
                     val maxWeight = productInfo.value?.weightRange?.maxWeight?.toInt() ?: 0
                    val canValidate = productInfo.value?.validateWG == true
-                    if (canValidate && maxWeight > 25) {
+                    if (canValidate && maxWeight < 25) {
                         addProductToShoppingCart(productInfo.value?.barcode.orEmpty(), 1)
                         _productInfo.value = null
                     } else {

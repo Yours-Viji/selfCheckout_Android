@@ -179,6 +179,8 @@ import com.ezycart.presentation.common.data.Constants
 import com.ezycart.presentation.landing.BitesHeader
 import com.ezycart.presentation.payment.BitesPaymentDialog
 import com.ezycart.services.usb.SensorSerialPortCommunication
+import com.ezycart.services.usb.com.AppScenario
+import com.ezycart.services.usb.com.LedSerialConnection
 
 import com.ezycart.services.usb.com.LoginWeightScaleSerialPort
 import com.ezycart.services.usb.com.WeightScaleManager
@@ -406,6 +408,7 @@ fun HomeScreen(
             type = AlertType.SUCCESS,
             isDismissible = false
         )
+        LedSerialConnection.setScenario(AppScenario.PAYMENT_SUCCESS)
     }
     if (showPaymentErrorDialog.value) {
        /* PaymentFailureAlert(
@@ -420,6 +423,7 @@ fun HomeScreen(
                 viewModel.hidePaymentErrorAlertView()
             }
         )*/
+
         currentSystemAlert.value = AlertState(
             title = "Payment was not successful",
             message = "Please try again or choose another payment method",
@@ -427,6 +431,7 @@ fun HomeScreen(
             type = AlertType.ERROR,
             isDismissible = false
         )
+        LedSerialConnection.setScenario(AppScenario.ERROR)
     }
     if (showDialog.value) {
         var lastClickTime = 0L
@@ -680,7 +685,7 @@ fun BitesHeaderNew(
     val showManualBarCode = remember { mutableStateOf(false) }
     val scannedCode = remember { mutableStateOf<String?>(null) }
     if (showManualBarCode.value) {
-        /*ManualBarcodeEntryDialog(
+        ManualBarcodeEntryDialog(
             onProceed = { barcode ->
                 viewModel.resetProductInfoDetails()
                 viewModel.getProductDetails(barcode)
@@ -694,8 +699,8 @@ fun BitesHeaderNew(
             onDismiss = {
                 showManualBarCode.value = false
             }
-        )*/
-        BarcodeScannerDialog(
+        )
+       /* BarcodeScannerDialog(
             onDismiss = { showManualBarCode.value = false },
             onBarcodeScanned = {
                 scannedCode.value = it
@@ -703,7 +708,7 @@ fun BitesHeaderNew(
                 viewModel.getProductDetails(scannedCode.value.toString())
                 showManualBarCode.value = false
             }
-        )
+        )*/
     }
     Column(
         modifier = Modifier
