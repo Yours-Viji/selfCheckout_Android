@@ -1,7 +1,9 @@
 package com.ezycart.presentation.home
 
+import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ezycart.data.datastore.PreferencesManager
@@ -23,9 +25,9 @@ import com.ezycart.presentation.common.data.Constants
 import com.ezycart.services.usb.WeightValidationManager
 import com.ezycart.services.usb.WeightValidationManager.ValidationResult
 import com.ezycart.services.usb.com.AppScenario
+import com.ezycart.services.usb.com.BixolonUsbPrinter
 import com.ezycart.services.usb.com.LedSerialConnection
 import com.ezycart.services.usb.com.LoginWeightScaleSerialPort
-import com.ezycart.services.usb.com.PrinterManager
 import com.ezycart.services.usb.com.UsbSerialManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -38,6 +40,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import java.io.File
+import java.net.URL
 import javax.inject.Inject
 import kotlin.math.abs
 
@@ -49,7 +53,6 @@ class HomeViewModel @Inject constructor(
     private val preferencesManager: PreferencesManager,
     private val loadingManager: LoadingManager,
     // private val ledManager: UsbLedManager
-    private val printerManager: PrinterManager
 ) : ViewModel() {
     private val _stateFlow = MutableStateFlow(HomeState())
     val stateFlow: StateFlow<HomeState> = _stateFlow.asStateFlow()
@@ -1097,22 +1100,39 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun printReceipt() {
-        printerManager.connectPrinter()
-        printerManager.printTestReceipt("EZY CART\nSELF TEST SUCCESS\n")
+
+    private suspend fun downloadPdf(pdfUrl: String,context : Context): File? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val destinationFile = File(context.cacheDir, "temp_receipt.pdf")
+                URL(pdfUrl).openStream().use { input ->
+                    destinationFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                destinationFile
+            } catch (e: Exception) {
+                null
+            }
+        }
     }
 
-    fun printCheckoutReceipt() {
-        viewModelScope.launch {
-            try {
-                printerManager.connectPrinter()
-                printerManager.printTestReceipt("--- EZY CART ---\nItems: 5\nTotal: RM 50.00\n")
+    fun onPaymentSuccess(pdfUrl: String,context : Context) {
+        viewModelScope.launch(Dispatchers.Main) {
 
-                // You can even combine actions!
-                // ledManager.sendLedCommand(LedPattern.SUCCESS)
-            } catch (e: Exception) {
-                //  ledManager.sendLedCommand(LedPattern.ERROR)
+            val pdfFile = downloadPdf(pdfUrl,context)
+
+            if (pdfFile != null) {
+                // 3. Print in background
+                withContext(Dispatchers.IO) {
+                    val printer = BixolonUsbPrinter(context)
+                    printer.printReceiptPdf("BK3-3", pdfFile)
+                }
+            } else {
+                _errorMessage.value = "Could not download receipt"
+               // showError("Could not download receipt")
             }
+
         }
     }
 }

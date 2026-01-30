@@ -42,5 +42,5 @@
 
     <!-- - - - custom prober - - - -->
     <!-- add IDs here -->
-
+    <usb-device class="7" protocol="2" subclass="1" />
 </resources>

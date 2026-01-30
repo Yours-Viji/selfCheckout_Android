@@ -3,7 +3,6 @@ package com.ezycart.di
 import android.content.Context
 import com.ezycart.data.datastore.PreferencesManager
 import com.ezycart.services.usb.UsbListener
-import com.ezycart.services.usb.com.PrinterManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,10 +23,4 @@ object UsbModule {
         return UsbListener(context, preferencesManager)
     }
 
-
-    @Provides
-    @Singleton
-    fun providePrinterManager(@ApplicationContext context: Context): PrinterManager {
-        return PrinterManager(context)
-    }
 }
