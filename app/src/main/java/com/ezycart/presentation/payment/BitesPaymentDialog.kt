@@ -58,7 +58,10 @@ fun BitesPaymentDialog(
     homeViewModel: HomeViewModel,
     viewModel: PaymentViewModel = viewModel(),
     onDismiss: () -> Unit,
-    onHelpClicked: () -> Unit
+    onHelpClicked: () -> Unit,
+    onCardPaymentClicked: () -> Unit,
+    onWalletPaymentClicked: () -> Unit,
+    onGrabPaymentClicked: () -> Unit
 ) {
     val shoppingCartInfo = homeViewModel.shoppingCartInfo.collectAsState()
     val formattedAmount = String.format("%.2f", shoppingCartInfo?.value?.finalAmount ?: 0.0)
@@ -125,20 +128,32 @@ fun BitesPaymentDialog(
                                 title = "VISA / MASTERCARD / AMEX",
                                 iconRes = R.drawable.ic_pay_1, // Add your icons
                                 modifier = Modifier.weight(1f)
-                            ) { viewModel.onPaymentMethodSelected("CARD") }
+                            ) {
+                                onCardPaymentClicked()
+                                viewModel.onPaymentMethodSelected("CARD")
+                                onDismiss
+                            }
 
                             PaymentOptionCard(
                                 title = "TNG / MAYBANK / ALIPAY",
                                 iconRes = R.drawable.ic_pay_2,
                                 modifier = Modifier.weight(1f)
-                            ) { viewModel.onPaymentMethodSelected("E-WALLET") }
+                            ) {
+                                onWalletPaymentClicked()
+                                viewModel.onPaymentMethodSelected("E-WALLET")
+                                onDismiss
+                            }
                         }
 
                         PaymentOptionCard(
                             title = "GRABPAY / PAYLATER",
                             iconRes = R.drawable.ic_pay_3,
                             modifier = Modifier.fillMaxWidth(0.7f).align(Alignment.CenterHorizontally)
-                        ) { viewModel.onPaymentMethodSelected("GRAB") }
+                        ) {
+                            onGrabPaymentClicked()
+                            viewModel.onPaymentMethodSelected("GRAB")
+                            onDismiss
+                        }
                     }
 
                     // 3. Bottom Navigation Buttons

@@ -46,7 +46,18 @@ class WeightValidationManager {
             }
         }
     }
+    fun productValidation(product: ProductInfo, deltaW2: Double ): ValidationResult{
+        val addedWeight = Math.abs(deltaW2)
 
+        val minAllowed = (product.weightRange.startWeight ?: 0) - THRESHOLD
+        val maxAllowed = (product.weightRange.maxWeight ?: 0) + THRESHOLD
+
+        if (addedWeight in minAllowed.toDouble()..maxAllowed.toDouble()) {
+            return   ValidationResult.Success
+        } else {
+            return   ValidationResult.Error("Product weight mismatch. Expected ~${product.weightRange.startWeight}g, got ${addedWeight.toInt()}g")
+        }
+    }
     /**
      * Logic for Deleting Products
      */

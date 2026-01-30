@@ -139,6 +139,10 @@ class HomeViewModel @Inject constructor(
 
     private val _canShowValidationErrorDialog = MutableStateFlow<Boolean>(false)
     val canShowValidationErrorDialog: StateFlow<Boolean> = _canShowValidationErrorDialog.asStateFlow()
+
+    private val _canShowProductMismatchDialog = MutableStateFlow<Boolean>(false)
+    val canShowProductMismatchDialog: StateFlow<Boolean> = _canShowProductMismatchDialog.asStateFlow()
+
     init {
         viewModelScope.launch {
             val savedAppMode = preferencesManager.getAppMode()
@@ -155,6 +159,7 @@ class HomeViewModel @Inject constructor(
         _canShowProductNotScannedDialog.value = false
         _canShowPaymentErrorDialog.value = false
         _canShowPaymentSuccessDialog.value = false
+        _canShowProductMismatchDialog.value = false
     }
     fun clearLog() {
         _loadCellValidationLog.value = ">>Loadcell Validation"
@@ -165,6 +170,9 @@ class HomeViewModel @Inject constructor(
     }
     fun hidePaymentView() {
         _canMakePayment.value = false
+    }
+    fun showPaymentView() {
+        _canMakePayment.value = true
     }
     private fun observeUsbData() {
         viewModelScope.launch {
@@ -388,8 +396,18 @@ class HomeViewModel @Inject constructor(
                         isLoading = false
                     )
                     _productInfo.value = result.data
+
+                    val maxWeight = productInfo.value?.weightRange?.maxWeight?.toInt() ?: 0
+                   val canValidate = productInfo.value?.validateWG == true
+                    if (canValidate && maxWeight > 25) {
+                        addProductToShoppingCart(productInfo.value?.barcode.orEmpty(), 1)
+                        _productInfo.value = null
+                    } else {
+                        getPriceDetails(barCode)
+                    }
+
                     //addProductToShoppingCart(productInfo.value!!.barcode,1)
-                    getPriceDetails(barCode)
+
                 }
 
                 is NetworkResponse.Error -> {
@@ -666,6 +684,10 @@ class HomeViewModel @Inject constructor(
 
     }
 
+    fun showPaymentSuccessAlertView() {
+        _canShowPaymentSuccessDialog.value = true
+    }
+
     fun hidePaymentSuccessAlertView() {
         _canShowPaymentSuccessDialog.value = false
 // Send receipt
@@ -767,8 +789,36 @@ class HomeViewModel @Inject constructor(
                 1->{
                     finalWeightOfLc1 = update.w1
                     finalTotalWeight = update.w2
+
+                    val product = _productInfo.value
+                    //addProductToShoppingCart("9556001601506", 1)
+                    if (product != null && update.delta_w2 > 20.0) {
+                        val result = validationManager.productValidation(
+                            product = product,
+                            deltaW2 = update.delta_w2
+                        )
+                        if(product.validateWG){
+                            if (result is ValidationResult.Success){
+                                addProductToShoppingCart(product.barcode, 1)
+                            }else{
+                                _canShowProductMismatchDialog.value = true
+                                // Mismatch
+                            }
+                        }else{
+                            addProductToShoppingCart(product.barcode, 1)
+                        }
+
+                        // _productInfo.value = null
+                    } else {
+                        if (update.delta_w2 > 20.0) {
+                            // Added without scan
+                            _canShowProductNotScannedDialog.value = true
+                            //_errorMessage.value = "Please scan and to add!"
+                            LedSerialConnection.setScenario(AppScenario.ERROR)
+                        }
+                    }
                 }
-                2 -> {
+                /*2 -> {
                     //addProductToShoppingCart("9556001601506", 1)
                     val product = _productInfo.value
                     //addProductToShoppingCart("9556001601506", 1)
@@ -783,11 +833,12 @@ class HomeViewModel @Inject constructor(
                             LedSerialConnection.setScenario(AppScenario.ERROR)
                         }
                     }
-                }
+                }*/
                 -2->{
-                    if (canShowProductNotScannedDialog.value){
+                    resetProductInfoDetails()
+                   /* if (canShowProductNotScannedDialog.value){
                         _canShowProductNotScannedDialog.value = false
-                    }
+                    }*/
                 }
                 10 -> {
                     if (cartCount.value == 0) {

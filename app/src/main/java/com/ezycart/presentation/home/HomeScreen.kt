@@ -244,6 +244,7 @@ fun HomeScreen(
     val context = LocalContext.current
     var currentSystemAlert = remember { mutableStateOf<AlertState?>(null)}
     var canShowProductNotScannedDialog = viewModel.canShowProductNotScannedDialog.collectAsState()
+    var canShowProductMismatchDialog = viewModel.canShowProductMismatchDialog.collectAsState()
     var canShowProductNotFoundDialog = viewModel.canShowProductNotFoundDialog.collectAsState()
     var canShowValidationErrorDialog = viewModel.canShowValidationErrorDialog.collectAsState()
     /* val commonListener = remember {
@@ -270,6 +271,16 @@ fun HomeScreen(
             message = "Please remove and scan the product.",
             lottieFileName = "anim_wrong.json",
             type = AlertType.WARNING,
+            isDismissible = false
+        )
+    }
+    if (canShowProductMismatchDialog.value){
+
+        currentSystemAlert.value = AlertState(
+            title = "Product Mismatch",
+            message = "Please remove, scan and add the correct product.",
+            lottieFileName = "anim_wrong.json",
+            type = AlertType.ERROR,
             isDismissible = false
         )
     }
@@ -391,7 +402,7 @@ fun HomeScreen(
         currentSystemAlert.value = AlertState(
             title = "Payment Success",
             message = "Please collect your receipt.\nThank you for your purchase!",
-            lottieFileName = "anim_success_cart.json",
+            lottieFileName = "anim_success_3.json",
             type = AlertType.SUCCESS,
             isDismissible = false
         )
@@ -468,7 +479,11 @@ fun HomeScreen(
                     type = AlertType.INFO,
                     isDismissible = true
                 )
-            }
+            },
+            onCardPaymentClicked = {viewModel.showPaymentSuccessAlertView()},
+            onWalletPaymentClicked = {viewModel.showPaymentSuccessAlertView()},
+            onGrabPaymentClicked = {viewModel.showPaymentSuccessAlertView()}
+
         )
     }
     Box(
