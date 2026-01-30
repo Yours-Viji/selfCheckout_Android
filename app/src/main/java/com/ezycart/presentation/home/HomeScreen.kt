@@ -170,7 +170,6 @@ import com.ezycart.data.remote.dto.ShoppingCartDetails
 import com.ezycart.domain.model.AppMode
 import com.ezycart.payment.nearpay.NearPaymentListener
 import com.ezycart.presentation.ScannerViewModel
-import com.ezycart.presentation.SensorSerialPortViewModel
 import com.ezycart.presentation.UsbTerminalDialog
 import com.ezycart.presentation.activation.LockScreenOrientation
 import com.ezycart.presentation.alertview.QrPaymentAlertView
@@ -178,7 +177,6 @@ import com.ezycart.presentation.common.components.BarcodeScannerListener
 import com.ezycart.presentation.common.data.Constants
 import com.ezycart.presentation.landing.BitesHeader
 import com.ezycart.presentation.payment.BitesPaymentDialog
-import com.ezycart.services.usb.SensorSerialPortCommunication
 import com.ezycart.services.usb.com.AppScenario
 import com.ezycart.services.usb.com.LedSerialConnection
 

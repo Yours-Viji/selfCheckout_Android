@@ -39,7 +39,6 @@ import com.ezycart.presentation.home.HomeViewModel
 import com.ezycart.presentation.home.WebViewScreen
 import com.ezycart.presentation.landing.LandingScreen
 import com.ezycart.presentation.payment.PaymentSelectionScreen
-import com.ezycart.services.usb.SensorSerialPortCommunication
 import com.ezycart.services.usb.com.AppScenario
 import com.ezycart.services.usb.com.LedSerialConnection
 import com.ezycart.services.usb.com.WeightScaleManager

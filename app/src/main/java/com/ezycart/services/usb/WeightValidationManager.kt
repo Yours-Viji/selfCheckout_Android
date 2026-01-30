@@ -87,3 +87,13 @@ class WeightValidationManager {
         }
     }
 }
+
+data class WeightUpdate(
+    val status: Int = 0,
+    val w1: Double = 0.0,
+    val w2: Double = 0.0,
+    val delta_w1:Double = 0.0,
+    val delta_w2:Double = 0.0,
+    val loadcell_id:Int =0,
+    val total_scanned: Double = 0.0
+)

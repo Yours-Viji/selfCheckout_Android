@@ -62,9 +62,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.ezycart.R
 import com.ezycart.domain.model.AppMode
-import com.ezycart.presentation.SensorSerialPortViewModel
-import com.ezycart.services.usb.SensorSerialPortCommunication
-import com.ezycart.services.usb.UsbEvent
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState

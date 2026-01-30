@@ -20,8 +20,8 @@ import com.ezycart.domain.usecase.PaymentUseCase
 import com.ezycart.domain.usecase.ShoppingUseCase
 import com.ezycart.model.ProductInfo
 import com.ezycart.model.ProductPriceInfo
-import com.ezycart.presentation.WeightUpdate
 import com.ezycart.presentation.common.data.Constants
+import com.ezycart.services.usb.WeightUpdate
 import com.ezycart.services.usb.WeightValidationManager
 import com.ezycart.services.usb.WeightValidationManager.ValidationResult
 import com.ezycart.services.usb.com.AppScenario
