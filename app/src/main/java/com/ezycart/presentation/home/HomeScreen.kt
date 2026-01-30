@@ -558,6 +558,7 @@ fun HomeScreen(
                     )
                 }
             ) {*/
+
             BitesHeaderNew(
                 viewModel, cartCount = cartCount.value, onHelpClick = {
                    // showTerminal.value = true
