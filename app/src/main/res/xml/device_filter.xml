@@ -43,4 +43,5 @@
     <!-- - - - custom prober - - - -->
     <!-- add IDs here -->
     <usb-device class="7" protocol="2" subclass="1" />
+    <usb-device vendor-id="04D8" product-id="003A" />
 </resources>
