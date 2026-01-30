@@ -2,11 +2,8 @@ package com.ezycart
 
 import android.app.Application
 import android.os.Bundle
-import android.util.Log
 import android.view.WindowManager
-import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,13 +12,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
@@ -38,10 +33,9 @@ import com.ezycart.presentation.home.HomeScreen
 import com.ezycart.presentation.home.HomeViewModel
 import com.ezycart.presentation.home.WebViewScreen
 import com.ezycart.presentation.landing.LandingScreen
-import com.ezycart.presentation.payment.PaymentSelectionScreen
-import com.ezycart.services.usb.com.AppScenario
-import com.ezycart.services.usb.com.LedSerialConnection
-import com.ezycart.services.usb.com.WeightScaleManager
+import com.ezycart.services.usb.AppScenario
+import com.ezycart.services.usb.LedSerialConnection
+import com.ezycart.services.usb.WeightScaleManager
 import com.meticha.permissions_compose.PermissionManagerConfig
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.HiltAndroidApp

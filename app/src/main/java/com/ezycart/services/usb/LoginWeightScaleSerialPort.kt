@@ -1,24 +1,17 @@
-package com.ezycart.services.usb.com
+package com.ezycart.services.usb
 
 import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.hardware.usb.UsbManager
 import android.util.Log
 import com.ezycart.presentation.home.HomeViewModel
 import com.ezycart.services.weightScaleService.CustomSerialProber
-import com.hoho.android.usbserial.driver.UsbSerialDriver
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
 import com.hoho.android.usbserial.util.SerialInputOutputManager
-import kotlinx.coroutines.*
-import java.io.IOException
-import java.util.*
-import kotlin.collections.indices
 import kotlin.text.contains
-import kotlin.text.lowercase
 import kotlin.text.toByteArray
 
 

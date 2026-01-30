@@ -2,8 +2,6 @@ package com.ezycart.presentation.home
 
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
-import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ezycart.data.datastore.PreferencesManager
@@ -24,11 +22,11 @@ import com.ezycart.presentation.common.data.Constants
 import com.ezycart.services.usb.WeightUpdate
 import com.ezycart.services.usb.WeightValidationManager
 import com.ezycart.services.usb.WeightValidationManager.ValidationResult
-import com.ezycart.services.usb.com.AppScenario
-import com.ezycart.services.usb.com.BixolonUsbPrinter
-import com.ezycart.services.usb.com.LedSerialConnection
-import com.ezycart.services.usb.com.LoginWeightScaleSerialPort
-import com.ezycart.services.usb.com.UsbSerialManager
+import com.ezycart.services.usb.AppScenario
+import com.ezycart.services.usb.BixolonUsbPrinter
+import com.ezycart.services.usb.LedSerialConnection
+import com.ezycart.services.usb.LoginWeightScaleSerialPort
+import com.ezycart.services.usb.UsbSerialManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

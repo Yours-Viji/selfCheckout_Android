@@ -1,4 +1,4 @@
-package com.ezycart.services.usb.com
+package com.ezycart.services.usb
 
 import android.content.Context
 import com.ezycart.presentation.home.HomeViewModel
