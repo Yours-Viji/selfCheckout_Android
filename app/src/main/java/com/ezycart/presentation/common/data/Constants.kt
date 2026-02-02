@@ -57,4 +57,15 @@ object Constants {
     var nearPaySessionID = ""
     var paymentOrderId = ""
     var paymentCode = ""
+    var selectedLanguage = ""
+    fun getSelectedLanguageCode(): String {
+        return when(selectedLanguage) {
+            "Bahasa Malaysia" -> "ms"
+            "中文" -> "zh"
+            "English" -> "en"
+            "日本語" -> "ja"
+            "한국어", "한국인" -> "ko"
+            else -> "en"
+        }
+    }
 }

@@ -10,4 +10,5 @@ data class CreateCartRequest (
     var appMode:String,
     var employeeId :String,
     var memberNumber:String,
+    var language : String,
 )

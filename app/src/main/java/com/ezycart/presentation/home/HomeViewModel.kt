@@ -150,6 +150,12 @@ class HomeViewModel @Inject constructor(
     private val _clearSystemAlert = MutableStateFlow<Boolean>(false)
     val clearSystemAlert: StateFlow<Boolean> = _clearSystemAlert.asStateFlow()
 
+    private val _canShowPaymentProcessDialog = MutableStateFlow<Boolean>(false)
+    val canShowPaymentProcessDialog: StateFlow<Boolean> = _canShowPaymentProcessDialog.asStateFlow()
+
+    private val _canShowPrintReceiptDialog = MutableStateFlow<Boolean>(false)
+    val canShowPrintReceiptDialog: StateFlow<Boolean> = _canShowPrintReceiptDialog.asStateFlow()
+
     init {
         viewModelScope.launch {
             val savedAppMode = preferencesManager.getAppMode()
@@ -168,6 +174,8 @@ class HomeViewModel @Inject constructor(
         _canShowPaymentErrorDialog.value = false
         _canShowPaymentSuccessDialog.value = false
         _canShowProductMismatchDialog.value = false
+        _canShowPaymentProcessDialog.value = false
+        _canShowPaymentProcessDialog.value = false
     }
     fun clearLog() {
         _loadCellValidationLog.value = ">>Loadcell Validation"
@@ -181,6 +189,9 @@ class HomeViewModel @Inject constructor(
     }
     fun showPaymentView() {
         _canMakePayment.value = true
+    }
+    fun getFormatedFinalAmount(): String {
+       return String.format("%.2f", shoppingCartInfo.value?.finalAmount ?: 0.0)
     }
     private fun observeUsbData() {
         viewModelScope.launch {
@@ -685,25 +696,65 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun timerDisplayForPaymentProcess() {
+        viewModelScope.launch {
+            clearSystemAlert()
+            showPaymentProcessAlertView()
+            delay(10000L)
 
+            clearSystemAlert()
+            timerDisplayForPaymentSuccess()
+        }
+    }
+    fun timerDisplayForReceiptPrint() {
+        viewModelScope.launch {
+            showPrintReceiptAlertView()
+            delay(5000L)
+
+            clearSystemAlert()
+
+
+        }
+    }
+    fun timerDisplayForPaymentSuccess() {
+        viewModelScope.launch {
+            showPaymentSuccessAlertView()
+            delay(2000L)
+
+            clearSystemAlert()
+            timerDisplayForReceiptPrint()
+
+        }
+    }
     fun hideQrPaymentAlertView() {
         _canShowQrPaymentDialog.value = false
         stopPaymentStatusPolling()
 
     }
-
+    fun showPaymentProcessAlertView() {
+        _canShowPaymentProcessDialog.value = true
+    }
+    fun showPrintReceiptAlertView() {
+        _canShowPrintReceiptDialog.value = true
+    }
     fun showPaymentSuccessAlertView() {
         _canShowPaymentSuccessDialog.value = true
     }
 
     fun hidePaymentSuccessAlertView() {
         _canShowPaymentSuccessDialog.value = false
-// Send receipt
+    }
+
+    fun hidePaymentProcessAlertView() {
+        _canShowPaymentProcessDialog.value = false
+    }
+
+    fun hidePrintReceiptAlertView() {
+        _canShowPrintReceiptDialog.value = false
     }
 
     fun hidePaymentErrorAlertView() {
         _canShowPaymentErrorDialog.value = false
-// Send receipt
     }
 
     private fun getMockPaymentResponse(reference: String): UpdatePaymentRequest {
@@ -747,23 +798,6 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-   // fun switchOnAllLed() = LedSerialConnection.sendMessageToLed(LedPattern.ON_ALL)
-    /*fun switchOnAllLed()= ledManager.sendLedCommand(listOf(1, 2, 3, 4, 5, 6))
-    fun switchOffAllLed()= ledManager.sendLedCommand(emptyList())
-   fun switchPaymentLed()= ledManager.sendLedCommand(listOf(1, 2, 3))
-    fun switchErrorLed()= ledManager.sendLedCommand(listOf(1, 2, 4))
-   fun switchStartShoppingLed()= ledManager.sendLedCommand(listOf(1, 2, 3, 5))*/
-
-   /* fun switchOnAllLed() = LoginWeightScaleSerialPort.sendLedCommand(LedPattern.ON_ALL)
-
-    fun switchOffAllLed() = LoginWeightScaleSerialPort.sendLedCommand(LedPattern.OFF)
-
-    fun switchPaymentLed() = LoginWeightScaleSerialPort.sendLedCommand(LedPattern.PAYMENT)
-
-    fun switchErrorLed() = LoginWeightScaleSerialPort.sendLedCommand(LedPattern.ERROR)
-
-    fun switchStartShoppingLed() =
-        LoginWeightScaleSerialPort.sendLedCommand(LedPattern.START_SHOPPING)*/
 
     fun resetLoadCell() {
         sendMessageToLoadCell("2")
@@ -1008,7 +1042,11 @@ class HomeViewModel @Inject constructor(
                 _canShowValidationErrorDialog.value = false
                // _errorMessage.value = "Weight is stable and within range."
             } else {
-                //switchErrorLed()
+                // Testing
+               /* _canMakePayment.value = true
+                _canShowValidationErrorDialog.value = false*/
+
+
                 _canMakePayment.value = false
                 _canShowValidationErrorDialog.value = true
                // _errorMessage.value = "Weight mismatch detected!"

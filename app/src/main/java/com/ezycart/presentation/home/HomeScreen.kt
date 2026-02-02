@@ -216,6 +216,8 @@ fun HomeScreen(
     var canShowProductMismatchDialog = viewModel.canShowProductMismatchDialog.collectAsState()
     var canShowProductNotFoundDialog = viewModel.canShowProductNotFoundDialog.collectAsState()
     var canShowValidationErrorDialog = viewModel.canShowValidationErrorDialog.collectAsState()
+    var canShowPaymentProcess = viewModel.canShowPaymentProcessDialog.collectAsState()
+    var canShowPrintReceipt = viewModel.canShowPrintReceiptDialog.collectAsState()
     var resetAndGoBack = viewModel.resetAndGoBack.collectAsState()
     var clearSystemAlert = viewModel.clearSystemAlert.collectAsState()
     /* val commonListener = remember {
@@ -274,7 +276,27 @@ if (resetAndGoBack.value){
             isDismissible = false
         )
     }
+    if(canShowPaymentProcess.value) {
+        currentSystemAlert.value = null
+        currentSystemAlert.value = AlertState(
+            title = "Please Tap Your  Credit/Debit Card on Terminal",
+            message = "To be paid RM ${viewModel.getFormatedFinalAmount()}",
+            lottieFileName = "anim_payment_3.json",
+            type = AlertType.SUCCESS,
+            isDismissible = false
+        )
+    }
 
+    if(canShowPrintReceipt.value) {
+        currentSystemAlert.value = null
+        currentSystemAlert.value = AlertState(
+            title = "Thank You for Shopping with us.",
+            message = "Please remember to take your receipt",
+            lottieFileName = "anim_print_receipt.json",
+            type = AlertType.SUCCESS,
+            isDismissible = false
+        )
+    }
 
     LaunchedEffect(state.error) {
         state.error?.let { errorMessage ->
@@ -465,9 +487,9 @@ if (resetAndGoBack.value){
                     isDismissible = true
                 )
             },
-            onCardPaymentClicked = {viewModel.showPaymentSuccessAlertView()},
-            onWalletPaymentClicked = {viewModel.showPaymentSuccessAlertView()},
-            onGrabPaymentClicked = {viewModel.showPaymentSuccessAlertView()}
+            onCardPaymentClicked = {viewModel.timerDisplayForPaymentProcess()},
+            onWalletPaymentClicked = {viewModel.timerDisplayForPaymentProcess()},
+            onGrabPaymentClicked = {viewModel.timerDisplayForPaymentProcess()}
 
         )
     }

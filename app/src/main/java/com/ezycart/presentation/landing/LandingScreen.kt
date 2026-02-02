@@ -66,6 +66,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.ezycart.AlertState
 import com.ezycart.AlertType
 import com.ezycart.CommonAlertView
+import com.ezycart.presentation.common.data.Constants
 import com.ezycart.services.usb.AppScenario
 
 @Composable
@@ -106,6 +107,7 @@ fun LandingScreen(viewModel: LandingViewModel = viewModel(),
                     // Replace with Language Selection after click
                     LanguageSelectionScreen(onLanguageSelected = { lang ->
                         Log.d("Kiosk", "Selected: $lang")
+                        Constants.selectedLanguage = lang
                         if(lang == "中文"){
                             showLedDialog.value = true
                         }else{
