@@ -118,6 +118,7 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.key.utf16CodePoint
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -959,6 +960,136 @@ fun CameraPreview(modifier: Modifier = Modifier) {
         modifier = modifier.clip(RoundedCornerShape(12.dp))
     )
 }*/
+/*@androidx.annotation.OptIn(ExperimentalLensFacing::class)
+@Composable
+fun CameraPreview(
+    modifier: Modifier = Modifier,
+    onRecordingStarted: () -> Unit = {},
+    onRecordingFinished: (Uri?) -> Unit = {},
+    onCaptureReady: (start: () -> Unit, stop: () -> Unit) -> Unit
+) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // 1. Initialize PreviewView with COMPATIBLE mode to allow rotation
+    val previewView = remember {
+        PreviewView(context).apply {
+            implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+            scaleType = PreviewView.ScaleType.FILL_CENTER
+        }
+    }
+
+    val videoCaptureState = remember {
+        val recorder = Recorder.Builder()
+            .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
+            .build()
+        VideoCapture.withOutput(recorder)
+    }
+
+    val currentRecording = remember { mutableStateOf<Recording?>(null) }
+
+    LaunchedEffect(Unit) {
+        val cameraProvider = ProcessCameraProvider.getInstance(context).get()
+
+        // 2. Setup Preview Use Case
+        val preview = Preview.Builder()
+            .build()
+            .also {
+                it.setSurfaceProvider(previewView.surfaceProvider)
+            }
+
+        try {
+            cameraProvider.unbindAll()
+
+            // Select External or Back camera
+            val cameraInfoList = cameraProvider.availableCameraInfos
+            val selectedCameraInfo = cameraInfoList.firstOrNull { info ->
+                info.lensFacing == CameraSelector.LENS_FACING_EXTERNAL ||
+                        info.lensFacing == CameraSelector.LENS_FACING_BACK
+            } ?: cameraInfoList.firstOrNull()
+
+            if (selectedCameraInfo != null) {
+                cameraProvider.bindToLifecycle(
+                    lifecycleOwner,
+                    selectedCameraInfo.cameraSelector,
+                    preview,
+                    videoCaptureState
+                )
+            }
+
+            // Define Recording Logic
+            val startRecording = {
+                val fileName = "SelfCheckout_${System.currentTimeMillis()}.mp4"
+                val contentValues = ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                    put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
+                    put(MediaStore.Video.Media.RELATIVE_PATH, Environment.DIRECTORY_MOVIES + "/CheckoutVideos")
+                }
+
+                val mediaStoreOutputOptions = MediaStoreOutputOptions
+                    .Builder(context.contentResolver, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
+                    .setContentValues(contentValues)
+                    .build()
+
+                currentRecording.value = videoCaptureState.output
+                    .prepareRecording(context, mediaStoreOutputOptions)
+                    .apply {
+                        if (PermissionChecker.checkSelfPermission(context, android.Manifest.permission.RECORD_AUDIO) == PermissionChecker.PERMISSION_GRANTED) {
+                            withAudioEnabled()
+                        }
+                    }
+                    .start(ContextCompat.getMainExecutor(context)) { event ->
+                        when (event) {
+                            is VideoRecordEvent.Start -> onRecordingStarted()
+                            is VideoRecordEvent.Finalize -> {
+                                if (!event.hasError()) {
+                                    onRecordingFinished(event.outputResults.outputUri)
+                                }
+                                currentRecording.value = null
+                            }
+                        }
+                    }
+            }
+
+            val stopRecording = {
+                currentRecording.value?.stop()
+                currentRecording.value = null
+            }
+
+            onCaptureReady(startRecording, stopRecording)
+
+        } catch (e: Exception) {
+            Log.e("CameraPreview", "Binding failed", e)
+        }
+    }
+
+    // 3. Render and Rotate the View
+    AndroidView(
+        factory = { previewView },
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .layout { measurable, constraints ->
+                val placeable = measurable.measure(
+                    constraints.copy(
+                        minWidth = constraints.minHeight,
+                        maxWidth = constraints.maxHeight,
+                        minHeight = constraints.minWidth,
+                        maxHeight = constraints.maxWidth
+                    )
+                )
+
+                layout(placeable.height, placeable.width) {
+                    placeable.placeWithLayer(
+                        x = -(placeable.width - placeable.height) / 2,
+                        y = -(placeable.height - placeable.width) / 2
+                    ) {
+                        rotationZ = 90f // Hardware correction
+                    }
+                }
+            }
+    )
+}*/
+
 @androidx.annotation.OptIn(ExperimentalLensFacing::class)
 @Composable
 fun CameraPreview(
@@ -969,139 +1100,114 @@ fun CameraPreview(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val previewView = remember { PreviewView(context) }
 
-    // Use cases and recording state
-    val videoCapture = remember {
+    val previewView = remember {
+        PreviewView(context).apply {
+            implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+            scaleType = PreviewView.ScaleType.FILL_CENTER
+        }
+    }
+
+    val videoCaptureState = remember {
         val recorder = Recorder.Builder()
             .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
             .build()
         VideoCapture.withOutput(recorder)
     }
 
-    // Keep track of the active recording
-    var currentRecording = remember { mutableStateOf<Recording?>(null) }
+    val currentRecording = remember { mutableStateOf<Recording?>(null) }
 
-    LaunchedEffect(Unit) {
-        val cameraProvider = ProcessCameraProvider.getInstance(context).get()
-        /*val preview = androidx.camera.core.Preview.Builder().build().also {
-            it.setSurfaceProvider(previewView.surfaceProvider)
-        }*/
-        val preview = Preview.Builder()
-            .setTargetRotation(android.view.Surface.ROTATION_90) // Force 90 degrees
-            .build().also {
-                it.setSurfaceProvider(previewView.surfaceProvider)
-            }
+    // 1. Define the start function clearly
+    val startRecording: () -> Unit = {
+        val fileName = "SelfCheckout_${System.currentTimeMillis()}"
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+            put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
+            put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/CheckoutVideos")
+        }
 
-        // FIX 2: Do the same for VideoCapture so the saved file isn't sideways
-        videoCapture.targetRotation = android.view.Surface.ROTATION_90
+        val mediaStoreOutputOptions = MediaStoreOutputOptions
+            .Builder(context.contentResolver, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
+            .setContentValues(contentValues)
+            .build()
+
         try {
-            cameraProvider.unbindAll()
-            val cameraInfoList = cameraProvider.availableCameraInfos
-            val selectedCameraInfo = cameraInfoList.firstOrNull { info ->
-                info.lensFacing == CameraSelector.LENS_FACING_EXTERNAL ||
-                        info.lensFacing == CameraSelector.LENS_FACING_BACK
-            } ?: cameraInfoList.firstOrNull()
-
-            if (selectedCameraInfo != null) {
-                // Bind BOTH preview and videoCapture
-                cameraProvider.bindToLifecycle(
-                    lifecycleOwner,
-                    selectedCameraInfo.cameraSelector,
-                    preview,
-                    videoCapture
-                )
-            }
-            try {
-                val fileName = "SelfCheckout_${System.currentTimeMillis()}.mp4"
-                val contentValues = ContentValues().apply {
-                    put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
-                    put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
-                    put(
-                        MediaStore.Video.Media.RELATIVE_PATH,
-                        Environment.DIRECTORY_MOVIES + "/CheckoutVideos"
-                    )
-                }
-
-                val mediaStoreOutputOptions = MediaStoreOutputOptions
-                    .Builder(context.contentResolver, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
-                    .setContentValues(contentValues)
-                    .build()
-
-                currentRecording.value = videoCapture.output
-                    .prepareRecording(context, mediaStoreOutputOptions)
-                    .apply {
-                        if (PermissionChecker.checkSelfPermission(
-                                context,
-                                android.Manifest.permission.RECORD_AUDIO
-                            ) == PermissionChecker.PERMISSION_GRANTED
-                        ) withAudioEnabled()
+            val recording = videoCaptureState.output
+                .prepareRecording(context, mediaStoreOutputOptions)
+                .apply {
+                    if (PermissionChecker.checkSelfPermission(context, android.Manifest.permission.RECORD_AUDIO) == PermissionChecker.PERMISSION_GRANTED) {
+                        withAudioEnabled()
                     }
-                    .start(ContextCompat.getMainExecutor(context)) { event ->
-                        when (event) {
-                            is VideoRecordEvent.Start -> onRecordingStarted()
-                            is VideoRecordEvent.Finalize -> {
-                                if (!event.hasError()) {
-                                    onRecordingFinished(event.outputResults.outputUri)
-                                } else {
-                                    currentRecording.value?.close()
-                                    currentRecording.value = null
-                                }
+                }
+                .start(ContextCompat.getMainExecutor(context)) { event ->
+                    when (event) {
+                        is VideoRecordEvent.Start -> onRecordingStarted()
+                        is VideoRecordEvent.Finalize -> {
+                            if (!event.hasError()) {
+                                onRecordingFinished(event.outputResults.outputUri)
                             }
                         }
                     }
-            } catch (e: Exception) {
-                Log.e("Camera Start recording", "Recording failed", e)
-            }
+                }
+            currentRecording.value = recording
         } catch (e: Exception) {
-            Log.e("Camera", "Binding failed", e)
+            Log.e("CameraPreview", "Start Recording Failed", e)
         }
+        // Force the return type to Unit to satisfy the compiler
+        Unit
     }
 
-    // --- Start Recording Function ---
-    val startRecordingAction = {
-        /* val fileName = "SelfCheckout_${System.currentTimeMillis()}.mp4"
-         val contentValues = ContentValues().apply {
-             put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
-             put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
-             put(MediaStore.Video.Media.RELATIVE_PATH, Environment.DIRECTORY_MOVIES + "/CheckoutVideos")
-         }
-
-         val mediaStoreOutputOptions = MediaStoreOutputOptions
-             .Builder(context.contentResolver, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
-             .setContentValues(contentValues)
-             .build()
-
-         currentRecording.value = videoCapture.output
-             .prepareRecording(context, mediaStoreOutputOptions)
-             .apply { if (PermissionChecker.checkSelfPermission(context, android.Manifest.permission.RECORD_AUDIO) == PermissionChecker.PERMISSION_GRANTED) withAudioEnabled() }
-             .start(ContextCompat.getMainExecutor(context)) { event ->
-                 when (event) {
-                     is VideoRecordEvent.Start -> onRecordingStarted()
-                     is VideoRecordEvent.Finalize -> {
-                         if (!event.hasError()) {
-                             onRecordingFinished(event.outputResults.outputUri)
-                         } else {
-                             currentRecording.value?.close()
-                             currentRecording.value = null
-                         }
-                     }
-                 }
-             }*/
-    }
-
-    // --- Stop Recording Function ---
-    val stopRecordingAction = {
+    val stopRecording: () -> Unit = {
         currentRecording.value?.stop()
         currentRecording.value = null
     }
+
+    // Pass the functions back to the UI
     LaunchedEffect(Unit) {
-        onCaptureReady(startRecordingAction, stopRecordingAction)
+        onCaptureReady(startRecording, stopRecording)
+
+        val cameraProvider = ProcessCameraProvider.getInstance(context).get()
+        val preview = Preview.Builder().build().also {
+            it.setSurfaceProvider(previewView.surfaceProvider)
+        }
+
+        try {
+            cameraProvider.unbindAll()
+            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+
+            cameraProvider.bindToLifecycle(
+                lifecycleOwner,
+                cameraSelector,
+                preview,
+                videoCaptureState
+            )
+        } catch (e: Exception) {
+            Log.e("CameraPreview", "Binding failed", e)
+        }
     }
-    // For demonstration: You can trigger these from UI Buttons
+
     AndroidView(
         factory = { previewView },
-        modifier = modifier.clip(RoundedCornerShape(12.dp))
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .layout { measurable, constraints ->
+                val placeable = measurable.measure(
+                    constraints.copy(
+                        minWidth = constraints.minHeight,
+                        maxWidth = constraints.maxHeight,
+                        minHeight = constraints.minWidth,
+                        maxHeight = constraints.maxWidth
+                    )
+                )
+                layout(placeable.height, placeable.width) {
+                    placeable.placeWithLayer(
+                        x = -(placeable.width - placeable.height) / 2,
+                        y = -(placeable.height - placeable.width) / 2
+                    ) {
+                        rotationZ = 90f
+                    }
+                }
+            }
     )
 }
 
@@ -1623,8 +1729,7 @@ fun CartScreen(
                             CameraPreview(
                                 modifier = Modifier
                                     .fillMaxSize(),
-                                    // 1. Rotate 90 degrees clockwise
-                                   // .graphicsLayer(rotationZ = 90f),
+
                                 onRecordingStarted = { isRecording.value = true },
                                 onRecordingFinished = { uri ->
                                     isRecording.value = false
