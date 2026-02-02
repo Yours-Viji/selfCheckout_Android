@@ -61,23 +61,39 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ezycart.R
 import com.ezycart.services.usb.LedSerialConnection
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.ezycart.AlertState
 import com.ezycart.AlertType
 import com.ezycart.CommonAlertView
+import com.ezycart.presentation.UsbTerminalDialog
+import com.ezycart.presentation.alertview.AdminSettingsDialog
 import com.ezycart.presentation.common.data.Constants
+import com.ezycart.presentation.home.HomeViewModel
 import com.ezycart.services.usb.AppScenario
+import com.ezycart.services.usb.WeightScaleManager
 
 @Composable
-fun LandingScreen(viewModel: LandingViewModel = viewModel(),
+fun LandingScreen(homeViewModel: HomeViewModel,viewModel: LandingViewModel = hiltViewModel(),
                   goToHomeScreen: () -> Unit) {
     val uiState = viewModel.uiState.collectAsStateWithLifecycle()
     var showGuidelines = remember { mutableStateOf(false) }
-    var showLedDialog = remember { mutableStateOf(false) }
+    var showLedDialog = viewModel.openLedTerminalDialog.collectAsState()
+    var openLoadCellTerminalDialog = viewModel.openLoadCellTerminalDialog.collectAsState()
+    val context = LocalContext.current
+    if (openLoadCellTerminalDialog.value){
+        WeightScaleManager.initOnce(homeViewModel)
+        WeightScaleManager.connectSafe(context)
+        UsbTerminalDialog(
+            onDismiss = { viewModel.activateLoadCellTerminal() },
+            viewModel = homeViewModel,
+        )
+    }
 
     if (showLedDialog.value) {
-        LedControlDialog(onDismiss = { showLedDialog.value = false })
+        LedControlDialog(onDismiss = { viewModel.activateLedTerminal() })
     }
     if (showGuidelines.value) {
         GuidelinesDialog(
@@ -88,10 +104,14 @@ fun LandingScreen(viewModel: LandingViewModel = viewModel(),
             }
         )
     }
-    Column(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .background(Color.Black)) {
 
         // 1. Dynamic Content Area (Banner or Language Selection)
-        Box(modifier = Modifier.weight(1f).background(Color.White)) {
+        Box(modifier = Modifier
+            .weight(1f)
+            .background(Color.White)) {
             AnimatedContent(
                 targetState = uiState.value.isStarted,
                 transitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) }
@@ -105,17 +125,11 @@ fun LandingScreen(viewModel: LandingViewModel = viewModel(),
                     )
                 } else {
                     // Replace with Language Selection after click
-                    LanguageSelectionScreen(onLanguageSelected = { lang ->
+                    LanguageSelectionScreen(viewModel,onLanguageSelected = { lang ->
                         Log.d("Kiosk", "Selected: $lang")
                         Constants.selectedLanguage = lang
-                        if(lang == "中文"){
-                            showLedDialog.value = true
-                        }else{
-                            showGuidelines.value = true
-                        }
+                        showGuidelines.value = true
 
-
-                        // Proceed to next step
                     })
                 }
             }
@@ -157,7 +171,7 @@ fun LandingScreen(viewModel: LandingViewModel = viewModel(),
 }
 
 @Composable
-fun LanguageSelectionScreen(onLanguageSelected: (String) -> Unit) {
+fun LanguageSelectionScreen(viewModel: LandingViewModel,onLanguageSelected: (String) -> Unit) {
     var currentSystemAlert = remember { mutableStateOf<AlertState?>(null)}
     Box(
         modifier = Modifier
@@ -180,7 +194,7 @@ fun LanguageSelectionScreen(onLanguageSelected: (String) -> Unit) {
             contentScale = ContentScale.Inside,
             alpha = 0.6f
         )*/
-        BitesHeader(onHelpClick = {  currentSystemAlert.value = AlertState(
+        BitesHeader(viewModel,onHelpClick = {  currentSystemAlert.value = AlertState(
             title = "Help is on the way",
             message = "Please wait for our Staff to assist you.",
             lottieFileName = "anim_warning_circle.json",
@@ -189,7 +203,9 @@ fun LanguageSelectionScreen(onLanguageSelected: (String) -> Unit) {
         ) })
 
             Column(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 40.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 40.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
@@ -221,7 +237,9 @@ fun LanguageSelectionScreen(onLanguageSelected: (String) -> Unit) {
 fun LanguageButton(text: String, onClick: () -> Unit) {
     Button(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(0.6f).height(90.dp),
+        modifier = Modifier
+            .fillMaxWidth(0.6f)
+            .height(90.dp),
         colors = ButtonDefaults.buttonColors(containerColor = Color.White),
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(1.dp, Color.LightGray),
@@ -276,9 +294,40 @@ fun GlassyKioskBackground(
 }
 @Composable
 fun BitesHeader(
-
+    viewModel: LandingViewModel,
     onHelpClick: () -> Unit
 ) {
+    var showAdminDialog = remember { mutableStateOf(false) }
+    if (showAdminDialog.value) {
+        AdminSettingsDialog(
+            onDismiss = { showAdminDialog.value = false },
+            onOpenTerminal = { type ->
+                // Logic to open specific terminal
+                when(type) {
+                    "Loadcell" -> {
+                        viewModel.activateLoadCellTerminal()
+                    }
+                    "LED" -> {
+                        viewModel.activateLedTerminal()
+                    }
+                    "Printer" -> {
+                        viewModel.activatePrinterTerminal()
+                    }
+                }
+                showAdminDialog.value = false
+            },
+
+            onTransferCart = { targetCart ->
+               // viewModel.transferCurrentCartTo(targetCart)
+                showAdminDialog.value = false
+            },
+            //currentThreshold = threshold,
+            currentThreshold = viewModel.getWeightThreshold(),
+            onThresholdChange = { newValue ->
+                viewModel.updateThreshold(newValue)
+            }
+        )
+    }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -310,7 +359,68 @@ fun BitesHeader(
             }
         }
 
-        // 2. Purple Action Bar (Self Checkout & Help)
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFF6A1B9A)) // Deep Purple
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            contentAlignment = Alignment.Center // This ensures the 'SELF CHECKOUT' is exactly in the middle
+        ) {
+            // 1. LEFT SIDE: Scan Button
+
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterStart) // Force to far left
+                    .size(32.dp)
+                    .clickable { showAdminDialog.value = true },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_settings),
+                    contentDescription = "scan",
+                    tint = Color.White,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            // 2. CENTER: Title
+            Text(
+                text = "SELF CHECKOUT",
+                style = TextStyle(
+                    color = Color.White,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                ),
+                modifier = Modifier.clickable {  }
+            )
+
+            // 3. RIGHT SIDE: Help Content
+            Row(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd) // Force to far right
+                    .clickable { onHelpClick() }
+                    .padding(4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "Help",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "Help",
+                    color = Color.White,
+                    fontSize = 16.sp
+                )
+
+            }
+        }
+
+
+       /* // 2. Purple Action Bar (Self Checkout & Help)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -353,7 +463,7 @@ fun BitesHeader(
                 )
 
             }
-        }
+        }*/
     }
 }
 
@@ -444,14 +554,18 @@ fun LedControlDialog(onDismiss: () -> Unit) {
         Surface(
             shape = RoundedCornerShape(28.dp),
             color = Color(0xFFF1F3F5),
-            modifier = Modifier.fillMaxWidth().padding(12.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp)
         ) {
             Column(modifier = Modifier.padding(24.dp)) {
                 Text("Output Controls", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
 
                 Button(
                     onClick = { LedSerialConnection.connect(context) },
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
                 ) { Text("CONNECT DEVICE") }
 
@@ -475,7 +589,9 @@ fun LedControlDialog(onDismiss: () -> Unit) {
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                         ) {
                             Column(
-                                modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                                modifier = Modifier
+                                    .padding(12.dp)
+                                    .fillMaxWidth(),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text("OUT ${index + 1}", fontSize = 12.sp, color = Color.Gray)
@@ -484,7 +600,11 @@ fun LedControlDialog(onDismiss: () -> Unit) {
                                 Box(
                                     modifier = Modifier
                                         .size(20.dp)
-                                        .background(if (isOn) Color(0xFF4CAF50) else Color(0xFFF44336), CircleShape)
+                                        .background(
+                                            if (isOn) Color(0xFF4CAF50) else Color(
+                                                0xFFF44336
+                                            ), CircleShape
+                                        )
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(if (isOn) "ON" else "OFF", fontSize = 10.sp, fontWeight = FontWeight.Bold)

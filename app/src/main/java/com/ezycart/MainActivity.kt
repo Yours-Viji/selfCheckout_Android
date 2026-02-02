@@ -138,7 +138,7 @@ class MainActivity : ComponentActivity() {
                                         } catch (e: Exception) {
                                         }
                                     }
-                                    LandingScreen(goToHomeScreen = {
+                                    LandingScreen(homeViewModel,goToHomeScreen = {
                                         try {
                                             homeViewModel.requestTotalWeightFromLoadCell()
                                             //homeViewModel.switchOnAllLed()

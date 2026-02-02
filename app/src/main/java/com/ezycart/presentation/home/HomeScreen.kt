@@ -152,7 +152,9 @@ import com.ezycart.domain.model.AppMode
 import com.ezycart.payment.nearpay.NearPaymentListener
 import com.ezycart.presentation.UsbTerminalDialog
 import com.ezycart.presentation.activation.LockScreenOrientation
+import com.ezycart.presentation.alertview.AdminSettingsDialog
 import com.ezycart.presentation.common.data.Constants
+import com.ezycart.presentation.landing.LedControlDialog
 import com.ezycart.presentation.payment.BitesPaymentDialog
 import com.ezycart.services.usb.AppScenario
 import com.ezycart.services.usb.LedSerialConnection
@@ -207,7 +209,6 @@ fun HomeScreen(
     val focusRequester = remember { FocusRequester() }
     val showErrorMessage = remember { mutableStateOf("") }
     val showWalletScanner = remember { mutableStateOf(false) }
-    var showTerminal = remember { mutableStateOf(false) }
     var clearTransAction = remember { mutableStateOf(false) }
     var showMainLogs = remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -224,6 +225,21 @@ fun HomeScreen(
          LoginWeightScaleSerialPort.createCommonListener(viewModel)
      }*/
     val loadCellValidationLog = viewModel.loadCellValidationLog.collectAsState()
+
+    var showLedDialog = viewModel.openLedTerminalDialog.collectAsState()
+    var openLoadCellTerminalDialog = viewModel.openLoadCellTerminalDialog.collectAsState()
+    if (openLoadCellTerminalDialog.value){
+        WeightScaleManager.initOnce(viewModel)
+        WeightScaleManager.connectSafe(context)
+        UsbTerminalDialog(
+            onDismiss = { viewModel.activateLoadCellTerminal() },
+            viewModel = viewModel,
+        )
+    }
+
+    if (showLedDialog.value) {
+        LedControlDialog(onDismiss = { viewModel.activateLedTerminal() })
+    }
 
     LockScreenOrientation(context, ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
 if (resetAndGoBack.value){
@@ -348,7 +364,7 @@ if (resetAndGoBack.value){
          }
 
      }*/
-    if (showTerminal.value) {
+    /*if (showTerminal.value) {
 
         WeightScaleManager.initOnce(viewModel)
         WeightScaleManager.connectSafe(context)
@@ -356,7 +372,7 @@ if (resetAndGoBack.value){
             onDismiss = { showTerminal.value = false },
             viewModel = viewModel,
         )
-    }
+    }*/
     if (proceedTapToPay.value) {
         shoppingCartInfo.value.let {
             val finalAmount = it?.finalAmount ?: 0.0
@@ -687,6 +703,39 @@ fun BitesHeaderNew(
 ) {
     val showManualBarCode = remember { mutableStateOf(false) }
     val scannedCode = remember { mutableStateOf<String?>(null) }
+
+    var showAdminDialog = remember { mutableStateOf(false) }
+    if (showAdminDialog.value) {
+        AdminSettingsDialog(
+            onDismiss = { showAdminDialog.value = false },
+            onOpenTerminal = { type ->
+                // Logic to open specific terminal
+                when(type) {
+                    "Loadcell" -> {
+                        viewModel.activateLoadCellTerminal()
+                    }
+                    "LED" -> {
+                        viewModel.activateLedTerminal()
+                    }
+                    "Printer" -> {
+                        viewModel.activatePrinterTerminal()
+                    }
+                }
+                showAdminDialog.value = false
+            },
+
+            onTransferCart = { targetCart ->
+                // viewModel.transferCurrentCartTo(targetCart)
+                showAdminDialog.value = false
+            },
+            //currentThreshold = threshold,
+            currentThreshold = viewModel.getWeightThreshold(),
+            onThresholdChange = { newValue ->
+                viewModel.updateThreshold(newValue)
+            }
+        )
+    }
+
     if (showManualBarCode.value) {
         ManualBarcodeEntryDialog(
             onProceed = { barcode ->
@@ -786,21 +835,42 @@ fun BitesHeaderNew(
             contentAlignment = Alignment.Center // This ensures the 'SELF CHECKOUT' is exactly in the middle
         ) {
             // 1. LEFT SIDE: Scan Button
-            Box(
-                modifier = Modifier
-                    .align(Alignment.CenterStart) // Force to far left
-                    .size(35.dp)
-                    .clickable { showManualBarCode.value = true },
-                contentAlignment = Alignment.Center
+            Row(
+                modifier = Modifier.align(Alignment.CenterStart),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_scan),
-                    contentDescription = "scan",
-                    tint = Color.White,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
+                // Barcode Scan Button
+                Box(
+                    modifier = Modifier
+                        .size(35.dp)
+                        .clickable { showManualBarCode.value = true },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_scan),
+                        contentDescription = "scan",
+                        tint = Color.White,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
 
+                Spacer(modifier = Modifier.width(35.dp)) // Space between the two icons
+
+                // Settings Button
+                Box(
+                    modifier = Modifier
+                        .size(33.dp)
+                        .clickable { showAdminDialog.value = true },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_settings),
+                        contentDescription = "settings",
+                        tint = Color.White,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
             // 2. CENTER: Title
             Text(
                 text = "SELF CHECKOUT",

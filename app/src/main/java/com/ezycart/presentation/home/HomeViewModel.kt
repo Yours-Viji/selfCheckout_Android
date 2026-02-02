@@ -156,6 +156,17 @@ class HomeViewModel @Inject constructor(
     private val _canShowPrintReceiptDialog = MutableStateFlow<Boolean>(false)
     val canShowPrintReceiptDialog: StateFlow<Boolean> = _canShowPrintReceiptDialog.asStateFlow()
 
+
+    private val _openLoadCellTerminalDialog = MutableStateFlow<Boolean>(false)
+    val openLoadCellTerminalDialog: StateFlow<Boolean> = _openLoadCellTerminalDialog.asStateFlow()
+
+    private val _openLedTerminalDialog = MutableStateFlow<Boolean>(false)
+    val openLedTerminalDialog: StateFlow<Boolean> = _openLedTerminalDialog.asStateFlow()
+
+    private val _openPrinterTerminalDialog = MutableStateFlow<Boolean>(false)
+    val openPrinterTerminalDialog: StateFlow<Boolean> = _openPrinterTerminalDialog.asStateFlow()
+
+
     init {
         viewModelScope.launch {
             val savedAppMode = preferencesManager.getAppMode()
@@ -166,6 +177,34 @@ class HomeViewModel @Inject constructor(
         }
         // observeUsbData()
     }
+
+    fun activateLoadCellTerminal(){
+        _openLoadCellTerminalDialog.value = !openLoadCellTerminalDialog.value
+    }
+    fun activateLedTerminal(){
+        _openLedTerminalDialog.value = !openLedTerminalDialog.value
+    }
+    fun activatePrinterTerminal(){
+        _openPrinterTerminalDialog.value = !openPrinterTerminalDialog.value
+    }
+
+    fun getWeightThreshold(): Double {
+        var weightThreshold = 25.00
+        viewModelScope.launch {
+            preferencesManager.getWeightThreshold().collect { value ->
+                weightThreshold = value
+            }
+        }
+
+        return weightThreshold
+    }
+
+    fun updateThreshold(newValue: Double) {
+        viewModelScope.launch {
+            preferencesManager.setWeightThreshold(newValue)
+        }
+    }
+
     fun clearSystemAlert(){
         _clearSystemAlert.value = true
         _canShowValidationErrorDialog.value = false

@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
@@ -44,6 +45,7 @@ class PreferencesManager @Inject constructor(
         private val EMPLOYEE_ID = intPreferencesKey("id")
         private val EMPLOYEE_STATUS = intPreferencesKey("status")
         private val CAN_SHOW_PRICE_CHECKER = booleanPreferencesKey("showPriceChecker")
+        private val WEIGHT_THRESHOLD = doublePreferencesKey("weight_threshold")
     }
 
     val userPreferencesFlow: Flow<UserPreferences> = dataStore.data
@@ -180,6 +182,18 @@ class PreferencesManager @Inject constructor(
         return dataStore.data.map { preferences ->
             preferences[IS_DEVICE_ACTIVATED] ?: false
         }.distinctUntilChanged()
+    }
+
+    fun getWeightThreshold(): Flow<Double> {
+        return dataStore.data.map { preferences ->
+            preferences[WEIGHT_THRESHOLD] ?: 25.00
+        }.distinctUntilChanged()
+    }
+
+    suspend fun setWeightThreshold(threshold: Double) {
+        dataStore.edit { preferences ->
+            preferences[WEIGHT_THRESHOLD] = threshold
+        }
     }
 
     suspend fun clearEmployeeDetails() {
