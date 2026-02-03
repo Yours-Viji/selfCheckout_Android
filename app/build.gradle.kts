@@ -1,3 +1,5 @@
+import org.gradle.kotlin.dsl.main
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -20,8 +22,24 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        ndk {
+            // Force the app to only use these architectures
+            abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a"))
+        }
     }
 
+    sourceSets {
+        getByName("main") {
+            jniLibs.srcDirs(file("jniLibs"))
+        }
+       /* // If it still fails, explicitly add it to the flavors
+        getByName("malaysia") {
+            jniLibs.srcDirs("src/main/jniLibs")
+        }
+        getByName("saudi") {
+            jniLibs.srcDirs("src/main/jniLibs")
+        }*/
+    }
     // Define flavor dimensions
     flavorDimensions += listOf("country")
 
@@ -95,6 +113,11 @@ android {
         kotlinCompilerExtensionVersion = "1.5.15"
     }
     packaging {
+        jniLibs {
+            useLegacyPackaging = true
+            pickFirsts.add("**/*.so")
+            //excludes += "**/libbxl_common.so.debug"// Forces traditional loading
+        }
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
@@ -102,6 +125,7 @@ android {
 }
 
 dependencies {
+
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar", "*.aar"))))
     // Core
     implementation(libs.androidx.core.ktx)

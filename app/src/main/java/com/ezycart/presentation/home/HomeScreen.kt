@@ -1,6 +1,7 @@
 package com.ezycart.presentation.home
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.ContentValues
 import android.content.pm.ActivityInfo
 import android.net.Uri
@@ -313,6 +314,7 @@ if (resetAndGoBack.value){
             type = AlertType.SUCCESS,
             isDismissible = false
         )
+        viewModel.onPaymentSuccess("https://api-retailetics-ops-mini-03.retailetics.com/ezyCart/invoice/000VGO-P9900003312",context as Activity)
     }
 
     LaunchedEffect(state.error) {
@@ -596,6 +598,7 @@ if (resetAndGoBack.value){
                     )
                                                                       },
                 onTitleClick = {
+                   // viewModel.onPaymentSuccess("https://api-retailetics-ops-mini-03.retailetics.com/ezyCart/invoice/000VGO-P9900003312",context as Activity)
                     showMainLogs.value = !showMainLogs.value
                     viewModel.clearLog()
                 })

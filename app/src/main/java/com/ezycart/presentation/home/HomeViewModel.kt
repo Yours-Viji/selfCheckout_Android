@@ -1,7 +1,24 @@
 package com.ezycart.presentation.home
 
+import android.app.Activity
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.net.Uri
+import android.net.http.SslError
+import android.os.Handler
+import android.os.Looper
+import android.print.PrintAttributes
 import android.util.Log
+import android.view.View
+import android.view.View.MeasureSpec
+import android.view.ViewGroup
+import android.webkit.SslErrorHandler
+import android.webkit.WebResourceError
+import android.webkit.WebResourceRequest
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.widget.FrameLayout
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ezycart.data.datastore.PreferencesManager
@@ -36,6 +53,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.File
@@ -133,16 +151,20 @@ class HomeViewModel @Inject constructor(
 
 
     private val _canShowProductNotScannedDialog = MutableStateFlow<Boolean>(false)
-    val canShowProductNotScannedDialog: StateFlow<Boolean> = _canShowProductNotScannedDialog.asStateFlow()
+    val canShowProductNotScannedDialog: StateFlow<Boolean> =
+        _canShowProductNotScannedDialog.asStateFlow()
 
     private val _canShowProductNotFoundDialog = MutableStateFlow<Boolean>(false)
-    val canShowProductNotFoundDialog: StateFlow<Boolean> = _canShowProductNotFoundDialog.asStateFlow()
+    val canShowProductNotFoundDialog: StateFlow<Boolean> =
+        _canShowProductNotFoundDialog.asStateFlow()
 
     private val _canShowValidationErrorDialog = MutableStateFlow<Boolean>(false)
-    val canShowValidationErrorDialog: StateFlow<Boolean> = _canShowValidationErrorDialog.asStateFlow()
+    val canShowValidationErrorDialog: StateFlow<Boolean> =
+        _canShowValidationErrorDialog.asStateFlow()
 
     private val _canShowProductMismatchDialog = MutableStateFlow<Boolean>(false)
-    val canShowProductMismatchDialog: StateFlow<Boolean> = _canShowProductMismatchDialog.asStateFlow()
+    val canShowProductMismatchDialog: StateFlow<Boolean> =
+        _canShowProductMismatchDialog.asStateFlow()
 
     private val _resetAndGoBack = MutableStateFlow<Boolean>(false)
     val resetAndGoBack: StateFlow<Boolean> = _resetAndGoBack.asStateFlow()
@@ -178,13 +200,15 @@ class HomeViewModel @Inject constructor(
         // observeUsbData()
     }
 
-    fun activateLoadCellTerminal(){
+    fun activateLoadCellTerminal() {
         _openLoadCellTerminalDialog.value = !openLoadCellTerminalDialog.value
     }
-    fun activateLedTerminal(){
+
+    fun activateLedTerminal() {
         _openLedTerminalDialog.value = !openLedTerminalDialog.value
     }
-    fun activatePrinterTerminal(){
+
+    fun activatePrinterTerminal() {
         _openPrinterTerminalDialog.value = !openPrinterTerminalDialog.value
     }
 
@@ -205,7 +229,7 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun clearSystemAlert(){
+    fun clearSystemAlert() {
         _clearSystemAlert.value = true
         _canShowValidationErrorDialog.value = false
         _canShowProductNotFoundDialog.value = false
@@ -216,6 +240,7 @@ class HomeViewModel @Inject constructor(
         _canShowPaymentProcessDialog.value = false
         _canShowPaymentProcessDialog.value = false
     }
+
     fun clearLog() {
         _loadCellValidationLog.value = ">>Loadcell Validation"
     }
@@ -223,15 +248,19 @@ class HomeViewModel @Inject constructor(
     fun setErrorMessage(data: String) {
         _errorMessage.value = "New Data ==>>: $data"
     }
+
     fun hidePaymentView() {
         _canMakePayment.value = false
     }
+
     fun showPaymentView() {
         _canMakePayment.value = true
     }
+
     fun getFormatedFinalAmount(): String {
-       return String.format("%.2f", shoppingCartInfo.value?.finalAmount ?: 0.0)
+        return String.format("%.2f", shoppingCartInfo.value?.finalAmount ?: 0.0)
     }
+
     private fun observeUsbData() {
         viewModelScope.launch {
             // This 'calls' the flow to start receiving data from the manager
@@ -263,8 +292,8 @@ class HomeViewModel @Inject constructor(
         createNewShoppingCart()
     }
 
-     fun clearCartDetails() {
-         cartId = ""
+    fun clearCartDetails() {
+        cartId = ""
         isJwtTokenCreated = false
         _productInfo.value = null
         _priceDetails.value = null
@@ -356,7 +385,7 @@ class HomeViewModel @Inject constructor(
 
     fun addProductToShoppingCart(barCode: String, quantity: Int) {
         loadingManager.show()
-       // resetProductInfoDetails()
+        // resetProductInfoDetails()
         viewModelScope.launch {
             _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
             when (val result = shoppingUseCase.addToCart(barCode, quantity)) {
@@ -455,7 +484,7 @@ class HomeViewModel @Inject constructor(
                     )
                     _productInfo.value = result.data
 
-                    val maxWeight = productInfo.value?.weightRange?.maxWeight?.toInt() ?: 0
+                      val maxWeight = productInfo.value?.weightRange?.maxWeight?.toInt() ?: 0
                    val canValidate = productInfo.value?.validateWG == true
                     if (canValidate && maxWeight < 25) {
                         addProductToShoppingCart(productInfo.value?.barcode.orEmpty(), 1)
@@ -464,7 +493,7 @@ class HomeViewModel @Inject constructor(
                         getPriceDetails(barCode)
                     }
 
-                  //  addProductToShoppingCart(productInfo.value!!.barcode,1)
+                   // addProductToShoppingCart(productInfo.value!!.barcode, 1)
 
                 }
 
@@ -745,9 +774,11 @@ class HomeViewModel @Inject constructor(
             timerDisplayForPaymentSuccess()
         }
     }
+
     fun timerDisplayForReceiptPrint() {
         viewModelScope.launch {
             showPrintReceiptAlertView()
+            LedSerialConnection.setScenario(AppScenario.PRINTING)
             delay(5000L)
 
             clearSystemAlert()
@@ -755,9 +786,15 @@ class HomeViewModel @Inject constructor(
 
         }
     }
+
     fun timerDisplayForPaymentSuccess() {
         viewModelScope.launch {
             showPaymentSuccessAlertView()
+            try {
+                makePayment(2)
+            } catch (e: Exception) {
+                TODO("Not yet implemented")
+            }
             delay(4000L)
 
             clearSystemAlert()
@@ -765,17 +802,21 @@ class HomeViewModel @Inject constructor(
 
         }
     }
+
     fun hideQrPaymentAlertView() {
         _canShowQrPaymentDialog.value = false
         stopPaymentStatusPolling()
 
     }
+
     fun showPaymentProcessAlertView() {
         _canShowPaymentProcessDialog.value = true
     }
+
     fun showPrintReceiptAlertView() {
         _canShowPrintReceiptDialog.value = true
     }
+
     fun showPaymentSuccessAlertView() {
         _canShowPaymentSuccessDialog.value = true
     }
@@ -867,7 +908,8 @@ class HomeViewModel @Inject constructor(
                         finalWeightOfLc1 = update.w1
                     }
                 }
-                1->{
+
+                1 -> {
                     finalWeightOfLc1 = update.w1
                     finalTotalWeight = update.w2
 
@@ -878,14 +920,14 @@ class HomeViewModel @Inject constructor(
                             product = product,
                             deltaW2 = update.delta_w2
                         )
-                        if(product.validateWG){
-                            if (result is ValidationResult.Success){
+                        if (product.validateWG) {
+                            if (result is ValidationResult.Success) {
                                 addProductToShoppingCart(product.barcode, 1)
-                            }else{
+                            } else {
                                 _canShowProductMismatchDialog.value = true
                                 // Mismatch
                             }
-                        }else{
+                        } else {
                             addProductToShoppingCart(product.barcode, 1)
                         }
 
@@ -915,23 +957,24 @@ class HomeViewModel @Inject constructor(
                         }
                     }
                 }*/
-               -1, -2->{
-                   if (update.delta_w2 <=50 && canShowProductNotScannedDialog.value){
-                       LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
-                       clearSystemAlert()
-                   }
-                   if (update.w2 <=50 && canShowPaymentSuccessDialog.value){
-                       clearSystemAlert()
-                       _canShowPaymentSuccessDialog.value = false
-                       _resetAndGoBack.value = true
-                       LedSerialConnection.setScenario(AppScenario.PRINTING)
-                       //LedSerialConnection.setScenario(AppScenario.ALL_OFF)
-                   }
+                -1, -2 -> {
+                    if (update.delta_w2 <= 50 && canShowProductNotScannedDialog.value) {
+                        LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
+                        clearSystemAlert()
+                    }
+                    if (update.w2 <= 50 && canShowPrintReceiptDialog.value) {
+                        clearSystemAlert()
+                        _canShowPrintReceiptDialog.value = false
+                        _resetAndGoBack.value = true
 
-                   /* if (canShowProductNotScannedDialog.value){
+                        //LedSerialConnection.setScenario(AppScenario.ALL_OFF)
+                    }
+
+                    /* if (canShowProductNotScannedDialog.value){
                         _canShowProductNotScannedDialog.value = false
                     }*/
                 }
+
                 10 -> {
                     if (cartCount.value == 0) {
                         // Updating before create cart // before start shopping  // New SOP
@@ -1079,16 +1122,16 @@ class HomeViewModel @Inject constructor(
             if (finalWeightOfLc1 <= 30.0 && difference <= threshold) {
                 _canMakePayment.value = true
                 _canShowValidationErrorDialog.value = false
-               // _errorMessage.value = "Weight is stable and within range."
+                // _errorMessage.value = "Weight is stable and within range."
             } else {
                 // Testing
                /* _canMakePayment.value = true
                 _canShowValidationErrorDialog.value = false*/
 
 
-                _canMakePayment.value = false
+                 _canMakePayment.value = false
                 _canShowValidationErrorDialog.value = true
-               // _errorMessage.value = "Weight mismatch detected!"
+                // _errorMessage.value = "Weight mismatch detected!"
                 // Weight difference is greater than 30g
                 LedSerialConnection.setScenario(AppScenario.ERROR)
             }
@@ -1147,7 +1190,7 @@ class HomeViewModel @Inject constructor(
             val id = json.optInt("loadcell_id")
             _errorMessage.value = "Full JSON = $jsonString\n"
             _terminalContent.value += "$jsonString\n"
-            _loadCellValidationLog.value  = "Full JSON = $jsonString\n"
+            _loadCellValidationLog.value = "Full JSON = $jsonString\n"
             handleWeightUpdate(
                 WeightUpdate(
                     status = status,
@@ -1176,7 +1219,7 @@ class HomeViewModel @Inject constructor(
     }
 
 
-    private suspend fun downloadPdf(pdfUrl: String,context : Context): File? {
+    /*private suspend fun downloadPdf(pdfUrl: String,context : Context): File? {
         return withContext(Dispatchers.IO) {
             try {
                 val destinationFile = File(context.cacheDir, "temp_receipt.pdf")
@@ -1208,6 +1251,219 @@ class HomeViewModel @Inject constructor(
                // showError("Could not download receipt")
             }
 
+        }
+    }*/
+
+    private suspend fun downloadPdf(pdfUrl: String, context: Context): File? {
+        return withContext(Dispatchers.IO) {
+            try {
+                // Use timestamp to prevent file collision
+                val destinationFile =
+                    File(context.cacheDir, "receipt_${System.currentTimeMillis()}.pdf")
+                URL(pdfUrl).openStream().use { input ->
+                    destinationFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                destinationFile
+            } catch (e: Exception) {
+                Log.e("Download", "Error: ${e.message}")
+                null
+            }
+        }
+    }
+
+    fun testPrinter(context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+
+            // --- ADD THE CODE HERE ---
+            val libFile = File(context.applicationInfo.nativeLibraryDir, "libbxl_common.so")
+            if (libFile.exists()) {
+                Log.d("PrinterTest", "FILE EXISTS AT: ${libFile.absolutePath}")
+                try {
+                    System.load(libFile.absolutePath)
+                    Log.d("PrinterTest", "Manual load success!")
+                } catch (e: Exception) {
+                    Log.e("PrinterTest", "Manual load failed: ${e.message}")
+                }
+            } else {
+                Log.e(
+                    "PrinterTest",
+                    "FILE DOES NOT EXIST IN LIB DIR: ${context.applicationInfo.nativeLibraryDir}"
+                )
+            }
+            // -------------------------
+
+            try {
+                // Now try the printer logic
+                val printer = BixolonUsbPrinter(context)
+                printer.triggerSelfTest("BK3-3")
+            } catch (e: Exception) {
+                Log.e("PrinterTest", "Printer Init Failed: ${e.message}")
+            }
+        }
+    }
+
+    fun onPaymentSuccess(webUrl: String, context: Activity) {
+        // Use Application Context to prevent crashes if the user navigates away
+        val appContext = context.applicationContext
+
+        viewModelScope.launch {
+            try {
+                _errorMessage.value = "Preparing receipt..."
+                Log.d("Printer", "Start: Downloading URL $webUrl")
+
+                // 1. Capture Bitmap (Run on Main Thread)
+                val receiptBitmap = captureUrlToBitmap(context,webUrl)
+                if (receiptBitmap != null) {
+                    // 2. Print (Run on IO Thread)
+                    withContext(Dispatchers.IO) {
+                        try {
+                            System.loadLibrary("bxl_common")
+                            val printer = BixolonUsbPrinter(appContext)
+                            printer.setupPrinter(appContext)
+                            delay(500)
+                            // Pass the bitmap to the printer
+                            printer.printBitmapToBixolon(receiptBitmap,context)
+
+                            Log.d("Printer", "Printing success")
+                            withContext(Dispatchers.Main) {
+                                _errorMessage.value = "Print Success!"
+                            }
+                        } catch (e: Exception) {
+                            Log.e("Printer", "Print Error: ${e.message}")
+                            withContext(Dispatchers.Main) {
+                                _errorMessage.value = "Printer Error: ${e.message}"
+                            }
+                        }
+                    }
+                } else {
+                    Log.e("Printer", "Bitmap was NULL")
+                    _errorMessage.value = "Failed to generate receipt image"
+                }
+            } catch (e: Exception) {
+                Log.e("Printer", "General Error: ${e.message}")
+            }
+        }
+    }
+
+    private suspend fun captureWebPage(context: Context, url: String): Bitmap? = suspendCancellableCoroutine { continuation ->
+        // USE APPLICATION CONTEXT - This is the most important change
+        val appContext = context.applicationContext
+
+        Handler(Looper.getMainLooper()).post {
+            val webView = WebView(appContext) // Use stable app context
+            val printWidth = 576
+
+            webView.settings.javaScriptEnabled = true
+            webView.settings.domStorageEnabled = true
+            webView.setBackgroundColor(android.graphics.Color.WHITE)
+
+            webView.webViewClient = object : WebViewClient() {
+                override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: SslError?) {
+                    handler?.proceed()
+                }
+
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    // Instead of a long delay, we measure and draw immediately
+                    webView.post {
+                        try {
+                            if (!continuation.isActive) return@post
+
+                            // Force Layout
+                            webView.measure(
+                                View.MeasureSpec.makeMeasureSpec(printWidth, View.MeasureSpec.EXACTLY),
+                                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+                            )
+                            val height = if (webView.measuredHeight > 0) webView.measuredHeight else 1800
+                            webView.layout(0, 0, printWidth, height)
+
+                            // Capture
+                            val bitmap = Bitmap.createBitmap(printWidth, height, Bitmap.Config.ARGB_8888)
+                            val canvas = Canvas(bitmap)
+                            canvas.drawColor(android.graphics.Color.WHITE)
+                            webView.draw(canvas)
+
+                            Log.d("PrinterDebug", "SUCCESS: Bitmap captured ${bitmap.width}x${bitmap.height}")
+
+                            continuation.resume(bitmap) {
+                                bitmap.recycle() // Cleanup if cancelled
+                            }
+                        } catch (e: Exception) {
+                            Log.e("PrinterDebug", "Capture Error: ${e.message}")
+                            if (continuation.isActive) continuation.resume(null) { }
+                        }
+                    }
+                }
+            }
+
+            Log.d("PrinterDebug", "Loading URL: $url")
+            webView.loadUrl(url)
+        }
+    }
+
+    private suspend fun captureUrlToBitmap(activity: Activity, url: String): Bitmap? = suspendCancellableCoroutine { continuation ->
+        activity.runOnUiThread {
+            val webView = WebView(activity)
+
+            // 1. MUST attach to a window to trigger rendering on newer Android versions
+            val params = FrameLayout.LayoutParams(576, 1) // 80mm width, 1px height
+            webView.layoutParams = params
+            webView.visibility = View.INVISIBLE // Hide from user
+
+            // Add to the activity's root layout
+            val rootView = activity.findViewById<ViewGroup>(android.R.id.content)
+            rootView.addView(webView)
+
+            webView.settings.apply {
+                javaScriptEnabled = true
+                domStorageEnabled = true
+                loadWithOverviewMode = true
+                useWideViewPort = true
+            }
+
+            webView.webViewClient = object : WebViewClient() {
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    Log.d("Printer", "Page Finished Loading. Waiting for JS...")
+
+                    // Give it 1.5 seconds for CSS/Images to render
+                    webView.postDelayed({
+                        try {
+                            // 2. Measure the full height of the content
+                            webView.measure(
+                                View.MeasureSpec.makeMeasureSpec(576, View.MeasureSpec.EXACTLY),
+                                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+                            )
+                            val contentHeight = webView.measuredHeight
+                            webView.layout(0, 0, 576, contentHeight)
+
+                            val bitmap = Bitmap.createBitmap(576, contentHeight, Bitmap.Config.ARGB_8888)
+                            val canvas = Canvas(bitmap)
+                            webView.draw(canvas)
+
+                            // 3. Cleanup: Remove from UI and destroy
+                            rootView.removeView(webView)
+                            webView.destroy()
+
+                            Log.d("Printer", "Bitmap Created: ${bitmap.height}px height")
+                            continuation.resume(bitmap) { }
+                        } catch (e: Exception) {
+                            Log.e("Printer", "Bitmap Failed: ${e.message}")
+                            rootView.removeView(webView)
+                            continuation.resume(null) { }
+                        }
+                    }, 1500)
+                }
+
+                override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
+                    Log.e("Printer", "URL Load Error: ${error?.description}")
+                    rootView.removeView(webView)
+                    continuation.resume(null) { }
+                }
+            }
+
+            Log.d("Printer", "Loading URL: $url")
+            webView.loadUrl(url)
         }
     }
 }
