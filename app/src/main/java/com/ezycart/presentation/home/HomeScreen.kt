@@ -1101,6 +1101,7 @@ fun CameraPreview(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
+    // 1. Initialize PreviewView with COMPATIBLE mode for rotation
     val previewView = remember {
         PreviewView(context).apply {
             implementationMode = PreviewView.ImplementationMode.COMPATIBLE
@@ -1117,7 +1118,7 @@ fun CameraPreview(
 
     val currentRecording = remember { mutableStateOf<Recording?>(null) }
 
-    // 1. Define the start function clearly
+    // 2. Define Recording Logic with explicit types to fix "Argument type mismatch"
     val startRecording: () -> Unit = {
         val fileName = "SelfCheckout_${System.currentTimeMillis()}"
         val contentValues = ContentValues().apply {
@@ -1145,15 +1146,18 @@ fun CameraPreview(
                         is VideoRecordEvent.Finalize -> {
                             if (!event.hasError()) {
                                 onRecordingFinished(event.outputResults.outputUri)
+                            } else {
+                                Log.e("CameraPreview", "Recording error: ${event.error}")
                             }
+                            currentRecording.value = null
                         }
                     }
                 }
             currentRecording.value = recording
         } catch (e: Exception) {
-            Log.e("CameraPreview", "Start Recording Failed", e)
+            Log.e("CameraPreview", "Start recording failed", e)
         }
-        // Force the return type to Unit to satisfy the compiler
+        // Ensure lambda returns Unit
         Unit
     }
 
@@ -1162,35 +1166,48 @@ fun CameraPreview(
         currentRecording.value = null
     }
 
-    // Pass the functions back to the UI
+    // 3. Bind Camera and restore your External Camera logic
     LaunchedEffect(Unit) {
-        onCaptureReady(startRecording, stopRecording)
-
         val cameraProvider = ProcessCameraProvider.getInstance(context).get()
+
         val preview = Preview.Builder().build().also {
             it.setSurfaceProvider(previewView.surfaceProvider)
         }
 
         try {
             cameraProvider.unbindAll()
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
-            cameraProvider.bindToLifecycle(
-                lifecycleOwner,
-                cameraSelector,
-                preview,
-                videoCaptureState
-            )
+            // RESTORED: Your specific External -> Back -> First logic
+            val cameraInfoList = cameraProvider.availableCameraInfos
+            val selectedCameraInfo = cameraInfoList.firstOrNull { info ->
+                info.lensFacing == CameraSelector.LENS_FACING_EXTERNAL ||
+                        info.lensFacing == CameraSelector.LENS_FACING_BACK
+            } ?: cameraInfoList.firstOrNull()
+
+            if (selectedCameraInfo != null) {
+                cameraProvider.bindToLifecycle(
+                    lifecycleOwner,
+                    selectedCameraInfo.cameraSelector,
+                    preview,
+                    videoCaptureState
+                )
+            }
+
+            // Pass the typed functions to your UI
+            onCaptureReady(startRecording, stopRecording)
+
         } catch (e: Exception) {
             Log.e("CameraPreview", "Binding failed", e)
         }
     }
 
+    // 4. Render and apply the 90-degree Hardware Fix
     AndroidView(
         factory = { previewView },
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
             .layout { measurable, constraints ->
+                // Swap dimensions for rotation
                 val placeable = measurable.measure(
                     constraints.copy(
                         minWidth = constraints.minHeight,
@@ -1199,12 +1216,13 @@ fun CameraPreview(
                         maxHeight = constraints.maxWidth
                     )
                 )
+
                 layout(placeable.height, placeable.width) {
                     placeable.placeWithLayer(
                         x = -(placeable.width - placeable.height) / 2,
                         y = -(placeable.height - placeable.width) / 2
                     ) {
-                        rotationZ = 90f
+                        rotationZ = 90f // Change to 270f if needed by TL
                     }
                 }
             }
