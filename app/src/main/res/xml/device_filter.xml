@@ -44,4 +44,14 @@
     <!-- add IDs here -->
     <usb-device class="7" protocol="2" subclass="1" />
     <usb-device vendor-id="04D8" product-id="003A" />
+
+    <!-- Bixolon BK3-3 USB Configuration -->
+    <!-- Vendor ID: 0x0416 (1046) - Bixolon -->
+    <usb-device vendor-id="1046" product-id="20497" />
+    <usb-device vendor-id="1046" product-id="20498" />
+    <usb-device vendor-id="1046" product-id="20499" />
+    <!-- Generic Bixolon Vendor ID -->
+    <usb-device vendor-id="1046" />
+    <!-- Generic USB Printer Class -->
+    <usb-device class="7" subclass="1" protocol="2" />
 </resources>

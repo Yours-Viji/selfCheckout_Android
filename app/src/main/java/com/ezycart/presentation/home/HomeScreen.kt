@@ -598,9 +598,10 @@ if (resetAndGoBack.value){
                     )
                                                                       },
                 onTitleClick = {
+                    viewModel.printPdfFromUrl("https://morth.nic.in/sites/default/files/dd12-13_0.pdf",context as Activity)
                    // viewModel.onPaymentSuccess("https://api-retailetics-ops-mini-03.retailetics.com/ezyCart/invoice/000VGO-P9900003312",context as Activity)
-                    showMainLogs.value = !showMainLogs.value
-                    viewModel.clearLog()
+                   /* showMainLogs.value = !showMainLogs.value
+                    viewModel.clearLog()*/
                 })
             if (showMainLogs.value) {
                 Text(
@@ -1252,8 +1253,8 @@ fun EmptyCartScreen(
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .size(
-                    width = 200.dp,
-                    height = 200.dp
+                    width = 350.dp,
+                    height = 350.dp
                 )
                 .graphicsLayer(
                     scaleX = -1f

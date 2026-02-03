@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
 import android.net.Uri
 import android.net.http.SslError
 import android.os.Handler
@@ -16,11 +17,13 @@ import android.view.ViewGroup
 import android.webkit.SslErrorHandler
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bxl.config.editor.BXLConfigLoader
 import com.ezycart.data.datastore.PreferencesManager
 import com.ezycart.data.remote.dto.CartItem
 import com.ezycart.data.remote.dto.CreateJwtTokenRequest
@@ -45,6 +48,8 @@ import com.ezycart.services.usb.LedSerialConnection
 import com.ezycart.services.usb.LoginWeightScaleSerialPort
 import com.ezycart.services.usb.UsbSerialManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import jpos.POSPrinter
+import jpos.POSPrinterConst
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -484,8 +489,8 @@ class HomeViewModel @Inject constructor(
                     )
                     _productInfo.value = result.data
 
-                      val maxWeight = productInfo.value?.weightRange?.maxWeight?.toInt() ?: 0
-                   val canValidate = productInfo.value?.validateWG == true
+                    val maxWeight = productInfo.value?.weightRange?.maxWeight?.toInt() ?: 0
+                    val canValidate = productInfo.value?.validateWG == true
                     if (canValidate && maxWeight < 25) {
                         addProductToShoppingCart(productInfo.value?.barcode.orEmpty(), 1)
                         _productInfo.value = null
@@ -493,7 +498,7 @@ class HomeViewModel @Inject constructor(
                         getPriceDetails(barCode)
                     }
 
-                   // addProductToShoppingCart(productInfo.value!!.barcode, 1)
+                    // addProductToShoppingCart(productInfo.value!!.barcode, 1)
 
                 }
 
@@ -1125,11 +1130,11 @@ class HomeViewModel @Inject constructor(
                 // _errorMessage.value = "Weight is stable and within range."
             } else {
                 // Testing
-               /* _canMakePayment.value = true
-                _canShowValidationErrorDialog.value = false*/
+                /* _canMakePayment.value = true
+                 _canShowValidationErrorDialog.value = false*/
 
 
-                 _canMakePayment.value = false
+                _canMakePayment.value = false
                 _canShowValidationErrorDialog.value = true
                 // _errorMessage.value = "Weight mismatch detected!"
                 // Weight difference is greater than 30g
@@ -1303,43 +1308,81 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
-
+/*
     fun onPaymentSuccess(webUrl: String, context: Activity) {
-        // Use Application Context to prevent crashes if the user navigates away
         val appContext = context.applicationContext
 
         viewModelScope.launch {
             try {
-                _errorMessage.value = "Preparing receipt..."
-                Log.d("Printer", "Start: Downloading URL $webUrl")
+                _errorMessage.value = "Generating Receipt..."
+                val receiptBitmap = captureUrlToBitmap(context, webUrl)
 
-                // 1. Capture Bitmap (Run on Main Thread)
-                val receiptBitmap = captureUrlToBitmap(context,webUrl)
                 if (receiptBitmap != null) {
-                    // 2. Print (Run on IO Thread)
                     withContext(Dispatchers.IO) {
-                        try {
-                            System.loadLibrary("bxl_common")
-                            val printer = BixolonUsbPrinter(appContext)
-                            printer.setupPrinter(appContext)
-                            delay(500)
-                            // Pass the bitmap to the printer
-                            printer.printBitmapToBixolon(receiptBitmap,context)
+                        val logicalName = "BK3_Printer"
+                        val configLoader = BXLConfigLoader(appContext)
 
-                            Log.d("Printer", "Printing success")
-                            withContext(Dispatchers.Main) {
-                                _errorMessage.value = "Print Success!"
-                            }
+                        try {
+                            // 1. JCL REGISTRY SETUP
+                            configLoader.openFile()
+                            configLoader.removeEntry(logicalName)
+                            configLoader.addEntry(
+                                logicalName,
+                                BXLConfigLoader.DEVICE_CATEGORY_POS_PRINTER,
+                                BXLConfigLoader.PRODUCT_NAME_BK3_3,
+                                BXLConfigLoader.DEVICE_BUS_USB,
+                                ""
+                            )
+                            configLoader.saveFile()
+
+                            // 2. PRINTER INITIALIZATION
+                            val posPrinter = POSPrinter(appContext)
+                            posPrinter.open(logicalName)
+                            posPrinter.claim(3000)
+                            posPrinter.deviceEnabled = true
+
+                            // 3. DARKNESS & WIDTH
+                            val width =
+                                if (posPrinter.recLineWidth > 0) posPrinter.recLineWidth else 576
+                            // Ensure printer is ready for graphics
+                            posPrinter.transactionPrint(
+                                POSPrinterConst.PTR_S_RECEIPT,
+                                POSPrinterConst.PTR_TP_TRANSACTION
+                            )
+
+                            // 4. PRINT BITMAP (The Fix for the Null Pointer crash)
+                            // We use PTR_BM_LEFT to avoid center-calculation logic crashes
+                            posPrinter.printBitmap(
+                                POSPrinterConst.PTR_S_RECEIPT,
+                                receiptBitmap,
+                                width,
+                                POSPrinterConst.PTR_BM_LEFT
+                            )
+
+                            // 5. FINISH TRANSACTION & FEED
+                            posPrinter.transactionPrint(
+                                POSPrinterConst.PTR_S_RECEIPT,
+                                POSPrinterConst.PTR_TP_NORMAL
+                            )
+
+                            // Feed 3 lines so the image fully exits the BK3-3 presenter
+                            posPrinter.printNormal(POSPrinterConst.PTR_S_RECEIPT, "\n\n\n")
+                            posPrinter.cutPaper(100)
+
+                            // 6. CLEANUP
+                            posPrinter.deviceEnabled = false
+                            posPrinter.release()
+                            posPrinter.close()
+
+                            withContext(Dispatchers.Main) { _errorMessage.value = "Success!" }
+
                         } catch (e: Exception) {
                             Log.e("Printer", "Print Error: ${e.message}")
                             withContext(Dispatchers.Main) {
-                                _errorMessage.value = "Printer Error: ${e.message}"
+                                _errorMessage.value = "Print Error: ${e.message}"
                             }
                         }
                     }
-                } else {
-                    Log.e("Printer", "Bitmap was NULL")
-                    _errorMessage.value = "Failed to generate receipt image"
                 }
             } catch (e: Exception) {
                 Log.e("Printer", "General Error: ${e.message}")
@@ -1347,89 +1390,206 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private suspend fun captureWebPage(context: Context, url: String): Bitmap? = suspendCancellableCoroutine { continuation ->
-        // USE APPLICATION CONTEXT - This is the most important change
-        val appContext = context.applicationContext
+    private suspend fun captureUrlToBitmap(activity: Activity, url: String): Bitmap? =
+        suspendCancellableCoroutine { continuation ->
+            activity.runOnUiThread {
+                // CRITICAL for modern Android: Allow capturing the whole page
+                WebView.enableSlowWholeDocumentDraw()
 
-        Handler(Looper.getMainLooper()).post {
-            val webView = WebView(appContext) // Use stable app context
-            val printWidth = 576
+                val webView = WebView(activity)
 
-            webView.settings.javaScriptEnabled = true
-            webView.settings.domStorageEnabled = true
-            webView.setBackgroundColor(android.graphics.Color.WHITE)
+                // Disable Hardware Acceleration for this specific view so the Canvas can capture pixels
+                webView.setLayerType(View.LAYER_TYPE_SOFTWARE, null)
 
-            webView.webViewClient = object : WebViewClient() {
-                override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: SslError?) {
-                    handler?.proceed()
+                val params = FrameLayout.LayoutParams(576, ViewGroup.LayoutParams.WRAP_CONTENT)
+                webView.layoutParams = params
+                webView.visibility = View.INVISIBLE
+
+                val rootView = activity.findViewById<ViewGroup>(android.R.id.content)
+                rootView.addView(webView)
+
+                webView.settings.apply {
+                    javaScriptEnabled = true
+                    domStorageEnabled = true
+                    cacheMode = WebSettings.LOAD_NO_CACHE
                 }
 
-                override fun onPageFinished(view: WebView?, url: String?) {
-                    // Instead of a long delay, we measure and draw immediately
-                    webView.post {
-                        try {
-                            if (!continuation.isActive) return@post
+                webView.webViewClient = object : WebViewClient() {
+                    override fun onPageFinished(view: WebView?, url: String?) {
+                        // Delay to allow CSS/JS/Images to actually paint
+                        webView.postDelayed({
+                            try {
+                                webView.measure(
+                                    View.MeasureSpec.makeMeasureSpec(576, View.MeasureSpec.EXACTLY),
+                                    View.MeasureSpec.makeMeasureSpec(
+                                        0,
+                                        View.MeasureSpec.UNSPECIFIED
+                                    )
+                                )
+                                val contentHeight = webView.measuredHeight
+                                webView.layout(0, 0, 576, contentHeight)
 
-                            // Force Layout
-                            webView.measure(
-                                View.MeasureSpec.makeMeasureSpec(printWidth, View.MeasureSpec.EXACTLY),
-                                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-                            )
-                            val height = if (webView.measuredHeight > 0) webView.measuredHeight else 1800
-                            webView.layout(0, 0, printWidth, height)
+                                // Create the Bitmap - Use ARGB_8888 and ensure it is not a "Hardware" bitmap
+                                val bitmap =
+                                    Bitmap.createBitmap(576, contentHeight, Bitmap.Config.ARGB_8888)
+                                val canvas = Canvas(bitmap)
 
-                            // Capture
-                            val bitmap = Bitmap.createBitmap(printWidth, height, Bitmap.Config.ARGB_8888)
-                            val canvas = Canvas(bitmap)
-                            canvas.drawColor(android.graphics.Color.WHITE)
-                            webView.draw(canvas)
+                                // Force a white background (Thermal printers see transparency as blank/white)
+                                canvas.drawColor(Color.WHITE)
+                                webView.draw(canvas)
 
-                            Log.d("PrinterDebug", "SUCCESS: Bitmap captured ${bitmap.width}x${bitmap.height}")
+                                rootView.removeView(webView)
+                                webView.destroy()
 
-                            continuation.resume(bitmap) {
-                                bitmap.recycle() // Cleanup if cancelled
+                                continuation.resume(bitmap) { }
+                            } catch (e: Exception) {
+                                rootView.removeView(webView)
+                                continuation.resume(null) { }
                             }
-                        } catch (e: Exception) {
-                            Log.e("PrinterDebug", "Capture Error: ${e.message}")
-                            if (continuation.isActive) continuation.resume(null) { }
-                        }
+                        }, 2000) // 2 seconds is safer for Android Boxes
+                    }
+                }
+                webView.loadUrl(url)
+            }
+        }*/
+fun printPdfFromUrl(pdfUrl: String, context: Activity) {
+    val appContext = context.applicationContext
+
+    viewModelScope.launch(Dispatchers.IO) {
+        try {
+            // 1. Download PDF to local storage
+            val localFile = File(appContext.cacheDir, "receipt.pdf")
+            URL(pdfUrl).openStream().use { input ->
+                localFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+
+            // 2. Setup JCL Registry (Same as before, required for Android Box)
+            val logicalName = "BK3_Printer"
+            val configLoader = BXLConfigLoader(appContext)
+            configLoader.openFile()
+            configLoader.removeEntry(logicalName)
+            configLoader.addEntry(logicalName, BXLConfigLoader.DEVICE_CATEGORY_POS_PRINTER,
+                BXLConfigLoader.PRODUCT_NAME_BK3_3, BXLConfigLoader.DEVICE_BUS_USB, "")
+            configLoader.saveFile()
+
+            // 3. Initialize Printer
+            val posPrinter = POSPrinter(appContext)
+            posPrinter.open(logicalName)
+            posPrinter.claim(5000)
+            posPrinter.deviceEnabled = true
+
+            // 4. PRINT PDF
+            // Parameters: station, fileName, width, alignment, startPage, endPage
+            // We use 576 for BK3-3 width (80mm)
+            posPrinter.printPDFFile(
+                POSPrinterConst.PTR_S_RECEIPT,
+                Uri.parse("https://morth.nic.in/sites/default/files/dd12-13_0.pdf"),
+                576,
+                POSPrinterConst.PTR_BM_LEFT,
+                0, // Start page (0 for all)
+                0  // End page (0 for all)
+            )
+
+            // 5. Feed and Cut
+            posPrinter.printNormal(POSPrinterConst.PTR_S_RECEIPT, "\n\n\n\n\n")
+            posPrinter.cutPaper(100)
+
+            // Cleanup
+            posPrinter.deviceEnabled = false
+            posPrinter.release()
+            posPrinter.close()
+            localFile.delete() // Remove temp file
+
+        } catch (e: Exception) {
+            Log.e("Printer", "PDF Print Failed: ${e.message}")
+        }
+    }
+}
+fun onPaymentSuccess(webUrl: String, context: Activity) {
+    val appContext = context.applicationContext
+
+    viewModelScope.launch {
+        try {
+            _errorMessage.value = "Generating Receipt..."
+            val receiptBitmap = captureUrlToBitmap(context, webUrl)
+
+            if (receiptBitmap != null) {
+                withContext(Dispatchers.IO) {
+                    try {
+                        val logicalName = "BK3_Printer"
+                        val configLoader = BXLConfigLoader(appContext)
+
+                        // 1. REGISTRY SETUP
+                        configLoader.openFile()
+                        configLoader.removeEntry(logicalName)
+                        configLoader.addEntry(logicalName, BXLConfigLoader.DEVICE_CATEGORY_POS_PRINTER,
+                            BXLConfigLoader.PRODUCT_NAME_BK3_3, BXLConfigLoader.DEVICE_BUS_USB, "")
+                        configLoader.saveFile()
+
+                        // 2. OPEN & CLAIM (Higher timeout for Android Box)
+                        val posPrinter = POSPrinter(appContext)
+                        posPrinter.open(logicalName)
+                        posPrinter.claim(5000)
+                        posPrinter.deviceEnabled = true
+
+                        // 3. PRINTING (The crash-proof method)
+                        val width = if (posPrinter.recLineWidth > 0) posPrinter.recLineWidth else 576
+
+                        // Use a Transaction to lock the buffer on the Box
+                        posPrinter.transactionPrint(POSPrinterConst.PTR_S_RECEIPT, POSPrinterConst.PTR_TP_TRANSACTION)
+
+                        posPrinter.printBitmap(
+                            POSPrinterConst.PTR_S_RECEIPT,
+                            receiptBitmap, // This is now a guaranteed software bitmap
+                            width,
+                            POSPrinterConst.PTR_BM_LEFT // Use LEFT to avoid SDK string math crashes
+                        )
+
+                        posPrinter.transactionPrint(POSPrinterConst.PTR_S_RECEIPT, POSPrinterConst.PTR_TP_NORMAL)
+
+                        // 4. FEED & CUT
+                        posPrinter.printNormal(POSPrinterConst.PTR_S_RECEIPT, "\n\n\n\n")
+                        posPrinter.cutPaper(100)
+
+                        // 5. CLEANUP
+                        posPrinter.deviceEnabled = false
+                        posPrinter.release()
+                        posPrinter.close()
+
+                    } catch (e: Exception) {
+                        Log.e("Printer", "Box Error: ${e.message}")
                     }
                 }
             }
-
-            Log.d("PrinterDebug", "Loading URL: $url")
-            webView.loadUrl(url)
+        } catch (e: Exception) {
+            Log.e("Printer", "General Error: ${e.message}")
         }
     }
-
+}
     private suspend fun captureUrlToBitmap(activity: Activity, url: String): Bitmap? = suspendCancellableCoroutine { continuation ->
         activity.runOnUiThread {
+            // Essential for modern Android WebView captures
+            WebView.enableSlowWholeDocumentDraw()
+
             val webView = WebView(activity)
 
-            // 1. MUST attach to a window to trigger rendering on newer Android versions
-            val params = FrameLayout.LayoutParams(576, 1) // 80mm width, 1px height
-            webView.layoutParams = params
-            webView.visibility = View.INVISIBLE // Hide from user
+            // CRITICAL: Disable Hardware Acceleration for this view.
+            // This ensures the pixels are accessible to the CPU/Bixolon SDK.
+            webView.setLayerType(View.LAYER_TYPE_SOFTWARE, null)
 
-            // Add to the activity's root layout
+            val params = FrameLayout.LayoutParams(576, ViewGroup.LayoutParams.WRAP_CONTENT)
+            webView.layoutParams = params
+            webView.visibility = View.INVISIBLE
+
             val rootView = activity.findViewById<ViewGroup>(android.R.id.content)
             rootView.addView(webView)
 
-            webView.settings.apply {
-                javaScriptEnabled = true
-                domStorageEnabled = true
-                loadWithOverviewMode = true
-                useWideViewPort = true
-            }
-
             webView.webViewClient = object : WebViewClient() {
                 override fun onPageFinished(view: WebView?, url: String?) {
-                    Log.d("Printer", "Page Finished Loading. Waiting for JS...")
-
-                    // Give it 1.5 seconds for CSS/Images to render
                     webView.postDelayed({
                         try {
-                            // 2. Measure the full height of the content
                             webView.measure(
                                 View.MeasureSpec.makeMeasureSpec(576, View.MeasureSpec.EXACTLY),
                                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
@@ -1437,32 +1597,30 @@ class HomeViewModel @Inject constructor(
                             val contentHeight = webView.measuredHeight
                             webView.layout(0, 0, 576, contentHeight)
 
+                            // 1. Create a software-backed bitmap
                             val bitmap = Bitmap.createBitmap(576, contentHeight, Bitmap.Config.ARGB_8888)
                             val canvas = Canvas(bitmap)
+
+                            // 2. Force White Background (Thermal printers see transparency as NULL/Blank)
+                            canvas.drawColor(Color.WHITE)
                             webView.draw(canvas)
 
-                            // 3. Cleanup: Remove from UI and destroy
+                            // 3. MANDATORY: Create a non-hardware copy
+                            // This fixes the "string.length" null pointer error
+                            val softwareBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, false)
+
                             rootView.removeView(webView)
                             webView.destroy()
+                            bitmap.recycle() // Clean up the first copy
 
-                            Log.d("Printer", "Bitmap Created: ${bitmap.height}px height")
-                            continuation.resume(bitmap) { }
+                            continuation.resume(softwareBitmap) { }
                         } catch (e: Exception) {
-                            Log.e("Printer", "Bitmap Failed: ${e.message}")
                             rootView.removeView(webView)
                             continuation.resume(null) { }
                         }
-                    }, 1500)
-                }
-
-                override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
-                    Log.e("Printer", "URL Load Error: ${error?.description}")
-                    rootView.removeView(webView)
-                    continuation.resume(null) { }
+                    }, 2000)
                 }
             }
-
-            Log.d("Printer", "Loading URL: $url")
             webView.loadUrl(url)
         }
     }
