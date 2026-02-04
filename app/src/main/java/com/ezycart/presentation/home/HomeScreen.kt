@@ -306,6 +306,7 @@ if (resetAndGoBack.value){
     }
 
     if(canShowPrintReceipt.value) {
+        viewModel.hidePaymentView()
         currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
             title = "Thank You for Shopping with us.",
@@ -408,6 +409,7 @@ if (resetAndGoBack.value){
         }
     }
     if (showPaymentSuccessDialog.value) {
+        viewModel.hidePaymentView()
        /* PaymentSuccessAlert(
 
             onSendReceipt = {
@@ -426,7 +428,20 @@ if (resetAndGoBack.value){
             message = "Please collect your receipt.\nThank you for your purchase!",
             lottieFileName = "anim_success_3.json",
             type = AlertType.SUCCESS,
-            isDismissible = false
+            isDismissible = false,
+            positiveButtonText = "Print Receipt",
+            onPositiveClick = {
+
+                currentSystemAlert.value = null
+                viewModel.timerDisplayForReceiptPrint()
+
+                              },
+            negativeButtonText = "Exit & Close",
+            onNegativeClick = {
+                currentSystemAlert.value = null
+                viewModel.resetLoadCell()
+                onLogout()
+            }
         )
         LedSerialConnection.setScenario(AppScenario.PAYMENT_SUCCESS)
     }
@@ -503,7 +518,9 @@ if (resetAndGoBack.value){
                     message = "Please wait for our Staff to assist you.",
                     lottieFileName = "anim_warning_circle.json",
                     type = AlertType.INFO,
-                    isDismissible = true
+                    isDismissible = true,
+                    positiveButtonText = "Ok",
+                    onPositiveClick = {currentSystemAlert.value = null}
                 )
             },
             onCardPaymentClicked = {viewModel.timerDisplayForPaymentProcess()},
@@ -594,11 +611,13 @@ if (resetAndGoBack.value){
                         message = "Please wait for our Staff to assist you.",
                         lottieFileName = "anim_warning_circle.json",
                         type = AlertType.INFO,
-                        isDismissible = true
+                        isDismissible = true,
+                        positiveButtonText = "Ok",
+                        onPositiveClick = {currentSystemAlert.value = null}
                     )
                                                                       },
                 onTitleClick = {
-                    viewModel.printPdfFromUrl("https://morth.nic.in/sites/default/files/dd12-13_0.pdf",context as Activity)
+                    viewModel.onPaymentSuccess("https://morth.nic.in/sites/default/files/dd12-13_0.pdf",context as Activity)
                    // viewModel.onPaymentSuccess("https://api-retailetics-ops-mini-03.retailetics.com/ezyCart/invoice/000VGO-P9900003312",context as Activity)
                    /* showMainLogs.value = !showMainLogs.value
                     viewModel.clearLog()*/
@@ -2423,83 +2442,6 @@ fun BillRow(label: String, value: String, isBold: Boolean = false, color: Color 
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun MyTopAppBar(
-    employeeName: String = "",
-    cartCount: Int = 0,
-    onMenuClick: () -> Unit,
-    onFirstIconClick: () -> Unit,
-    onLogout: () -> Unit,
-    onRefresh: () -> Unit
-) {
-    TopAppBar(
-        title = {
-            Text(
-                text = "Hi, WELCOME",
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 12.sp,
-                    color = Color.White
-                )
-            )
-        },
-        navigationIcon = {
-            IconButton(
-                onClick = onMenuClick,
-                modifier = Modifier
-                    .size(30.dp)
-                    .clip(CircleShape)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Menu,
-                    contentDescription = "Menu",
-                    tint = Color.White
-                )
-            }
-        },
-        actions = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(5.dp)
-            ) {
-                /* IconButton(
-                     onClick = {
-                         onRefresh()
-                     }
-                 ) {
-                     Icon(
-                         painter = painterResource(id = R.drawable.outline_autorenew_24),
-                         contentDescription = "Refresh",
-                         tint = Color.White,
-                         modifier = Modifier.size(28.dp)
-                     )
-                 }
-                 Spacer(Modifier.width(3.dp))*/
-                CartIconWithBadge(count = cartCount)
-                Spacer(Modifier.width(3.dp))
-                IconButton(
-                    onClick = {
-                        onLogout()
-                    }
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.outline_logout_24),
-                        contentDescription = "Logout",
-                        tint = Color.White,
-                        modifier = Modifier.size(23.dp)
-                    )
-                }
-
-                Spacer(Modifier.width(5.dp))
-            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            titleContentColor = MaterialTheme.colorScheme.primary
-        )
-    )
-}
 
 @Composable
 fun CartIconWithBadge(

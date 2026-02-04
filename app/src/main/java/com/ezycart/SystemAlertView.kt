@@ -1,6 +1,8 @@
 package com.ezycart
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -10,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,6 +36,9 @@ fun CommonAlertView(
     state: AlertState,
     onClose: () -> Unit
 ) {
+    // Custom Brand Color
+    val brandPurple = Color(0xFF5A398F)
+
     Dialog(
         onDismissRequest = { if (state.isDismissible) onClose() },
         properties = DialogProperties(
@@ -41,7 +47,7 @@ fun CommonAlertView(
         )
     ) {
         Surface(
-            shape = RoundedCornerShape(24.dp), // Smooth rounded corners
+            shape = RoundedCornerShape(24.dp),
             color = Color.White,
             modifier = Modifier
                 .fillMaxWidth()
@@ -57,7 +63,7 @@ fun CommonAlertView(
                     text = state.title,
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.ExtraBold,
-                        fontSize = 22.sp
+                        fontSize = 24.sp
                     ),
                     textAlign = TextAlign.Center,
                     color = Color.Black
@@ -65,7 +71,7 @@ fun CommonAlertView(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 2. Center Lottie Animation (Loading from Assets)
+                // 2. Lottie Animation
                 val composition = rememberLottieComposition(
                     LottieCompositionSpec.Asset(state.lottieFileName)
                 )
@@ -77,39 +83,79 @@ fun CommonAlertView(
                 LottieAnimation(
                     composition = composition.value,
                     progress = { progress.value },
-                    modifier = Modifier.size(180.dp) // Optimized size for kiosk screens
+                    modifier = Modifier.size(180.dp)
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 3. Bottom Message
+                // 3. Message
                 Text(
                     text = state.message,
                     style = MaterialTheme.typography.bodyLarge.copy(
-                        lineHeight = 24.sp
+                        lineHeight = 26.sp,
+                        fontSize = 18.sp
                     ),
                     textAlign = TextAlign.Center,
                     color = Color.DarkGray
                 )
 
-                // 4. Dismiss Button (Only if cancellable)
-                if (state.isDismissible) {
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Button(
-                        onClick = onClose,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = when (state.type) {
-                                AlertType.ERROR -> Color(0xFFC62828)
-                                AlertType.SUCCESS -> Color(0xFF2E7D32)
-                                else -> Color.Black
-                            }
-                        )
-                    ) {
-                        Text("CLOSE", fontWeight = FontWeight.Bold, color = Color.White)
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // 4. Button Container
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Left Button (e.g., Exit & Close)
+                    if (state.negativeButtonText != null) {
+                        Button(
+                            onClick = {
+                                state.onNegativeClick?.invoke()
+                                onClose()
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(56.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = brandPurple,
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Text(
+                                text = state.negativeButtonText.uppercase(),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+
+                    // Right Button (e.g., Print Receipt)
+                    if (state.positiveButtonText != null) {
+                        Button(
+                            onClick = {
+                                state.onPositiveClick()
+                                onClose()
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(56.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = when (state.type) {
+                                    AlertType.ERROR -> Color(0xFFC62828)
+                                    AlertType.SUCCESS -> Color(0xFF2E7D32)
+                                    else -> brandPurple // Default to brand color
+                                },
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Text(
+                                text = state.positiveButtonText.uppercase(),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
+                        }
                     }
                 }
             }
@@ -127,5 +173,10 @@ data class AlertState(
     val lottieFileName: String,
     val type: AlertType,
     val isDismissible: Boolean = true,
-    val onDismiss: () -> Unit = {}
+    // Left button config
+    val negativeButtonText: String? = null,
+    val onNegativeClick: (() -> Unit)? = null,
+    // Right button config (Primary)
+    val positiveButtonText: String? = "CLOSE",
+    val onPositiveClick: (() -> Unit) = {}
 )

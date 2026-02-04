@@ -245,7 +245,9 @@ class HomeViewModel @Inject constructor(
         _canShowPaymentProcessDialog.value = false
         _canShowPaymentProcessDialog.value = false
     }
-
+    fun resetAndGoBack(){
+        _resetAndGoBack.value = true
+    }
     fun clearLog() {
         _loadCellValidationLog.value = ">>Loadcell Validation"
     }
@@ -800,10 +802,10 @@ class HomeViewModel @Inject constructor(
             } catch (e: Exception) {
                 TODO("Not yet implemented")
             }
-            delay(4000L)
+            //delay(4000L)
 
-            clearSystemAlert()
-            timerDisplayForReceiptPrint()
+           // clearSystemAlert()
+
 
         }
     }
@@ -969,8 +971,8 @@ class HomeViewModel @Inject constructor(
                     }
                     if (update.w2 <= 50 && canShowPrintReceiptDialog.value) {
                         clearSystemAlert()
-                        _canShowPrintReceiptDialog.value = false
-                        _resetAndGoBack.value = true
+                       /* _canShowPrintReceiptDialog.value = false
+                        _resetAndGoBack.value = true*/
 
                         //LedSerialConnection.setScenario(AppScenario.ALL_OFF)
                     }
