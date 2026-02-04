@@ -624,7 +624,8 @@ if (resetAndGoBack.value){
 
                     /* showMainLogs.value = !showMainLogs.value
                     viewModel.clearLog()*/
-                })
+                },
+                onClearClick ={clearTransAction.value = true})
             if (showMainLogs.value) {
                 Text(
                     text = loadCellValidationLog.value,
@@ -726,7 +727,8 @@ fun BitesHeaderNew(
     viewModel: HomeViewModel,
     cartCount: Int = 0,
     onHelpClick: () -> Unit,
-    onTitleClick: () -> Unit
+    onTitleClick: () -> Unit,
+    onClearClick: () -> Unit
 ) {
     val showManualBarCode = remember { mutableStateOf(false) }
     val scannedCode = remember { mutableStateOf<String?>(null) }
@@ -862,6 +864,22 @@ fun BitesHeaderNew(
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_settings),
+                        contentDescription = "settings",
+                        tint = Color.White,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+                Spacer(modifier = Modifier.width(25.dp)) // Space between the two icons
+
+                // Settings Button
+                Box(
+                    modifier = Modifier
+                        .size(33.dp)
+                        .clickable { onClearClick() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_reset),
                         contentDescription = "settings",
                         tint = Color.White,
                         modifier = Modifier.fillMaxSize()
@@ -1314,12 +1332,12 @@ fun PickersShoppingScreen(
     val shoppingCartInfo = viewModel.shoppingCartInfo.collectAsState()
     val isPickerModel = viewModel.isPickerModel.collectAsState()
 
-    val sheetState = rememberModalBottomSheetState(
+    /*val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true
-    )
-    var showSheet = remember { mutableStateOf(false) }
+    )*/
+    //var showSheet = remember { mutableStateOf(false) }
 
-    if (showSheet.value) {
+    /*if (showSheet.value) {
         ModalBottomSheet(
             onDismissRequest = { showSheet.value = false },
             sheetState = sheetState,
@@ -1340,7 +1358,7 @@ fun PickersShoppingScreen(
                 )
             }
         }
-    }
+    }*/
 
     Row(
         modifier = Modifier
@@ -1425,7 +1443,7 @@ fun PickersShoppingScreen(
     }
 }
 
-@Composable
+/*@Composable
 fun CheckoutSummaryScreen(
     shoppingCartInfo: State<ShoppingCartDetails?>,
     onQrPaymentClick: () -> Unit,
@@ -1482,7 +1500,7 @@ fun CheckoutSummaryScreen(
         Spacer(modifier = Modifier.height(10.dp))
 
         // Apply Coupon / Voucher Button
-        /* Button(
+        *//* Button(
              onClick = {
 
              },
@@ -1511,7 +1529,7 @@ fun CheckoutSummaryScreen(
                      color = Color.White
                  )
              )
-         }*/
+         }*//*
 
         // Take up remaining space → pushes "Total Payable" to bottom
         Spacer(modifier = Modifier.weight(1f))
@@ -1589,7 +1607,7 @@ fun CheckoutSummaryScreen(
             }
         }
     }
-}
+}*/
 
 @Composable
 fun AnimatedPayableText() {
@@ -1712,21 +1730,32 @@ fun CartScreen(
                 Column(
                     modifier = Modifier.padding(24.dp)
                 ) {
+                    Text(
+                        text = "Total Products : ${paymentSummary?.totalItems ?: 0}",
+                        color = MaterialTheme.colorScheme.primary,
+
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 25.sp
+                        )
+
+                    )
+                    Spacer(Modifier.height(5.dp))
                     // --- BILLING SECTION ---
                     val summaryRows = listOf(
-                        "Sub Total" to (paymentSummary?.totalPrice ?: 0.0),
-                        "Promo Discount" to (paymentSummary?.promotionSave ?: 0.0),
-                        "Special Discount" to (paymentSummary?.totalDiscount ?: 0.0),
-                        "Coupon Discount" to (paymentSummary?.couponAmount ?: 0.0),
-                        "Voucher Discount" to (paymentSummary?.vourcherAmount ?: 0.0),
-                        "Tax" to (paymentSummary?.totalTax ?: 0.0)
+                        Triple("Sub Total", paymentSummary?.totalPrice ?: 0.0, true),
+                        Triple("Promo Discount", paymentSummary?.promotionSave ?: 0.0, false),
+                        Triple("Special Discount", paymentSummary?.totalDiscount ?: 0.0, false),
+                        Triple("Voucher Discount", paymentSummary?.vourcherAmount ?: 0.0, false),
+                        Triple("Tax", paymentSummary?.totalTax ?: 0.0, true)
                     )
 
-                    summaryRows.forEach { (label, value) ->
+                    summaryRows.forEach { (label, value, isBiggerFont) ->
                         BillRow(
                             label,
                             "${Constants.currencySymbol} ${getFormattedPrice(value)}",
-                            color = Color.Black
+                            color = Color.Black,
+                            isBiggerFont = isBiggerFont
                         )
                     }
 
@@ -1751,7 +1780,7 @@ fun CartScreen(
                             modifier = Modifier
                                 .size(
                                     width = 270.dp,
-                                    height = 220.dp
+                                    height = 250.dp
                                 ) // Fixed Aspect Ratio for Camera
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(Color.Black)
@@ -1807,26 +1836,69 @@ fun CartScreen(
                                 "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.finalAmount ?: 0.0)}",
                                 isBold = true,
                                 color = MaterialTheme.colorScheme.primary,
+                                false
                             )
+                            Spacer(modifier = Modifier.height(5.dp))
                             // APPLY VOUCHER BUTTON
-                            OutlinedButton(
-                                onClick = { /* Add your logic */ },
+                            Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(50.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    "APPLY VOUCHER",
-                                    style = TextStyle(
-                                        fontSize = 18.sp,
+
+                                // MEMBER LOGIN BUTTON (LEFT)
+                                OutlinedButton(
+                                    onClick = { /* Member login logic */ },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight(),
+                                    shape = RoundedCornerShape(12.dp),
+                                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        contentColor = MaterialTheme.colorScheme.primary
+                                    )
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_member_logo),
+                                        contentDescription = "Member Login",
+                                        modifier = Modifier.size(40.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(5.dp))
+                                    Text(
+                                        "MEMBER",
+                                        fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold
                                     )
-                                )
+                                }
+
+                                // APPLY VOUCHER BUTTON (RIGHT)
+                                OutlinedButton(
+                                    onClick = { /* Voucher logic */ },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight(),
+                                    shape = RoundedCornerShape(12.dp),
+                                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        contentColor = MaterialTheme.colorScheme.primary
+                                    )
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_voucher),
+                                        contentDescription = "Apply Voucher",
+                                        modifier = Modifier.size(38.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(5.dp))
+                                    Text(
+                                        "VOUCHER",
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
                             }
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(5.dp))
                             // PAY NOW BUTTON
                             Button(
                                 onClick = {
@@ -1856,7 +1928,7 @@ fun CartScreen(
                             }
 
                             // CANCEL TRANSACTION (Red and Simple)
-                            TextButton(
+                            /*TextButton(
                                 onClick = onLogout,
                                 modifier = Modifier.padding(top = 4.dp)
                             ) {
@@ -1869,8 +1941,8 @@ fun CartScreen(
                                         textDecoration = TextDecoration.Underline
                                     )
                                 )
-                            }
-                            Spacer(modifier = Modifier.height(6.dp))
+                            }*/
+                            Spacer(modifier = Modifier.height(7.dp))
                         }
                     }
                 }
@@ -2379,7 +2451,7 @@ fun CancelConfirmationDialog(
 }
 
 @Composable
-fun BillRow(label: String, value: String, isBold: Boolean = false, color: Color = Color.Gray) {
+fun BillRow(label: String, value: String, isBold: Boolean = false, color: Color = Color.Gray,isBiggerFont: Boolean) {
     val scale by animateFloatAsState(
         targetValue = if (isBold) 1.2f else 1.0f, // Zooms to 120% when bold
         animationSpec = if (isBold) {
@@ -2398,7 +2470,7 @@ fun BillRow(label: String, value: String, isBold: Boolean = false, color: Color 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp),
+            .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
@@ -2410,7 +2482,7 @@ fun BillRow(label: String, value: String, isBold: Boolean = false, color: Color 
             )
             else MaterialTheme.typography.bodyMedium.copy(
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 20.sp
+                fontSize = if (isBiggerFont)22.sp else 16.sp
             )
         )
         Text(
@@ -2426,7 +2498,7 @@ fun BillRow(label: String, value: String, isBold: Boolean = false, color: Color 
             )
             else MaterialTheme.typography.bodyMedium.copy(
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 20.sp
+                fontSize = if (isBiggerFont)22.sp else 16.sp
             )
         )
     }

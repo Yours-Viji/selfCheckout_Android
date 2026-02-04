@@ -493,16 +493,16 @@ class HomeViewModel @Inject constructor(
                     )
                     _productInfo.value = result.data
 
-                    val maxWeight = productInfo.value?.weightRange?.maxWeight?.toInt() ?: 0
+                    /*val maxWeight = productInfo.value?.weightRange?.maxWeight?.toInt() ?: 0
                     val canValidate = productInfo.value?.validateWG == true
                     if (canValidate && maxWeight < 25) {
                         addProductToShoppingCart(productInfo.value?.barcode.orEmpty(), 1)
                         _productInfo.value = null
                     } else {
                         getPriceDetails(barCode)
-                    }
+                    }*/
 
-                    // addProductToShoppingCart(productInfo.value!!.barcode, 1)
+                     addProductToShoppingCart(productInfo.value!!.barcode, 1)
 
                 }
 
