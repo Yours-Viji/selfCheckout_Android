@@ -819,37 +819,7 @@ fun BitesHeaderNew(
                 )
             }
 
-            /* Row(
-                 modifier = Modifier
-                     .fillMaxWidth()
-                     .height(80.dp),
-                 verticalAlignment = Alignment.CenterVertically,
-                 horizontalArrangement = Arrangement.Center
-             ) {
 
-                 Text(
-                     text = "ezy",
-                     style = TextStyle(
-                         color = Color.Red,
-                         fontSize = 20.sp,
-                         fontWeight = FontWeight.Bold,
-                         letterSpacing = 1.sp
-                     ),
-                     modifier = Modifier.clickable{onTitleClick()}
-
-                 )
-                 Text(
-                     text = "Express",
-                     style = TextStyle(
-                         color = Color.Black,
-                         fontSize = 20.sp,
-                         fontWeight = FontWeight.ExtraBold,
-                         letterSpacing = 1.sp
-                     ),
-                     modifier = Modifier.clickable{onTitleClick()}
-
-                 )
-             }*/
 
         }
 
@@ -918,20 +888,38 @@ fun BitesHeaderNew(
                     .padding(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Help",
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "Help",
-                    color = Color.White,
-                    fontSize = 16.sp
-                )
-                Spacer(modifier = Modifier.width(20.dp))
+                Row(
+                    modifier = Modifier
+
+                        .clip(RoundedCornerShape(50))
+                        .border(
+                            width = 2.dp,
+                            color = colorResource(R.color.colorOrange),
+                            shape = RoundedCornerShape(50)
+                        )
+                        .clickable { onHelpClick() }
+                        .padding(horizontal = 14.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_help),
+                        contentDescription = "Help",
+                        tint = colorResource(R.color.colorOrange),
+                        modifier = Modifier.size(35.dp)
+                    )
+
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    Text(
+                        text = "Help",
+                        color = colorResource(R.color.colorOrange),
+                        fontSize = 27.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Spacer(modifier = Modifier.width(25.dp))
                 CartIconWithBadge(count = cartCount)
+                Spacer(modifier = Modifier.width(7.dp))
             }
         }
     }
@@ -2455,7 +2443,7 @@ fun CartIconWithBadge(
 ) {
     Box(
         modifier = modifier
-            .size(25.dp)
+            .size(45.dp)
             .clickable { onClick() },
         contentAlignment = Alignment.TopEnd
     ) {
@@ -2469,16 +2457,16 @@ fun CartIconWithBadge(
         //if (count > 0) {
         Box(
             modifier = Modifier
-                .offset(x = (4).dp, y = (-4).dp)
-                .size(if (count > 99) 26.dp else 20.dp)
+                .offset(x = (15).dp, y = (-15).dp)
+                .size(if (count > 99) 40.dp else 35.dp)
                 .background(Color.Red, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = if (count > 99) "99+" else count.toString(),
                 color = Color.White,
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                fontSize = 7.sp
+                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                fontSize = 15.sp
             )
         }
         //}

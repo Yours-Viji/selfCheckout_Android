@@ -9,6 +9,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
@@ -68,6 +69,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ezycart.AlertState
 import com.ezycart.AlertType
@@ -418,25 +420,34 @@ fun BitesHeader(
             // 3. RIGHT SIDE: Help Content
             Row(
                 modifier = Modifier
-                    .align(Alignment.CenterEnd) // Force to far right
+                    .align(Alignment.CenterEnd)
+                    .clip(RoundedCornerShape(50))
+                    .border(
+                        width = 2.dp,
+                        color = colorResource(R.color.colorOrange),
+                        shape = RoundedCornerShape(50)
+                    )
                     .clickable { onHelpClick() }
-                    .padding(4.dp),
+                    .padding(horizontal = 14.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = Icons.Default.Person,
+                    painter = painterResource(id = R.drawable.ic_help),
                     contentDescription = "Help",
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "Help",
-                    color = Color.White,
-                    fontSize = 16.sp
+                    tint = colorResource(R.color.colorOrange),
+                    modifier = Modifier.size(35.dp)
                 )
 
+                Spacer(modifier = Modifier.width(6.dp))
+
+                Text(
+                    text = "Help",
+                    color = colorResource(R.color.colorOrange),
+                    fontSize = 27.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
+
         }
 
 
