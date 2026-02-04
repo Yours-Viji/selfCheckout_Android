@@ -5,7 +5,6 @@ import android.app.Activity
 import android.content.ContentValues
 import android.content.pm.ActivityInfo
 import android.net.Uri
-import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.webkit.WebView
@@ -62,7 +61,6 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -90,7 +88,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -261,7 +258,8 @@ if (resetAndGoBack.value){
             message = "Please try again or Call for Help.",
             lottieFileName = "anim_warning_circle.json",
             type = AlertType.INFO,
-            isDismissible = true
+            isDismissible = true,
+            showButton = false
         )
     }
     if (canShowProductNotScannedDialog.value){
@@ -271,7 +269,8 @@ if (resetAndGoBack.value){
             message = "Please remove and scan the product.",
             lottieFileName = "anim_wrong.json",
             type = AlertType.WARNING,
-            isDismissible = false
+            isDismissible = false,
+            showButton = false
         )
     }
     if (canShowProductMismatchDialog.value){
@@ -281,7 +280,8 @@ if (resetAndGoBack.value){
             message = "Please remove, scan and add the correct product.",
             lottieFileName = "anim_wrong.json",
             type = AlertType.ERROR,
-            isDismissible = false
+            isDismissible = false,
+            showButton = false
         )
     }
     if(canShowValidationErrorDialog.value) {
@@ -291,7 +291,8 @@ if (resetAndGoBack.value){
             message = "Please Call for Help.",
             lottieFileName = "anim_wrong.json",
             type = AlertType.ERROR,
-            isDismissible = false
+            isDismissible = false,
+            showButton = true
         )
     }
     if(canShowPaymentProcess.value) {
@@ -301,7 +302,8 @@ if (resetAndGoBack.value){
             message = "To be paid RM ${viewModel.getFormatedFinalAmount()}",
             lottieFileName = "anim_payment_3.json",
             type = AlertType.SUCCESS,
-            isDismissible = false
+            isDismissible = false,
+            showButton = true
         )
     }
 
@@ -313,6 +315,7 @@ if (resetAndGoBack.value){
             message = "Please remember to take your receipt",
             lottieFileName = "anim_print_receipt.json",
             type = AlertType.SUCCESS,
+            showButton = false,
             isDismissible = false
         )
         viewModel.onPaymentSuccess("https://api-retailetics-ops-mini-03.retailetics.com/ezyCart/invoice/000VGO-P9900003312",context as Activity)
@@ -425,19 +428,20 @@ if (resetAndGoBack.value){
         currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
             title = "Payment Success",
-            message = "Please collect your receipt.\nThank you for your purchase!",
+            message = "Save Paper & Mother Earth.\nThank you for your purchase!",
             lottieFileName = "anim_success_3.json",
             type = AlertType.SUCCESS,
             isDismissible = false,
-            positiveButtonText = "Print Receipt",
-            onPositiveClick = {
+            showButton = true,
+            negativeButtonText = "Print Receipt",
+            onNegativeClick = {
 
                 currentSystemAlert.value = null
                 viewModel.timerDisplayForReceiptPrint()
 
                               },
-            negativeButtonText = "Exit & Close",
-            onNegativeClick = {
+            positiveButtonText = "Exit & Close",
+            onPositiveClick = {
                 currentSystemAlert.value = null
                 viewModel.resetLoadCell()
                 onLogout()
@@ -464,6 +468,7 @@ if (resetAndGoBack.value){
             message = "Please try again or choose another payment method",
             lottieFileName = "anim_wrong.json",
             type = AlertType.ERROR,
+            showButton = true,
             isDismissible = false
         )
         LedSerialConnection.setScenario(AppScenario.ERROR)
@@ -519,6 +524,7 @@ if (resetAndGoBack.value){
                     lottieFileName = "anim_warning_circle.json",
                     type = AlertType.INFO,
                     isDismissible = true,
+                    showButton = true,
                     positiveButtonText = "Ok",
                     onPositiveClick = {currentSystemAlert.value = null}
                 )
@@ -612,12 +618,13 @@ if (resetAndGoBack.value){
                         lottieFileName = "anim_warning_circle.json",
                         type = AlertType.INFO,
                         isDismissible = true,
+                        showButton = true,
                         positiveButtonText = "Ok",
                         onPositiveClick = {currentSystemAlert.value = null}
                     )
                                                                       },
                 onTitleClick = {
-                    viewModel.onPaymentSuccess("https://morth.nic.in/sites/default/files/dd12-13_0.pdf",context as Activity)
+                    viewModel.printReceipt("https://morth.nic.in/sites/default/files/dd12-13_0.pdf",context)
                    // viewModel.onPaymentSuccess("https://api-retailetics-ops-mini-03.retailetics.com/ezyCart/invoice/000VGO-P9900003312",context as Activity)
                    /* showMainLogs.value = !showMainLogs.value
                     viewModel.clearLog()*/

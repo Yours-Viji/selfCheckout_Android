@@ -6,18 +6,9 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.net.Uri
-import android.net.http.SslError
-import android.os.Handler
-import android.os.Looper
-import android.print.PrintAttributes
 import android.util.Log
 import android.view.View
-import android.view.View.MeasureSpec
 import android.view.ViewGroup
-import android.webkit.SslErrorHandler
-import android.webkit.WebResourceError
-import android.webkit.WebResourceRequest
-import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
@@ -46,7 +37,9 @@ import com.ezycart.services.usb.AppScenario
 import com.ezycart.services.usb.BixolonUsbPrinter
 import com.ezycart.services.usb.LedSerialConnection
 import com.ezycart.services.usb.LoginWeightScaleSerialPort
+import com.ezycart.services.usb.PrinterManager
 import com.ezycart.services.usb.UsbSerialManager
+import dagger.hilt.android.internal.Contexts.getApplication
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jpos.POSPrinter
 import jpos.POSPrinterConst
@@ -1624,6 +1617,15 @@ fun onPaymentSuccess(webUrl: String, context: Activity) {
                 }
             }
             webView.loadUrl(url)
+        }
+    }
+
+    fun printReceipt(imageUrl: String, context: Context) {
+        viewModelScope.launch {
+            val printerManager = PrinterManager.getInstance(context)
+            viewModelScope.launch {
+                printerManager.printUrlAsImage("https://api-retailetics-ops-mini-03.retailetics.com/ezyCart/invoice/000VGO-P9900003312")
+            }
         }
     }
 }

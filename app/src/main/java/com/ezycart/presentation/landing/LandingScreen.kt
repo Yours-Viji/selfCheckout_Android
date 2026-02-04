@@ -199,7 +199,8 @@ fun LanguageSelectionScreen(viewModel: LandingViewModel,onLanguageSelected: (Str
             message = "Please wait for our Staff to assist you.",
             lottieFileName = "anim_warning_circle.json",
             type = AlertType.INFO,
-            isDismissible = true
+            isDismissible = true,
+            showButton = true
         ) })
 
             Column(

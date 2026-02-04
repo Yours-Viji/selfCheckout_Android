@@ -37,7 +37,7 @@ fun CommonAlertView(
     onClose: () -> Unit
 ) {
     // Custom Brand Color
-    val brandPurple = Color(0xFF5A398F)
+    val brandPurple = Color(0xFFC62828)
 
     Dialog(
         onDismissRequest = { if (state.isDismissible) onClose() },
@@ -102,62 +102,65 @@ fun CommonAlertView(
                 Spacer(modifier = Modifier.height(32.dp))
 
                 // 4. Button Container
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // Left Button (e.g., Exit & Close)
-                    if (state.negativeButtonText != null) {
-                        Button(
-                            onClick = {
-                                state.onNegativeClick?.invoke()
-                                onClose()
-                            },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(56.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = brandPurple,
-                                contentColor = Color.White
-                            )
-                        ) {
-                            Text(
-                                text = state.negativeButtonText.uppercase(),
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
-                            )
-                        }
-                    }
-
-                    // Right Button (e.g., Print Receipt)
-                    if (state.positiveButtonText != null) {
-                        Button(
-                            onClick = {
-                                state.onPositiveClick()
-                                onClose()
-                            },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(56.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = when (state.type) {
-                                    AlertType.ERROR -> Color(0xFFC62828)
-                                    AlertType.SUCCESS -> Color(0xFF2E7D32)
-                                    else -> brandPurple // Default to brand color
+                if (state.showButton){
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Left Button (e.g., Exit & Close)
+                        if (state.negativeButtonText != null) {
+                            Button(
+                                onClick = {
+                                    state.onNegativeClick?.invoke()
+                                    onClose()
                                 },
-                                contentColor = Color.White
-                            )
-                        ) {
-                            Text(
-                                text = state.positiveButtonText.uppercase(),
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
-                            )
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(56.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = brandPurple,
+                                    contentColor = Color.White
+                                )
+                            ) {
+                                Text(
+                                    text = state.negativeButtonText.uppercase(),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp
+                                )
+                            }
+                        }
+
+                        // Right Button (e.g., Print Receipt)
+                        if (state.positiveButtonText != null) {
+                            Button(
+                                onClick = {
+                                    state.onPositiveClick()
+                                    onClose()
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(56.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = when (state.type) {
+                                        AlertType.ERROR -> Color(0xFFC62828)
+                                        AlertType.SUCCESS -> Color(0xFF2E7D32)
+                                        else -> brandPurple // Default to brand color
+                                    },
+                                    contentColor = Color.White
+                                )
+                            ) {
+                                Text(
+                                    text = state.positiveButtonText.uppercase(),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp
+                                )
+                            }
                         }
                     }
                 }
+
             }
         }
     }
@@ -173,6 +176,7 @@ data class AlertState(
     val lottieFileName: String,
     val type: AlertType,
     val isDismissible: Boolean = true,
+    val showButton: Boolean = false,
     // Left button config
     val negativeButtonText: String? = null,
     val onNegativeClick: (() -> Unit)? = null,
