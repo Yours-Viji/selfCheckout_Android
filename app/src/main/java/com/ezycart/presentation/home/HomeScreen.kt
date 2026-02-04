@@ -259,7 +259,7 @@ if (resetAndGoBack.value){
             lottieFileName = "anim_warning_circle.json",
             type = AlertType.INFO,
             isDismissible = true,
-            showButton = false
+            showButton = true
         )
     }
     if (canShowProductNotScannedDialog.value){
@@ -511,6 +511,7 @@ if (resetAndGoBack.value){
     }
     if (canMakePayment.value) {
        // goToPaymentScreen()
+        viewModel.startShoppingLed()
         BitesPaymentDialog(
             viewModel,
             onDismiss = {
@@ -624,10 +625,10 @@ if (resetAndGoBack.value){
                     )
                                                                       },
                 onTitleClick = {
-                    viewModel.printReceipt("https://morth.nic.in/sites/default/files/dd12-13_0.pdf",context)
+                   // viewModel.printReceipt("https://morth.nic.in/sites/default/files/dd12-13_0.pdf",context)
                    // viewModel.onPaymentSuccess("https://api-retailetics-ops-mini-03.retailetics.com/ezyCart/invoice/000VGO-P9900003312",context as Activity)
-                   /* showMainLogs.value = !showMainLogs.value
-                    viewModel.clearLog()*/
+                    showMainLogs.value = !showMainLogs.value
+                    viewModel.clearLog()
                 })
             if (showMainLogs.value) {
                 Text(

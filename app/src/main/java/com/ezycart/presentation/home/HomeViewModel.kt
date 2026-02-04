@@ -186,6 +186,7 @@ class HomeViewModel @Inject constructor(
     private val _openPrinterTerminalDialog = MutableStateFlow<Boolean>(false)
     val openPrinterTerminalDialog: StateFlow<Boolean> = _openPrinterTerminalDialog.asStateFlow()
 
+    private var notScannedTotalWeight = 0.0
 
     init {
         viewModelScope.launch {
@@ -393,6 +394,8 @@ class HomeViewModel @Inject constructor(
                     _stateFlow.value = _stateFlow.value.copy(
                         isLoading = false
                     )
+                    _canShowProductMismatchDialog.value = false
+                    _canShowProductNotScannedDialog.value = false
                     storeProductWeight(barCode, weightAtRemovalDeltaW2)
                     weightAtRemovalDeltaW2 = 0.0
                     _cartDataList.value = result.data.cartItems
@@ -890,7 +893,9 @@ class HomeViewModel @Inject constructor(
     fun sendMessageToLoadCell(message: String) {
         LoginWeightScaleSerialPort.sendMessageToWeightScale("$message\r\n")
     }
-
+    fun startShoppingLed(){
+        LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
+    }
     fun handleWeightUpdate(update: WeightUpdate) {
         val message =
             "Status=${update.status} - w1=${update.w1} - w2=${update.w2} - deltaw1=${update.delta_w1}-deltaw2=${update.delta_w2}"
@@ -915,7 +920,7 @@ class HomeViewModel @Inject constructor(
 
                     val product = _productInfo.value
                     //addProductToShoppingCart("9556001601506", 1)
-                    if (product != null && update.delta_w2 > 20.0) {
+                    if (product != null && update.delta_w2 > 20.0 && update.loadcell_id == 1) {
                         val result = validationManager.productValidation(
                             product = product,
                             deltaW2 = update.delta_w2
@@ -924,17 +929,20 @@ class HomeViewModel @Inject constructor(
                             if (result is ValidationResult.Success) {
                                 addProductToShoppingCart(product.barcode, 1)
                             } else {
+                                notScannedTotalWeight = notScannedTotalWeight.plus(update.delta_w2)
                                 _canShowProductMismatchDialog.value = true
                                 // Mismatch
                             }
                         } else {
+                            notScannedTotalWeight = 0.0
                             addProductToShoppingCart(product.barcode, 1)
                         }
 
                         // _productInfo.value = null
                     } else {
-                        if (update.delta_w2 > 20.0) {
+                        if (update.delta_w2 > 20.0 && update.loadcell_id == 1) {
                             // Added without scan
+
                             _canShowProductNotScannedDialog.value = true
                             //_errorMessage.value = "Please scan and to add!"
                             LedSerialConnection.setScenario(AppScenario.ERROR)
@@ -957,16 +965,22 @@ class HomeViewModel @Inject constructor(
                         }
                     }
                 }*/
-                -1, -2 -> {
-                    if (update.delta_w2 <= 50 && canShowProductNotScannedDialog.value) {
+                -1,  -> {
+                    if (update.delta_w2 <= 50 && canShowProductNotScannedDialog.value && update.loadcell_id == 1) {
                         LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
                         clearSystemAlert()
+
                     }
-                    if (update.delta_w2 <= 50 && canShowProductMismatchDialog.value) {
-                        LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
-                        clearSystemAlert()
+                    if (update.delta_w2 <= 50 && canShowProductMismatchDialog.value && update.loadcell_id == 1) {
+                        notScannedTotalWeight = notScannedTotalWeight.minus(Math.abs(update.delta_w2))
+                        if (notScannedTotalWeight < 50.0){
+                            LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
+                            clearSystemAlert()
+                            notScannedTotalWeight = 0.0
+                        }
+
                     }
-                    if (update.w2 <= 50 && canShowPrintReceiptDialog.value) {
+                    if (update.w2 <= 50 && canShowPrintReceiptDialog.value && update.loadcell_id == 1) {
                         clearSystemAlert()
                        /* _canShowPrintReceiptDialog.value = false
                         _resetAndGoBack.value = true*/

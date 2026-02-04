@@ -13,8 +13,6 @@ import jpos.JposConst
 import jpos.JposException
 import jpos.POSPrinter
 import jpos.POSPrinterConst
-import jpos.config.JposEntry
-import jpos.loader.JposServiceLoader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -52,12 +50,12 @@ class PrinterManager private constructor(private val context: Context) {
      */
     suspend fun printPdfFromUrl(pdfUrl: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            /*val file = File(context.cacheDir, "temp_receipt.pdf")
+            val file = File(context.cacheDir, "temp_receipt.pdf")
             URL(pdfUrl).openStream().use { input ->
                 FileOutputStream(file).use { output ->
                     input.copyTo(output)
                 }
-            }*/
+            }
 
             openPrinter()
 
@@ -105,12 +103,11 @@ class PrinterManager private constructor(private val context: Context) {
 
             posPrinter.asyncMode = false
 
-            // Correction: Use the setter method instead of property access if the property is not visible
-            // This handles the "Unresolved reference: binaryConversion"
+            // Setting binary conversion via direct setter to avoid property errors
             try {
-              //  posPrinter.setBinaryConversion(0) // 0 is equivalent to PTR_BC_NONE
+               // posPrinter.setBinaryConversion(0) // 0 is PTR_BC_NONE
             } catch (e: Exception) {
-                Log.w(TAG, "binaryConversion setting not supported by this driver version")
+                Log.w(TAG, "binaryConversion setting failed: ${e.message}")
             }
 
             // Print the rendered bitmap
@@ -164,34 +161,18 @@ class PrinterManager private constructor(private val context: Context) {
     }
 
     private fun openPrinter() {
-        /*try {
-            // Fix for "Unresolved reference 'entries'":
-            // Some Bixolon JPOS versions require accessing the service manager via JposServiceLoader
-            val manager = JposServiceLoader.getManager()
-            val entries = manager.entries
-
-            var found = false
-            while (entries.hasMoreElements()) {
-                val entry = entries.nextElement() as? JposEntry
-                if (entry?.logicalName == logicalName) {
-                    found = true
-                    break
-                }
-            }
-
-            if (!found) {
-                Log.e(TAG, "Logical name '$logicalName' not found in registry. Ensure jpos.xml is in assets.")
-            }
-
+        try {
             if (posPrinter.state == JposConst.JPOS_S_CLOSED) {
+                // We directly call open. If jpos.xml is missing or logicalName is wrong,
+                // this will throw a JposException with "Service does not exist".
                 posPrinter.open(logicalName)
                 posPrinter.claim(1500)
                 posPrinter.deviceEnabled = true
             }
         } catch (e: JposException) {
-            Log.e(TAG, "Open Printer failed: ${e.message}", e)
+            Log.e(TAG, "Open Printer failed: ${e.message} (Code: ${e.errorCode})", e)
             throw e
-        }*/
+        }
     }
 
     private fun closePrinter() {
