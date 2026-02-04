@@ -227,6 +227,7 @@ fun HomeScreen(
 
     var showLedDialog = viewModel.openLedTerminalDialog.collectAsState()
     var openLoadCellTerminalDialog = viewModel.openLoadCellTerminalDialog.collectAsState()
+    var canShowHelpDialog= viewModel.canShowHelpDialog.collectAsState()
     if (openLoadCellTerminalDialog.value){
         WeightScaleManager.initOnce(viewModel)
         WeightScaleManager.connectSafe(context)
@@ -473,6 +474,19 @@ if (resetAndGoBack.value){
         )
         LedSerialConnection.setScenario(AppScenario.ERROR)
     }
+    if(canShowHelpDialog.value){
+        currentSystemAlert.value = null
+        currentSystemAlert.value = AlertState(
+            title = "Help is on the way",
+            message = "Please wait for our Staff to assist you.",
+            lottieFileName = "anim_warning_circle.json",
+            type = AlertType.INFO,
+            isDismissible = false,
+            showButton = true,
+            positiveButtonText = "Ok",
+            onPositiveClick = {viewModel.clearSystemAlert()}
+        )
+    }
     if (showDialog.value) {
         var lastClickTime = 0L
         val clickDebounceTime = 300L
@@ -518,17 +532,7 @@ if (resetAndGoBack.value){
                 viewModel.hidePaymentView()
                         },
             onHelpClicked = {
-                currentSystemAlert.value = null
-                currentSystemAlert.value = AlertState(
-                    title = "Help is on the way",
-                    message = "Please wait for our Staff to assist you.",
-                    lottieFileName = "anim_warning_circle.json",
-                    type = AlertType.INFO,
-                    isDismissible = true,
-                    showButton = true,
-                    positiveButtonText = "Ok",
-                    onPositiveClick = {currentSystemAlert.value = null}
-                )
+                viewModel.showHelpDialog()
             },
             onCardPaymentClicked = {viewModel.timerDisplayForPaymentProcess()},
             onWalletPaymentClicked = {viewModel.timerDisplayForPaymentProcess()},
@@ -612,23 +616,14 @@ if (resetAndGoBack.value){
             BitesHeaderNew(
                 viewModel, cartCount = cartCount.value, onHelpClick = {
                    // showTerminal.value = true
-                    currentSystemAlert.value = null
-                    currentSystemAlert.value = AlertState(
-                        title = "Help is on the way",
-                        message = "Please wait for our Staff to assist you.",
-                        lottieFileName = "anim_warning_circle.json",
-                        type = AlertType.INFO,
-                        isDismissible = true,
-                        showButton = true,
-                        positiveButtonText = "Ok",
-                        onPositiveClick = {currentSystemAlert.value = null}
-                    )
+                    viewModel.showHelpDialog()
                                                                       },
                 onTitleClick = {
-                   // viewModel.printReceipt("https://morth.nic.in/sites/default/files/dd12-13_0.pdf",context)
+                    viewModel.printReceipt("https://www.cte.iup.edu/cte/Resources/PDF_TestPage.pdf",context)
                    // viewModel.onPaymentSuccess("https://api-retailetics-ops-mini-03.retailetics.com/ezyCart/invoice/000VGO-P9900003312",context as Activity)
-                    showMainLogs.value = !showMainLogs.value
-                    viewModel.clearLog()
+
+                    /* showMainLogs.value = !showMainLogs.value
+                    viewModel.clearLog()*/
                 })
             if (showMainLogs.value) {
                 Text(

@@ -173,6 +173,21 @@ fun LandingScreen(homeViewModel: HomeViewModel,viewModel: LandingViewModel = hil
 @Composable
 fun LanguageSelectionScreen(viewModel: LandingViewModel,onLanguageSelected: (String) -> Unit) {
     var currentSystemAlert = remember { mutableStateOf<AlertState?>(null)}
+    var canShowHelpDialog= viewModel.canShowHelpDialog.collectAsState()
+    if(canShowHelpDialog.value){
+        currentSystemAlert.value = null
+        currentSystemAlert.value = AlertState(
+            title = "Help is on the way",
+            message = "Please wait for our Staff to assist you.",
+            lottieFileName = "anim_warning_circle.json",
+            type = AlertType.INFO,
+            isDismissible = false,
+            showButton = true,
+            positiveButtonText = "Ok",
+            onPositiveClick = {viewModel.clearSystemAlert()}
+        )
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -194,14 +209,7 @@ fun LanguageSelectionScreen(viewModel: LandingViewModel,onLanguageSelected: (Str
             contentScale = ContentScale.Inside,
             alpha = 0.6f
         )*/
-        BitesHeader(viewModel,onHelpClick = {  currentSystemAlert.value = AlertState(
-            title = "Help is on the way",
-            message = "Please wait for our Staff to assist you.",
-            lottieFileName = "anim_warning_circle.json",
-            type = AlertType.INFO,
-            isDismissible = true,
-            showButton = true
-        ) })
+        BitesHeader(viewModel,onHelpClick = { viewModel.showHelpDialog()  })
 
             Column(
                 modifier = Modifier

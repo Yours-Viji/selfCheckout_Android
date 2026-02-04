@@ -186,6 +186,9 @@ class HomeViewModel @Inject constructor(
     private val _openPrinterTerminalDialog = MutableStateFlow<Boolean>(false)
     val openPrinterTerminalDialog: StateFlow<Boolean> = _openPrinterTerminalDialog.asStateFlow()
 
+    private val _canShowHelpDialog = MutableStateFlow<Boolean>(false)
+    val canShowHelpDialog: StateFlow<Boolean> = _canShowHelpDialog.asStateFlow()
+
     private var notScannedTotalWeight = 0.0
 
     init {
@@ -238,6 +241,10 @@ class HomeViewModel @Inject constructor(
         _canShowProductMismatchDialog.value = false
         _canShowPaymentProcessDialog.value = false
         _canShowPaymentProcessDialog.value = false
+        _canShowHelpDialog.value = false
+    }
+    fun showHelpDialog(){
+        _canShowHelpDialog.value = true
     }
     fun resetAndGoBack(){
         _resetAndGoBack.value = true
@@ -1638,11 +1645,16 @@ fun onPaymentSuccess(webUrl: String, context: Activity) {
         }
     }
 
-    fun printReceipt(imageUrl: String, context: Context) {
+    fun printReceipt(pdfUrl: String, context: Context) {
         viewModelScope.launch {
             val printerManager = PrinterManager.getInstance(context)
-            viewModelScope.launch {
-                printerManager.printUrlAsImage("https://api-retailetics-ops-mini-03.retailetics.com/ezyCart/invoice/000VGO-P9900003312")
+            // Correct usage for the PDF link you provided
+            val result = printerManager.printPdfFromUrl(pdfUrl)
+
+            result.onSuccess {
+                Log.d("Print", "Success")
+            }.onFailure {
+                Log.e("Print", "Error: ${it.message}")
             }
         }
     }

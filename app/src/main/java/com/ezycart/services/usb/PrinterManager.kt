@@ -3,7 +3,6 @@ package com.ezycart.services.usb
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -23,14 +22,12 @@ import kotlin.coroutines.resume
 
 /**
  * Singleton Manager for Bixolon BK3-33 Printer.
- * Handles rendering Web content to Bitmaps and direct PDF printing.
+ * Enhanced with detailed trace logging for debugging.
  */
 class PrinterManager private constructor(private val context: Context) {
 
     private var posPrinter: POSPrinter = POSPrinter(context)
-    private val TAG = "BixolonPrinter"
-
-    // Ensure this matches the <jposEntry logicalName="..."> in your jpos.xml
+    private val TAG = "BixolonPrinterTrace"
     private val logicalName = "BK3-3"
 
     companion object {
@@ -45,54 +42,86 @@ class PrinterManager private constructor(private val context: Context) {
     }
 
     /**
-     * Downloads a PDF from a URL and prints it directly.
-     * Note: Bixolon SDK supports PDF printing in newer versions (v2.16+).
+     * Downloads a PDF and prints via DirectIO.
      */
     suspend fun printPdfFromUrl(pdfUrl: String): Result<Unit> = withContext(Dispatchers.IO) {
+        var tempFile: File? = null
+        Log.d(TAG, "== START printPdfFromUrl == URL: $pdfUrl")
         try {
-            val file = File(context.cacheDir, "temp_receipt.pdf")
+            // 1. Download
+            tempFile = File(context.cacheDir, "print_job_${System.currentTimeMillis()}.pdf")
+            Log.d(TAG, "Downloading PDF to: ${tempFile.absolutePath}")
+
             URL(pdfUrl).openStream().use { input ->
-                FileOutputStream(file).use { output ->
-                    input.copyTo(output)
+                FileOutputStream(tempFile).use { output ->
+                    val bytesCopied = input.copyTo(output)
+                    Log.d(TAG, "Download complete. Bytes copied: $bytesCopied")
                 }
             }
 
+            if (!tempFile.exists() || tempFile.length() == 0L) {
+                throw Exception("Downloaded file is empty or missing")
+            }
+
+            // 2. Open Printer
             openPrinter()
 
-            // Using the printPDF API (Added in BXL SDK v2.16)
-            // Parameters: Path, Width (0 = default), Alignment, Page range (0 = all)
-            posPrinter.printPDFFile(
-                POSPrinterConst.PTR_S_RECEIPT,
-                Uri.parse(pdfUrl),
-                POSPrinterConst.PTR_PD_LEFT_TO_RIGHT, // Alignment
-                0,                          // Width (0 for automatic)
-                0                           // Start page (0 for all)
+            // 3. DirectIO Execution
+            Log.d(TAG, "Preparing DirectIO (Command 211) for PDF printing...")
+            val data = IntArray(1)
+            val obj = arrayOf<Any>(
+                tempFile.absolutePath, // Path
+                0,                     // Width (0 = auto)
+                0,                     // Alignment (0 = Left)
+                0                      // Page (0 = All)
             )
 
-            // Feed and Cut
+            try {
+                Log.d(TAG, "Executing posPrinter.directIO(211, ...)")
+                posPrinter.directIO(211, data, obj)
+                Log.d(TAG, "directIO executed successfully")
+            } catch (e: JposException) {
+                Log.e(TAG, "directIO JposException: Code ${e.errorCode}, Message: ${e.message}")
+                throw e
+            }
+
+            // 4. Feed and Cut
+            Log.d(TAG, "Sending Feed and Cut commands...")
             posPrinter.printNormal(POSPrinterConst.PTR_S_RECEIPT, "\n\n\n\n\n")
             posPrinter.cutPaper(100)
+            Log.d(TAG, "Feed and Cut completed")
 
             closePrinter()
+            Log.d(TAG, "== SUCCESS printPdfFromUrl ==")
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e(TAG, "PDF Printing failed", e)
+            Log.e(TAG, "== FAILED printPdfFromUrl == Error: ${e.message}", e)
             closePrinter()
             Result.failure(e)
+        } finally {
+            if (tempFile?.exists() == true) {
+                val deleted = tempFile.delete()
+                Log.d(TAG, "Temporary file deleted: $deleted")
+            }
         }
     }
 
     /**
-     * Renders a web URL to a bitmap and prints it.
+     * Renders URL to Bitmap and prints.
      */
     suspend fun printUrlAsImage(url: String): Result<Unit> {
+        Log.d(TAG, "== START printUrlAsImage == URL: $url")
         return try {
             val bitmap = captureUrlToBitmap(url)
-                ?: return Result.failure(Exception("Failed to render web receipt"))
+            if (bitmap == null) {
+                Log.e(TAG, "Bitmap generation returned NULL")
+                return Result.failure(Exception("Failed to render web receipt"))
+            }
+            Log.d(TAG, "Bitmap captured: Width=${bitmap.width}, Height=${bitmap.height}")
 
             executePrint(bitmap)
         } catch (e: Exception) {
-            Log.e(TAG, "Image printing failed", e)
+            Log.e(TAG, "== FAILED printUrlAsImage == Error: ${e.message}", e)
             Result.failure(e)
         }
     }
@@ -101,76 +130,93 @@ class PrinterManager private constructor(private val context: Context) {
         try {
             openPrinter()
 
+            Log.d(TAG, "Setting asyncMode = false")
             posPrinter.asyncMode = false
 
-            // Setting binary conversion via direct setter to avoid property errors
-            try {
-               // posPrinter.setBinaryConversion(0) // 0 is PTR_BC_NONE
-            } catch (e: Exception) {
-                Log.w(TAG, "binaryConversion setting failed: ${e.message}")
-            }
-
-            // Print the rendered bitmap
+            Log.d(TAG, "Executing posPrinter.printBitmap(...)")
             posPrinter.printBitmap(
                 POSPrinterConst.PTR_S_RECEIPT,
                 bitmap,
                 POSPrinterConst.PTR_BM_ASIS,
                 POSPrinterConst.PTR_BC_CENTER
             )
+            Log.d(TAG, "Bitmap printed successfully")
 
             posPrinter.printNormal(POSPrinterConst.PTR_S_RECEIPT, "\n\n\n\n\n")
             posPrinter.cutPaper(100)
+            Log.d(TAG, "Feed and Cut completed")
 
             closePrinter()
+            Log.d(TAG, "== SUCCESS executePrint ==")
             Result.success(Unit)
         } catch (e: JposException) {
-            Log.e(TAG, "Jpos Error: Code ${e.errorCode}", e)
+            Log.e(TAG, "Jpos Error in executePrint: Code ${e.errorCode}", e)
             closePrinter()
             Result.failure(e)
         }
     }
 
     private suspend fun captureUrlToBitmap(url: String): Bitmap? = suspendCancellableCoroutine { continuation ->
+        Log.d(TAG, "Switching to MainThread for WebView rendering...")
         Handler(Looper.getMainLooper()).post {
-            val webView = WebView(context)
-            webView.layout(0, 0, 576, 5000)
+            try {
+                val webView = WebView(context)
+                webView.layout(0, 0, 576, 5000)
 
-            val settings = webView.settings
-            settings.javaScriptEnabled = true
-            settings.useWideViewPort = true
-            settings.loadWithOverviewMode = true
+                webView.settings.javaScriptEnabled = true
+                webView.settings.useWideViewPort = true
+                webView.settings.loadWithOverviewMode = true
 
-            webView.webViewClient = object : WebViewClient() {
-                override fun onPageFinished(view: WebView, url: String) {
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        try {
-                            val contentHeight = (view.contentHeight * view.scale).toInt().coerceAtLeast(100)
-                            val bitmap = Bitmap.createBitmap(576, contentHeight, Bitmap.Config.ARGB_8888)
-                            val canvas = Canvas(bitmap)
-                            view.draw(canvas)
-                            continuation.resume(bitmap)
-                        } catch (e: Exception) {
-                            Log.e(TAG, "Bitmap capture error", e)
-                            continuation.resume(null)
-                        }
-                    }, 800)
+                webView.webViewClient = object : WebViewClient() {
+                    override fun onPageFinished(view: WebView, url: String) {
+                        Log.d(TAG, "WebView page loaded. Waiting 1s for layout stabilization...")
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            try {
+                                val contentHeight = (view.contentHeight * view.scale).toInt().coerceAtLeast(100)
+                                Log.d(TAG, "Rendering WebView to Bitmap. ContentHeight: $contentHeight")
+                                val bitmap = Bitmap.createBitmap(576, contentHeight, Bitmap.Config.ARGB_8888)
+                                val canvas = Canvas(bitmap)
+                                view.draw(canvas)
+                                Log.d(TAG, "Bitmap rendering complete")
+                                continuation.resume(bitmap)
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Error during Canvas draw: ${e.message}")
+                                continuation.resume(null)
+                            }
+                        }, 1000)
+                    }
+
+                    override fun onReceivedError(view: WebView, errorCode: Int, description: String, failingUrl: String) {
+                        Log.e(TAG, "WebView Error ($errorCode): $description")
+                        continuation.resume(null)
+                    }
                 }
+                Log.d(TAG, "Loading URL into WebView: $url")
+                webView.loadUrl(url)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to initialize WebView: ${e.message}")
+                continuation.resume(null)
             }
-            webView.loadUrl(url)
         }
     }
 
     private fun openPrinter() {
+        Log.d(TAG, "Printer State Check: Current State = ${posPrinter.state}")
+        if (posPrinter.state != JposConst.JPOS_S_CLOSED) {
+            Log.d(TAG, "Printer already open or in use. Skipping open().")
+            return
+        }
+
         try {
-            if (posPrinter.state == JposConst.JPOS_S_CLOSED) {
-                // We directly call open. If jpos.xml is missing or logicalName is wrong,
-                // this will throw a JposException with "Service does not exist".
-                posPrinter.open(logicalName)
-                posPrinter.claim(1500)
-                posPrinter.deviceEnabled = true
-            }
+            Log.d(TAG, "Attempting posPrinter.open('$logicalName')...")
+            posPrinter.open(logicalName)
+            Log.d(TAG, "Open successful. Attempting claim(1500)...")
+            posPrinter.claim(1500)
+            Log.d(TAG, "Claim successful. Attempting deviceEnabled = true...")
+            posPrinter.deviceEnabled = true
+            Log.d(TAG, "Printer is now READY (Enabled).")
         } catch (e: JposException) {
-            Log.e(TAG, "Open Printer failed: ${e.message} (Code: ${e.errorCode})", e)
+            Log.e(TAG, "Failed to initialize printer: ${e.message} (Code: ${e.errorCode})")
             throw e
         }
     }
@@ -178,12 +224,14 @@ class PrinterManager private constructor(private val context: Context) {
     private fun closePrinter() {
         try {
             if (posPrinter.state != JposConst.JPOS_S_CLOSED) {
+                Log.d(TAG, "Closing printer resources...")
                 posPrinter.deviceEnabled = false
                 posPrinter.release()
                 posPrinter.close()
+                Log.d(TAG, "Printer closed successfully.")
             }
         } catch (e: JposException) {
-            Log.e(TAG, "Close Printer failed", e)
+            Log.e(TAG, "Error while closing printer: ${e.message}")
         }
     }
 }

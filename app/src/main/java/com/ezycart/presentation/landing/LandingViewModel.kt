@@ -32,6 +32,9 @@ class LandingViewModel @Inject constructor(
     private val _openPrinterTerminalDialog = MutableStateFlow<Boolean>(false)
     val openPrinterTerminalDialog: StateFlow<Boolean> = _openPrinterTerminalDialog.asStateFlow()
 
+    private val _canShowHelpDialog = MutableStateFlow<Boolean>(false)
+    val canShowHelpDialog: StateFlow<Boolean> = _canShowHelpDialog.asStateFlow()
+
     init {
         startAutoScroll()
     }
@@ -44,6 +47,13 @@ class LandingViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(currentBannerIndex = nextIndex)
             }
         }
+    }
+    fun clearSystemAlert() {
+
+        _canShowHelpDialog.value = false
+    }
+    fun showHelpDialog(){
+        _canShowHelpDialog.value = true
     }
     fun activateLoadCellTerminal(){
         _openLoadCellTerminalDialog.value = !openLoadCellTerminalDialog.value
