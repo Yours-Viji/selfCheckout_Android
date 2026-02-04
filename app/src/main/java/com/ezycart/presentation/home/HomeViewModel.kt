@@ -962,6 +962,10 @@ class HomeViewModel @Inject constructor(
                         LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
                         clearSystemAlert()
                     }
+                    if (update.delta_w2 <= 50 && canShowProductMismatchDialog.value) {
+                        LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
+                        clearSystemAlert()
+                    }
                     if (update.w2 <= 50 && canShowPrintReceiptDialog.value) {
                         clearSystemAlert()
                        /* _canShowPrintReceiptDialog.value = false
