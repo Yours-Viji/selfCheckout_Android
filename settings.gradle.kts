@@ -20,6 +20,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ezySCO"
+rootProject.name = "ezyExpress"
 include(":app")
  
