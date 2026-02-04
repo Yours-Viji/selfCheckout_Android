@@ -4,7 +4,11 @@ package com.ezycart.services.usb
 import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.pdf.PdfRenderer
 import android.net.Uri
+import android.os.ParcelFileDescriptor
 import android.util.Log
 import com.bxl.config.editor.BXLConfigLoader
 import jpos.JposConst
@@ -313,6 +317,141 @@ class BixolonUsbPrinter(private val context: Context) {
                 posPrinter.close()
             } catch (_: Exception) {}
         }
+    }
+
+    private fun renderPdfToBitmaps(pdfFile: File): List<Bitmap> {
+        val result = mutableListOf<Bitmap>()
+
+        val fd = ParcelFileDescriptor.open(
+            pdfFile,
+            ParcelFileDescriptor.MODE_READ_ONLY
+        )
+        val renderer = PdfRenderer(fd)
+
+        for (i in 0 until renderer.pageCount) {
+            val page = renderer.openPage(i)
+
+           /* val targetWidth = 576
+            val targetHeight = (targetWidth * page.height) / page.width*/
+
+            val targetWidth = 576  // full width of printer
+            val scaleFactor = 1.5 // scale content 2x
+            val targetHeight = ((targetWidth * page.height / page.width) * scaleFactor).toInt()
+
+            // ✅ MUST be ARGB_8888 for PdfRenderer
+            val tempBitmap = Bitmap.createBitmap(
+                targetWidth,
+                targetHeight,
+                Bitmap.Config.ARGB_8888
+            )
+
+            // Force WHITE background (very important)
+            val canvas = Canvas(tempBitmap)
+            canvas.drawColor(Color.WHITE)
+
+            page.render(
+                tempBitmap,
+                null,
+                null,
+                PdfRenderer.Page.RENDER_MODE_FOR_PRINT
+            )
+
+            page.close()
+
+            // ✅ Convert to thermal-friendly bitmap
+            val monoBitmap = convertToMonochrome(tempBitmap)
+            tempBitmap.recycle()
+
+            result.add(monoBitmap)
+        }
+
+        renderer.close()
+        fd.close()
+
+        return result
+    }
+    private fun convertToMonochrome(src: Bitmap): Bitmap {
+        val width = src.width
+        val height = src.height
+
+        val out = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
+
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                val pixel = src.getPixel(x, y)
+
+                val r = Color.red(pixel)
+                val g = Color.green(pixel)
+                val b = Color.blue(pixel)
+
+                // Luminance formula
+                val gray = (0.299 * r + 0.587 * g + 0.114 * b).toInt()
+
+                // Threshold – tune if needed
+                val bw = if (gray < 160) Color.BLACK else Color.WHITE
+
+                out.setPixel(x, y, bw)
+            }
+        }
+        return out
+    }
+    fun printPdfAsBitmap(context: Context, pdfFile: File) {
+        val posPrinter = POSPrinter(context)
+
+        posPrinter.open("BK3_USB")
+        posPrinter.claim(5000)
+        posPrinter.deviceEnabled = true
+
+        val bitmaps = renderPdfToBitmaps(pdfFile)
+
+        for (bitmap in bitmaps) {
+            posPrinter.printBitmap(
+                POSPrinterConst.PTR_S_RECEIPT,
+                bitmap,
+                POSPrinterConst.PTR_BM_CENTER,
+                576
+            )
+        }
+       /* posPrinter.printNormal(
+            POSPrinterConst.PTR_S_RECEIPT,
+            "\u001b|2C" + // double width
+                    "\u001b|2H" + // double height
+                    "BIG TEXT HERE\n"
+        )*/
+        posPrinter.printNormal(
+            POSPrinterConst.PTR_S_RECEIPT,
+            "\u001b|3lF\u001b|fP"
+        )
+
+        posPrinter.deviceEnabled = false
+        posPrinter.release()
+        posPrinter.close()
+    }
+
+    private fun toMonochrome(src: Bitmap): Bitmap {
+        val width = src.width
+        val height = src.height
+
+        val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
+
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                val pixel = src.getPixel(x, y)
+
+                val r = Color.red(pixel)
+                val g = Color.green(pixel)
+                val b = Color.blue(pixel)
+
+                // Luminance formula
+                val gray = (0.299 * r + 0.587 * g + 0.114 * b).toInt()
+
+                // Threshold (tune if needed)
+                val bw = if (gray < 160) Color.BLACK else Color.WHITE
+
+                bmp.setPixel(x, y, bw)
+            }
+        }
+        return bmp
     }
 }
 

@@ -1291,8 +1291,8 @@ class HomeViewModel @Inject constructor(
 
                 Log.d("PDF", "Downloaded: ${pdfFile.absolutePath}")
 
-                BixolonUsbPrinter(context).printPdf(pdfFile)
-
+                //BixolonUsbPrinter(context).printPdf(pdfFile)
+                BixolonUsbPrinter(context).printPdfAsBitmap(context,pdfFile)
             } catch (e: Exception) {
                 Log.e("PDF", "Print failed", e)
             }
