@@ -10,6 +10,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -61,8 +62,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ezycart.R
 import com.ezycart.services.usb.LedSerialConnection
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ezycart.AlertState
@@ -83,6 +87,10 @@ fun LandingScreen(homeViewModel: HomeViewModel,viewModel: LandingViewModel = hil
     var showLedDialog = viewModel.openLedTerminalDialog.collectAsState()
     var openLoadCellTerminalDialog = viewModel.openLoadCellTerminalDialog.collectAsState()
     val context = LocalContext.current
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
     if (openLoadCellTerminalDialog.value){
         WeightScaleManager.initOnce(homeViewModel)
         WeightScaleManager.connectSafe(context)
@@ -121,7 +129,8 @@ fun LandingScreen(homeViewModel: HomeViewModel,viewModel: LandingViewModel = hil
                     AutoScrollingBanner(
                         banners = uiState.value.banners,
                         currentIndex = uiState.value.currentBannerIndex,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize().focusRequester(focusRequester)
+                            .focusable()
                     )
                 } else {
                     // Replace with Language Selection after click
@@ -306,6 +315,7 @@ fun BitesHeader(
     viewModel: LandingViewModel,
     onHelpClick: () -> Unit
 ) {
+    val focusRequester = remember { FocusRequester() }
     var showAdminDialog = remember { mutableStateOf(false) }
     if (showAdminDialog.value) {
         AdminSettingsDialog(
@@ -401,7 +411,8 @@ fun BitesHeader(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp
                 ),
-                modifier = Modifier.clickable {  }
+                modifier = Modifier.focusRequester(focusRequester)
+                    .focusable().clickable {  }
             )
 
             // 3. RIGHT SIDE: Help Content
