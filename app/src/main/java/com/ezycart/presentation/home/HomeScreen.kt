@@ -319,7 +319,7 @@ if (resetAndGoBack.value){
             showButton = false,
             isDismissible = false
         )
-        viewModel.onPaymentSuccess("https://api-retailetics-ops-mini-03.retailetics.com/ezyCart/invoice/000VGO-P9900003312",context as Activity)
+        viewModel.printReceipt("https://api-retailetics-ops-mini-03.retailetics.com/ezyCart/invoice/000VGO-P9900003312",context as Activity)
     }
 
     LaunchedEffect(state.error) {
@@ -619,7 +619,7 @@ if (resetAndGoBack.value){
                     viewModel.showHelpDialog()
                                                                       },
                 onTitleClick = {
-                    viewModel.printReceipt("https://www.cte.iup.edu/cte/Resources/PDF_TestPage.pdf",context)
+                    viewModel.printReceipt("https://uat-api-retailetics-ops-mini-03.retailetics.com/invoices/invoice-000VGO-P0000002159.pdf",context)
                    // viewModel.onPaymentSuccess("https://api-retailetics-ops-mini-03.retailetics.com/ezyCart/invoice/000VGO-P9900003312",context as Activity)
 
                     /* showMainLogs.value = !showMainLogs.value

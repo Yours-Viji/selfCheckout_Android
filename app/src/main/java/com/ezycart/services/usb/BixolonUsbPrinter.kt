@@ -11,7 +11,11 @@ import jpos.JposConst
 import jpos.POSPrinter
 import jpos.POSPrinterConst
 import jpos.JposException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileOutputStream
+import java.net.URL
 
 /*
 class BixolonUsbPrinter(private val context: Context) {
@@ -92,6 +96,7 @@ class BixolonUsbPrinter(private val context: Context) {
 }*/
 
 
+/*
 class BixolonUsbPrinter(private val context: Context) {
     private val posPrinter = POSPrinter(context.applicationContext)
     //private val posPrinter = POSPrinter(context)
@@ -115,6 +120,7 @@ class BixolonUsbPrinter(private val context: Context) {
                 "" // Leaving this empty for auto-detection of USB
             )
             configLoader.saveFile()
+
             return true
         } catch (e: Exception) {
             Log.e(TAG, "Config Error: ${e.message}")
@@ -193,6 +199,7 @@ class BixolonUsbPrinter(private val context: Context) {
         } finally {
         }
     }
+
     fun triggerSelfTest(productName: String) {
         try {
             if (!configureUsb(productName)) return
@@ -219,47 +226,93 @@ class BixolonUsbPrinter(private val context: Context) {
         }
     }
 
-    fun printBitmapToBixolon(bitmap: Bitmap, context: Context) {
-        // 1. DO NOT create a new 'val posPrinter' here.
-        // Use the one already defined at the top of your class.
+
+
+
+}*/
+
+class BixolonUsbPrinter(private val context: Context) {
+
+    private val logicalName = "BK3_USB"
+    private val posPrinter = POSPrinter(context.applicationContext)
+    private val TAG = "BixolonPDF"
+
+    private fun configure(): Boolean {
+        return try {
+            val loader = BXLConfigLoader(context)
+            try {
+                loader.openFile()
+            } catch (e: Exception) {
+                loader.newFile()
+            }
+
+            loader.removeEntry(logicalName)
+            loader.addEntry(
+                logicalName,
+                BXLConfigLoader.DEVICE_CATEGORY_POS_PRINTER,
+                BXLConfigLoader.PRODUCT_NAME_BK3_3,
+                BXLConfigLoader.DEVICE_BUS_USB,
+                ""
+            )
+            loader.saveFile()
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Config error", e)
+            false
+        }
+    }
+
+    fun printPdf(pdfFile: File) {
+        if (!pdfFile.exists()) {
+            Log.e("BixolonPDF", "PDF not found")
+            return
+        }
 
         try {
-            // 2. Open using the Logical Name
-            if (posPrinter.state == JposConst.JPOS_S_CLOSED) {
-                posPrinter.open("Printer1")
-            }
+            val loader = BXLConfigLoader(context)
+            try { loader.openFile() } catch (e: Exception) { loader.newFile() }
 
-            // 3. Try to claim
-            posPrinter.claim(1500)
-
-            // 4. If claim succeeded, enable and print
-            posPrinter.deviceEnabled = true
-            posPrinter.printBitmap(
-                POSPrinterConst.PTR_S_RECEIPT,
-                bitmap,
-                posPrinter.recLineWidth,
-                POSPrinterConst.PTR_BM_LEFT
+            loader.removeEntry("BK3_USB")
+            loader.addEntry(
+                "BK3_USB",
+                BXLConfigLoader.DEVICE_CATEGORY_POS_PRINTER,
+                BXLConfigLoader.PRODUCT_NAME_BK3_3,
+                BXLConfigLoader.DEVICE_BUS_USB,
+                ""
             )
-            posPrinter.cutPaper(100)
+            loader.saveFile()
 
-        } catch (e: Exception) {
-            Log.e("Printer", "Critical Print Error: ${e.message}")
-            // IMPORTANT: Re-throw so your ViewModel knows it failed!
-            throw e
+            posPrinter.open("BK3_USB")
+            posPrinter.claim(5000)
+            posPrinter.deviceEnabled = true
+
+            val pdfPath = "file://${pdfFile.absolutePath}"
+            Log.d("BixolonPDF", "Printing: $pdfPath")
+
+            posPrinter.printPDFFile(
+                POSPrinterConst.PTR_S_RECEIPT,
+                Uri.parse(pdfPath),
+                576,                               // BK3-3 width
+                POSPrinterConst.PTR_BM_CENTER,
+                1
+            )
+
+            posPrinter.printNormal(
+                POSPrinterConst.PTR_S_RECEIPT,
+                "\u001b|3lF\u001b|fP"             // feed + full cut
+            )
+
+        } catch (e: JposException) {
+            Log.e("BixolonPDF", "JPOS ${e.errorCode}", e)
         } finally {
-            // 5. SMARTER CLEANUP
             try {
-                if (posPrinter.state != JposConst.JPOS_S_CLOSED) {
-                    // Only disable/release if we actually own the claim
-                    if (posPrinter.claimed) {
-                        posPrinter.deviceEnabled = false
-                        posPrinter.release()
-                    }
-                    posPrinter.close()
+                if (posPrinter.claimed) {
+                    posPrinter.deviceEnabled = false
+                    posPrinter.release()
                 }
-            } catch (cleanupError: Exception) {
-                Log.e("Printer", "Cleanup failed: ${cleanupError.message}")
-            }
+                posPrinter.close()
+            } catch (_: Exception) {}
         }
     }
 }
+
