@@ -183,6 +183,15 @@ class AuthRepositoryImpl @Inject constructor(
             }
     }
 
+    override suspend fun getInvoicePdf(referenceNo: String): NetworkResponse<InvoiceResponse> {
+        return safeApiCallRaw { authApi.getPdfInvoice(referenceNo = referenceNo) }
+            .also { result ->
+                if (result is NetworkResponse.Success) {
+                    //Constants.nearPaySessionID=result.data.sessionId
+                }
+            }
+    }
+
     private suspend fun getMerchantParam(): HashMap<String, String> {
         val params = HashMap<String, String>()
         params["merchantId"] = "" + preferencesManager.getMerchantId()

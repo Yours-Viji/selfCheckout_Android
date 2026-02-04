@@ -3,6 +3,7 @@ package com.ezycart.domain.repository
 import com.ezycart.data.remote.dto.CreateCartResponse
 import com.ezycart.data.remote.dto.CreateJwtTokenRequest
 import com.ezycart.data.remote.dto.DeviceDetailsResponse
+import com.ezycart.data.remote.dto.InvoiceResponse
 import com.ezycart.data.remote.dto.JwtTokenResponse
 import com.ezycart.data.remote.dto.NearPaymentSessionResponse
 import com.ezycart.data.remote.dto.NetworkResponse
@@ -41,6 +42,7 @@ interface AuthRepository {
     suspend fun getWavPayQRPaymentStatus(): NetworkResponse<WavPayQrPaymentStatus>
     suspend fun saveAuthToken(token: String)
     suspend fun getAuthToken(): String?
+    suspend fun getInvoicePdf(referenceNo: String): NetworkResponse<InvoiceResponse>
     //suspend fun refreshInterceptor()
     fun isDeviceActivated(): Flow<Boolean>
     fun getCartId(): Flow<String>

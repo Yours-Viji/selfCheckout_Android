@@ -8,6 +8,7 @@ import com.ezycart.data.remote.dto.CreateJwtTokenRequest
 import com.ezycart.data.remote.dto.DeleteProductInCartRequest
 import com.ezycart.data.remote.dto.DeviceDetailsResponse
 import com.ezycart.data.remote.dto.EditProductRequest
+import com.ezycart.data.remote.dto.InvoiceResponse
 import com.ezycart.data.remote.dto.JwtTokenResponse
 import com.ezycart.data.remote.dto.LoginRequest
 import com.ezycart.data.remote.dto.LoginResponse
@@ -131,9 +132,11 @@ interface AuthApi {
     suspend fun getWavPayQRPaymentStatus(
         @Path(value = "order_Id", encoded = true) orderId: String): Response<WavPayQrPaymentStatus>
 
+    @GET("ezycart/invoice/{reference_no}/pdf-url")
+    suspend fun getPdfInvoice(
+        @Path(value = "reference_no", encoded = true) referenceNo: String): Response<InvoiceResponse>
     /* @POST("/Login")
     fun loginApi(@Body loginRequest: LoginRequest): Call<Any>
-
     @GET("ezcart/product")
     @Headers("Content-Type:application/x-www-form-urlencoded; charset=utf-8")
     fun scannedProductDetails(@QueryMap params: Map<String, String>): Call<Any>

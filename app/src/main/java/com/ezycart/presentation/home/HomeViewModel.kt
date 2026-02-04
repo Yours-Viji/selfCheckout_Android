@@ -18,6 +18,7 @@ import com.bxl.config.editor.BXLConfigLoader
 import com.ezycart.data.datastore.PreferencesManager
 import com.ezycart.data.remote.dto.CartItem
 import com.ezycart.data.remote.dto.CreateJwtTokenRequest
+import com.ezycart.data.remote.dto.InvoiceResponse
 import com.ezycart.data.remote.dto.NetworkResponse
 import com.ezycart.data.remote.dto.PaymentRequest
 import com.ezycart.data.remote.dto.ShoppingCartDetails
@@ -134,6 +135,9 @@ class HomeViewModel @Inject constructor(
     val loadCellValidationLog: StateFlow<String> = _loadCellValidationLog.asStateFlow()
 
     private val productWeightsMap = HashMap<String, MutableList<Double>>()
+
+    private val _invoiceInfo = MutableStateFlow<InvoiceResponse?>(null)
+    val invoiceInfo: StateFlow<InvoiceResponse?> = _invoiceInfo.asStateFlow()
 
     sealed class PaymentStatusState {
         object Idle : PaymentStatusState()
@@ -493,16 +497,16 @@ class HomeViewModel @Inject constructor(
                     )
                     _productInfo.value = result.data
 
-                    /*val maxWeight = productInfo.value?.weightRange?.maxWeight?.toInt() ?: 0
+                    val maxWeight = productInfo.value?.weightRange?.maxWeight?.toInt() ?: 0
                     val canValidate = productInfo.value?.validateWG == true
                     if (canValidate && maxWeight < 25) {
                         addProductToShoppingCart(productInfo.value?.barcode.orEmpty(), 1)
                         _productInfo.value = null
                     } else {
                         getPriceDetails(barCode)
-                    }*/
+                    }
 
-                     addProductToShoppingCart(productInfo.value!!.barcode, 1)
+                   //  addProductToShoppingCart(productInfo.value!!.barcode, 1)
 
                 }
 
@@ -595,6 +599,7 @@ class HomeViewModel @Inject constructor(
                     )
                     result.data.referenceNo.let {
                         updatePaymentStatus(result.data.referenceNo)
+                        getInvoicePdf(result.data.referenceNo)
                     }
                     loadingManager.hide()
                 }
@@ -1274,7 +1279,15 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun printReceipt(pdfUrl: String, context: Context) {
+    fun printReceipt(context: Context) {
+        val pdfUrl = invoiceInfo.value?.pdfUrl
+
+        if (pdfUrl.isNullOrBlank()) {
+            _errorMessage.value = "PDF URL is null or empty"
+            Log.e("PDF", "PDF URL is null or empty")
+            return
+        }
+
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 // Native lib (Android box safe)
@@ -1296,6 +1309,41 @@ class HomeViewModel @Inject constructor(
             } catch (e: Exception) {
                 Log.e("PDF", "Print failed", e)
             }
+        }
+    }
+
+
+
+    private fun getInvoicePdf(referenceNumber: String) {
+        //loadingManager.show()
+        try {
+            viewModelScope.launch {
+                _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
+
+                when (val result = shoppingUseCase.getInvoicePdf(referenceNumber)) {
+                    is NetworkResponse.Success -> {
+                        /*_stateFlow.value = _stateFlow.value.copy(
+                            isLoading = false
+                        )*/
+                        _invoiceInfo.value = result.data
+                       // loadingManager.hide()
+                        /*  if(!isJwtTokenCreated){
+                              isJwtTokenCreated = true
+                              createNewJwtToken()
+                          }*/
+
+                    }
+
+                    is NetworkResponse.Error -> {
+                       /* _stateFlow.value = _stateFlow.value.copy(
+                            isLoading = false,
+                            error = result.message,
+                        )
+                        loadingManager.hide()*/
+                    }
+                }
+            }
+        } catch (e: Exception) {
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.ezycart.domain.usecase
 
 import com.ezycart.data.remote.dto.CreateCartResponse
+import com.ezycart.data.remote.dto.InvoiceResponse
 import com.ezycart.data.remote.dto.NetworkResponse
 import com.ezycart.data.remote.dto.PaymentRequest
 import com.ezycart.data.remote.dto.PaymentResponse
@@ -57,5 +58,9 @@ class ShoppingUseCase @Inject constructor(
         return authRepository.deleteProductFromShoppingCart(barCode,id)
     }
 
+
+    suspend  fun getInvoicePdf(referenceNo: String): NetworkResponse<InvoiceResponse> {
+        return authRepository.getInvoicePdf(referenceNo)
+    }
 
 }

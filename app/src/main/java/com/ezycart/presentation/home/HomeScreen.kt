@@ -319,7 +319,7 @@ if (resetAndGoBack.value){
             showButton = false,
             isDismissible = false
         )
-        viewModel.printReceipt("https://api-retailetics-ops-mini-03.retailetics.com/ezyCart/invoice/000VGO-P9900003312",context as Activity)
+        viewModel.printReceipt(/*"https://api-retailetics-ops-mini-03.retailetics.com/ezyCart/invoice/000VGO-P9900003312",*/context as Activity)
     }
 
     LaunchedEffect(state.error) {
@@ -619,11 +619,10 @@ if (resetAndGoBack.value){
                     viewModel.showHelpDialog()
                                                                       },
                 onTitleClick = {
-                    viewModel.printReceipt("https://uat-api-retailetics-ops-mini-03.retailetics.com/invoices/invoice-000VGO-P0000002159.pdf",context)
-                   // viewModel.onPaymentSuccess("https://api-retailetics-ops-mini-03.retailetics.com/ezyCart/invoice/000VGO-P9900003312",context as Activity)
+                   // viewModel.printReceipt(/*"https://uat-api-retailetics-ops-mini-03.retailetics.com/invoices/invoice-000VGO-P0000002159.pdf",*/context)
 
-                    /* showMainLogs.value = !showMainLogs.value
-                    viewModel.clearLog()*/
+                     showMainLogs.value = !showMainLogs.value
+                    viewModel.clearLog()
                 },
                 onClearClick ={clearTransAction.value = true})
             if (showMainLogs.value) {
