@@ -476,7 +476,7 @@ fun BitesHeader(
                     .clip(RoundedCornerShape(50))
                     .border(
                         width = 2.dp,
-                        color = colorResource(R.color.colorOrange),
+                        color = colorResource(R.color.white),
                         shape = RoundedCornerShape(50)
                     )
                     .clickable { onHelpClick() }
@@ -486,7 +486,7 @@ fun BitesHeader(
                 Icon(
                     painter = painterResource(id = R.drawable.ic_help),
                     contentDescription = "Help",
-                    tint = colorResource(R.color.colorOrange),
+                    tint = colorResource(R.color.white),
                     modifier = Modifier.size(35.dp)
                 )
 
@@ -494,7 +494,7 @@ fun BitesHeader(
 
                 Text(
                     text = "Help",
-                    color = colorResource(R.color.colorOrange),
+                    color = colorResource(R.color.white),
                     fontSize = 27.sp,
                     fontWeight = FontWeight.Bold
                 )

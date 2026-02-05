@@ -220,6 +220,7 @@ fun HomeScreen(
     var canShowPrintReceipt = viewModel.canShowPrintReceiptDialog.collectAsState()
     var resetAndGoBack = viewModel.resetAndGoBack.collectAsState()
     var clearSystemAlert = viewModel.clearSystemAlert.collectAsState()
+    var canShowDeleteDialog = viewModel.canShowDeleteDialog.collectAsState()
     /* val commonListener = remember {
          LoginWeightScaleSerialPort.createCommonListener(viewModel)
      }*/
@@ -257,6 +258,17 @@ if (resetAndGoBack.value){
         currentSystemAlert.value = AlertState(
             title = "Product Not Found",
             message = "Please try again or Call for Help.",
+            lottieFileName = "anim_warning_circle.json",
+            type = AlertType.INFO,
+            isDismissible = true,
+            showButton = true
+        )
+    }
+    if(canShowDeleteDialog.value) {
+        currentSystemAlert.value = null
+        currentSystemAlert.value = AlertState(
+            title = "Please Wait, Support Will Assist You To Delete",
+            message = "",
             lottieFileName = "anim_warning_circle.json",
             type = AlertType.INFO,
             isDismissible = true,
@@ -912,7 +924,7 @@ fun BitesHeaderNew(
                         .clip(RoundedCornerShape(50))
                         .border(
                             width = 2.dp,
-                            color = colorResource(R.color.colorOrange),
+                            color = colorResource(R.color.white),
                             shape = RoundedCornerShape(50)
                         )
                         .clickable { onHelpClick() }
@@ -922,7 +934,7 @@ fun BitesHeaderNew(
                     Icon(
                         painter = painterResource(id = R.drawable.ic_help),
                         contentDescription = "Help",
-                        tint = colorResource(R.color.colorOrange),
+                        tint = colorResource(R.color.white),
                         modifier = Modifier.size(35.dp)
                     )
 
@@ -930,7 +942,7 @@ fun BitesHeaderNew(
 
                     Text(
                         text = "Help",
-                        color = colorResource(R.color.colorOrange),
+                        color = colorResource(R.color.white),
                         fontSize = 27.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -1406,6 +1418,9 @@ fun PickersShoppingScreen(
                     },
                     onPayNowClick = onTapToPayClick,
                     onLogout = onLogout,
+                    onDeleteItemClick = {
+                        viewModel.showDeleteProductDialog()
+                    }
                 )
             }
         }
@@ -1709,6 +1724,7 @@ fun CartScreen(
     onEditProduct: (String, Int, Int) -> Unit,
     onPayNowClick: () -> Unit,
     onLogout: () -> Unit,
+    onDeleteItemClick: () -> Unit,
 ) {
     var isRecording = remember { mutableStateOf(false) }
     var startFunc = remember { mutableStateOf<(() -> Unit)?>(null) }
@@ -1980,6 +1996,9 @@ fun CartScreen(
                         onEditProduct = { barCode, id, updatedQuantity ->
                             onEditProduct(barCode, id, updatedQuantity)
                         },
+                        onDeleteItemClick = {
+                            onDeleteItemClick()
+                        }
                     )
                 }
                 //}
@@ -2203,6 +2222,7 @@ fun CartItemCard(
     onRemove: (CartItem) -> Unit,
     modifier: Modifier = Modifier,
     onEditProduct: (String, Int, Int) -> Unit,
+    onDeleteItemClick: () -> Unit
 ) {
     val showDeleteDialog = remember { mutableStateOf(false) }
     val showEditDialog = remember { mutableStateOf(false) }
@@ -2369,6 +2389,7 @@ fun CartItemCard(
                     modifier = Modifier
                         .size(26.dp)
                         .clickable {
+                            onDeleteItemClick()
                            // selectedCartItem.value = productInfo
                           //  showDeleteDialog.value = true
                         }
@@ -3511,7 +3532,7 @@ fun ManualBarcodeEntryDialog(
     onCancel: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    var barcode = remember { mutableStateOf("") }
+    var barcode = remember { mutableStateOf("9556001601506") }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(

@@ -161,6 +161,10 @@ class HomeViewModel @Inject constructor(
     val canShowProductNotFoundDialog: StateFlow<Boolean> =
         _canShowProductNotFoundDialog.asStateFlow()
 
+    private val _canShowDeleteDialog = MutableStateFlow<Boolean>(false)
+    val canShowDeleteDialog: StateFlow<Boolean> =
+        _canShowDeleteDialog.asStateFlow()
+
     private val _canShowValidationErrorDialog = MutableStateFlow<Boolean>(false)
     val canShowValidationErrorDialog: StateFlow<Boolean> =
         _canShowValidationErrorDialog.asStateFlow()
@@ -248,6 +252,10 @@ class HomeViewModel @Inject constructor(
         _canShowPaymentProcessDialog.value = false
         _canShowPaymentProcessDialog.value = false
         _canShowHelpDialog.value = false
+        _canShowDeleteDialog.value = false
+    }
+    fun showDeleteProductDialog(){
+        _canShowDeleteDialog.value = true
     }
     fun showHelpDialog(){
         _canShowHelpDialog.value = true
@@ -501,16 +509,16 @@ class HomeViewModel @Inject constructor(
                     )
                     _productInfo.value = result.data
 
-                    val maxWeight = productInfo.value?.weightRange?.maxWeight?.toInt() ?: 0
+                    /*val maxWeight = productInfo.value?.weightRange?.maxWeight?.toInt() ?: 0
                     val canValidate = productInfo.value?.validateWG == true
                     if (canValidate && maxWeight < 25) {
                         addProductToShoppingCart(productInfo.value?.barcode.orEmpty(), 1)
                         _productInfo.value = null
                     } else {
                         getPriceDetails(barCode)
-                    }
+                    }*/
 
-                  //   addProductToShoppingCart(productInfo.value!!.barcode, 1)
+                     addProductToShoppingCart(productInfo.value!!.barcode, 1)
 
                 }
 
@@ -943,6 +951,7 @@ class HomeViewModel @Inject constructor(
                         if (product.validateWG) {
                             if (result is ValidationResult.Success) {
                                 addProductToShoppingCart(product.barcode, 1)
+                                notScannedTotalWeight = 0.0
                             } else {
                                 notScannedTotalWeight = notScannedTotalWeight.plus(update.delta_w2)
                                 _canShowProductMismatchDialog.value = true
