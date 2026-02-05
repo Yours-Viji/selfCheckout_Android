@@ -35,6 +35,9 @@ class LandingViewModel @Inject constructor(
     private val _canShowHelpDialog = MutableStateFlow<Boolean>(false)
     val canShowHelpDialog: StateFlow<Boolean> = _canShowHelpDialog.asStateFlow()
 
+    private val _canStartShopping = MutableStateFlow<Boolean>(false)
+    val canStartShopping: StateFlow<Boolean> = _canStartShopping.asStateFlow()
+
     init {
         startAutoScroll()
     }
@@ -48,8 +51,11 @@ class LandingViewModel @Inject constructor(
             }
         }
     }
+    fun setStartShopping(value: Boolean){
+        _canStartShopping.value = value
+    }
     fun clearSystemAlert() {
-
+        _canStartShopping.value = false
         _canShowHelpDialog.value = false
     }
     fun showHelpDialog(){

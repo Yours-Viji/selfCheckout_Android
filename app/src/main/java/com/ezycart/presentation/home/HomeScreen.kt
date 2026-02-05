@@ -277,7 +277,7 @@ if (resetAndGoBack.value){
     if (canShowProductMismatchDialog.value){
         currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
-            title = "Product Mismatch",
+            title = "Wrong Product Placed",
             message = "Please remove, scan and add the correct product.",
             lottieFileName = "anim_wrong.json",
             type = AlertType.ERROR,
@@ -310,6 +310,7 @@ if (resetAndGoBack.value){
 
     if(canShowPrintReceipt.value) {
         viewModel.hidePaymentView()
+        viewModel.printReceipt(/*"https://api-retailetics-ops-mini-03.retailetics.com/ezyCart/invoice/000VGO-P9900003312",*/context as Activity)
         currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
             title = "Thank You for Shopping with us.",
@@ -319,7 +320,7 @@ if (resetAndGoBack.value){
             showButton = false,
             isDismissible = false
         )
-        viewModel.printReceipt(/*"https://api-retailetics-ops-mini-03.retailetics.com/ezyCart/invoice/000VGO-P9900003312",*/context as Activity)
+
     }
 
     LaunchedEffect(state.error) {
@@ -619,10 +620,10 @@ if (resetAndGoBack.value){
                     viewModel.showHelpDialog()
                                                                       },
                 onTitleClick = {
-                   // viewModel.printReceipt(/*"https://uat-api-retailetics-ops-mini-03.retailetics.com/invoices/invoice-000VGO-P0000002159.pdf",*/context)
+                    viewModel.printReceipt(/*"https://uat-api-retailetics-ops-mini-03.retailetics.com/invoices/invoice-000VGO-P0000002159.pdf",*/context)
 
-                     showMainLogs.value = !showMainLogs.value
-                    viewModel.clearLog()
+                  /*   showMainLogs.value = !showMainLogs.value
+                    viewModel.clearLog()*/
                 },
                 onClearClick ={clearTransAction.value = true})
             if (showMainLogs.value) {
@@ -1727,11 +1728,12 @@ fun CartScreen(
                 shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(24.dp)
+                    modifier = Modifier.padding(10.dp)
                 ) {
+                    Spacer(Modifier.height(5.dp))
                     Text(
                         text = "Total Products : ${paymentSummary?.totalItems ?: 0}",
-                        color = MaterialTheme.colorScheme.primary,
+                        color = Color.Black,
 
                         style = MaterialTheme.typography.bodyLarge.copy(
                             fontWeight = FontWeight.Medium,
@@ -1778,8 +1780,8 @@ fun CartScreen(
                         Box(
                             modifier = Modifier
                                 .size(
-                                    width = 270.dp,
-                                    height = 250.dp
+                                    width = 300.dp,
+                                    height = 290.dp
                                 ) // Fixed Aspect Ratio for Camera
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(Color.Black)
@@ -1970,7 +1972,8 @@ fun CartScreen(
                 contentPadding = PaddingValues(bottom = 80.dp) // leave room for bottom bar
             ) {
                 //repeat(20) {
-                itemsIndexed(cartItems.reversed()) { index, productData ->
+                val productList = cartItems.reversed()
+                itemsIndexed(productList) { index, productData ->
                     CartItemCard(
                         productInfo = cartItems[index],
                         onRemove = { onRemoveItem(it) },
@@ -2023,7 +2026,7 @@ fun ActionButton(
     }
 }
 
-@Composable
+/*@Composable
 fun CartItemCard(
     productInfo: CartItem,
     onRemove: (CartItem) -> Unit,
@@ -2191,33 +2194,74 @@ fun CartItemCard(
             }
         }
     }
-    /*Card(
+
+
+}*/
+@Composable
+fun CartItemCard(
+    productInfo: CartItem,
+    onRemove: (CartItem) -> Unit,
+    modifier: Modifier = Modifier,
+    onEditProduct: (String, Int, Int) -> Unit,
+) {
+    val showDeleteDialog = remember { mutableStateOf(false) }
+    val showEditDialog = remember { mutableStateOf(false) }
+    val selectedCartItem = remember { mutableStateOf<CartItem?>(null) }
+
+    // DELETE CONFIRMATION
+    if (showDeleteDialog.value && selectedCartItem.value != null) {
+        DeleteProductDialog(
+            productName = selectedCartItem.value?.productName ?: "",
+            productCode = selectedCartItem.value?.barcode ?: "",
+            oldPrice = "${Constants.currencySymbol} ${selectedCartItem.value?.originalPrice ?: 0.0}",
+            newPrice = "${Constants.currencySymbol} ${selectedCartItem.value?.finalPrice ?: 0.0}",
+            imageRes = selectedCartItem.value?.imageUrl ?: "",
+            onRemove = {
+                onRemove(selectedCartItem.value!!)
+                showDeleteDialog.value = false
+            },
+            onDismiss = { showDeleteDialog.value = false }
+        )
+    }
+
+    // EDIT PRODUCT
+    if (showEditDialog.value && selectedCartItem.value != null) {
+        EditProductDialog(
+            productName = selectedCartItem.value?.productName ?: "",
+            productCode = selectedCartItem.value?.barcode ?: "",
+            oldPrice = "${Constants.currencySymbol} ${selectedCartItem.value?.originalPrice ?: 0.0}",
+            newPrice = "${Constants.currencySymbol} ${selectedCartItem.value?.finalPrice ?: 0.0}",
+            imageRes = selectedCartItem.value?.imageUrl ?: "",
+            currentQuantity = selectedCartItem.value?.quantity ?: 1,
+            onEdit = { updatedQuantity ->
+                if (selectedCartItem.value?.quantity != updatedQuantity) {
+                    selectedCartItem.value?.let {
+                        onEditProduct(it.barcode, it.id, updatedQuantity)
+                    }
+                }
+                showEditDialog.value = false
+            },
+            onDismiss = { showEditDialog.value = false }
+        )
+    }
+
+    Card(
         modifier = modifier
-            .then(
-
-
-                    Modifier.height(130.dp)
-
-            )
+            .height(110.dp)
             .fillMaxWidth()
-            .padding(
-                horizontal = 3.dp,
-                vertical = 2.dp
-            ),
+            .padding(horizontal = 4.dp, vertical = 3.dp),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight()
-                .padding(6.dp),
+                .fillMaxSize()
+                .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Spacer(modifier = Modifier.width(4.dp))
-            // Image
+
+            // 1️⃣ PRODUCT IMAGE
             Box(
                 modifier = Modifier
                     .size(90.dp)
@@ -2225,181 +2269,114 @@ fun CartItemCard(
                     .background(Color(0xFFF2F2F2)),
                 contentAlignment = Alignment.Center
             ) {
-                if (productInfo.imageUrl != null) {
-                    AsyncImage(
-                        model = productInfo.imageUrl,
-                        contentDescription = "${productInfo.id}",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize(),
-                        placeholder = painterResource(R.drawable.ic_no_product_image),
-                        error = painterResource(R.drawable.ic_no_product_image)
-                    )
-                } else {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_no_product_image),
-                        contentDescription = "${productInfo.id}",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
+                AsyncImage(
+                    model = productInfo.imageUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                    placeholder = painterResource(R.drawable.ic_no_product_image),
+                    error = painterResource(R.drawable.ic_no_product_image)
+                )
             }
 
-            Spacer(modifier = Modifier.width(4.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
-            // Product name
+            // 2️⃣ PRODUCT INFO
             Column(
-                modifier = Modifier.weight(1f) // take remaining space before price + icons
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
             ) {
                 Text(
                     text = productInfo.productName,
-                    modifier = Modifier.padding(start = 3.dp),
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 20.sp
+                        fontSize = 20.sp,
+                        color = MaterialTheme.colorScheme.primary
                     ),
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.height( 3.dp))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        // This adds exactly 12.dp of space between every child in the Row
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Spacer(modifier = Modifier.width(3.dp))
-                        // Item 1
-                        *//*Text(
-                            text = "${productInfo.displayQty} x ${Constants.currencySymbol} ${
-                                "%.2f".format(
-                                    productInfo.unitPrice
-                                )
-                            }",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 18.sp
-                            ),
-                            color = Color.Gray
-                        )
-
-                        // Item 2 (Conditional)
-                        if (productInfo.finalPriceBeforeDiscount != productInfo.finalPrice) {
-                            Text(
-                                text = "${Constants.currencySymbol} ${"%.2f".format(productInfo.finalPriceBeforeDiscount)}",
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 18.sp
-                                ),
-                                textDecoration = TextDecoration.LineThrough
-                            )
-                        }
-
-                        // Item 3
-                        Text(
-                            text = "${Constants.currencySymbol} ${"%.2f".format(productInfo.finalPrice)}",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp,
-                                color = colorResource(R.color.colorPrimary)
-                            )
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(3.dp))*//*
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_discount_icon),
-                        contentDescription = "discount",
+                        contentDescription = "Discount",
                         tint = colorResource(R.color.colorOrange),
-                        modifier = Modifier
-                            .size(35.dp)
-                            .padding(start = 4.dp, end = 6.dp)
+                        modifier = Modifier.size(22.dp)
                     )
-
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "Buy One Get One",
-                        style = MaterialTheme.typography.bodyLarge.copy(
+                        style = TextStyle(
                             fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
+                            fontSize = 16.sp,
                             color = colorResource(R.color.colorOrange)
                         )
                     )
                 }
-
-
             }
 
+            Spacer(modifier = Modifier.width(10.dp))
 
-            Spacer(Modifier.width( 3.dp))
-            // Delete icon
-            *//*Icon(
-                painter = painterResource(id = R.drawable.ic_box_delete),
-                contentDescription = "Delete ${productInfo.id}",
-                tint = Color.Unspecified,
-                modifier = Modifier
-                    .size( 50.dp)
-                    .padding(start = 4.dp)
-                    .clickable {
-                        selectedCartItem.value = productInfo
-                        showDeleteDialog.value = true
-                    }
-            )
-            Spacer(Modifier.width(5.dp))
-            // Edit icon
-            Icon(
-                painter = painterResource(id = R.drawable.ic_edit_box),
-                contentDescription = "Edit ${productInfo.id}",
-                tint = Color.Unspecified,
-                modifier = Modifier
-                    .size(50.dp)
-                    .padding(start = 4.dp)
-                    .clickable {
-                        selectedCartItem.value = productInfo
-                        showEditDialog.value = true
-                    }
-            )*//*
-                Text(
-                    text = "${productInfo.displayQty} x ${Constants.currencySymbol} ${
-                        "%.2f".format(
-                            productInfo.unitPrice
-                        )
-                    }",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 18.sp
-                    ),
-                    color = Color.Gray
-                )
-
-                // Item 2 (Conditional)
-                if (productInfo.finalPriceBeforeDiscount != productInfo.finalPrice) {
+            // 3️⃣ PRICE + DELETE
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.End
+                ) {
                     Text(
-                        text = "${Constants.currencySymbol} ${"%.2f".format(productInfo.finalPriceBeforeDiscount)}",
-                        style = MaterialTheme.typography.bodyMedium.copy(
+                        text = "${productInfo.displayQty} x ${Constants.currencySymbol}${"%.2f".format(productInfo.unitPrice)}",
+                        style = TextStyle(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp,
+                            color = Color.Gray
+                        )
+                    )
+
+                    if (productInfo.finalPriceBeforeDiscount != productInfo.finalPrice) {
+                        Text(
+                            text = "${Constants.currencySymbol}${"%.2f".format(productInfo.finalPriceBeforeDiscount)}",
+                            style = TextStyle(
+                                fontSize = 15.sp,
+                                textDecoration = TextDecoration.LineThrough,
+                                color = Color.Red
+                            )
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Text(
+                        text = "${Constants.currencySymbol}${"%.2f".format(productInfo.finalPrice)}",
+                        style = TextStyle(
                             fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        ),
-                        textDecoration = TextDecoration.LineThrough
+                            fontSize = 22.sp,
+                            color = colorResource(R.color.colorPrimary)
+                        )
                     )
                 }
 
-                // Item 3
-                Text(
-                    text = "${Constants.currencySymbol} ${"%.2f".format(productInfo.finalPrice)}",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        color = colorResource(R.color.colorPrimary)
-                    )
+                Spacer(modifier = Modifier.width(20.dp))
+
+                // 🗑 DELETE BUTTON
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_delete),
+                    contentDescription = "Delete item",
+                    tint = Color.Red,
+                    modifier = Modifier
+                        .size(26.dp)
+                        .clickable {
+                           // selectedCartItem.value = productInfo
+                          //  showDeleteDialog.value = true
+                        }
                 )
+                Spacer(Modifier.width(7.dp))
             }
-            Spacer(modifier = Modifier.height(3.dp))
-
         }
-    }*/
-
+    }
 }
 
 @Composable

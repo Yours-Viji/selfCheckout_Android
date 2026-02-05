@@ -63,6 +63,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ezycart.R
 import com.ezycart.services.usb.LedSerialConnection
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateListOf
@@ -90,8 +92,43 @@ fun LandingScreen(homeViewModel: HomeViewModel,viewModel: LandingViewModel = hil
     var openLoadCellTerminalDialog = viewModel.openLoadCellTerminalDialog.collectAsState()
     val context = LocalContext.current
     val focusRequester = remember { FocusRequester() }
+    var continueShoppingDialog = remember { mutableStateOf(false) }
+    var currentSystemAlert = remember { mutableStateOf<AlertState?>(null)}
+    var canStartShopping= viewModel.canStartShopping.collectAsState()
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
+    }
+    if (continueShoppingDialog.value){
+        ContinueShoppingDialog(
+
+            onMemberLogin = {
+                showGuidelines.value = true
+                continueShoppingDialog.value = false
+                // Navigate to member login
+            },
+            onGuestLogin = {
+                showGuidelines.value = true
+                continueShoppingDialog.value = false
+                // Continue without login
+            },
+            onDismiss = {
+                continueShoppingDialog.value = false
+            }
+        )
+    }
+
+    if(canStartShopping.value){
+        currentSystemAlert.value = null
+        currentSystemAlert.value = AlertState(
+            title = "Please Add All your products in Tray 1",
+            message = "",
+            lottieFileName = "anim_warning_circle.json",
+            type = AlertType.INFO,
+            isDismissible = false,
+            showButton = true,
+            positiveButtonText = "Ok",
+            onPositiveClick = {viewModel.clearSystemAlert()}
+        )
     }
     if (openLoadCellTerminalDialog.value){
         WeightScaleManager.initOnce(homeViewModel)
@@ -139,7 +176,8 @@ fun LandingScreen(homeViewModel: HomeViewModel,viewModel: LandingViewModel = hil
                     LanguageSelectionScreen(viewModel,onLanguageSelected = { lang ->
                         Log.d("Kiosk", "Selected: $lang")
                         Constants.selectedLanguage = lang
-                        showGuidelines.value = true
+                        continueShoppingDialog.value = true
+
 
                     })
                 }
@@ -156,8 +194,15 @@ fun LandingScreen(homeViewModel: HomeViewModel,viewModel: LandingViewModel = hil
                     // ADD THIS: It pushes the content up away from the system navigation buttons
                     .navigationBarsPadding()
                     .clickable(enabled = !uiState.value.isStarted) {
-                        LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
-                        viewModel.onStartClicked()
+                        if (homeViewModel.initialTotalWeight >50){
+                            LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
+                            viewModel.onStartClicked()
+                        }else{
+                            LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
+                            viewModel.onStartClicked()
+                           // viewModel.setStartShopping(true)
+                        }
+
                     },
                 contentAlignment = Alignment.Center
             ) {
@@ -177,6 +222,13 @@ fun LandingScreen(homeViewModel: HomeViewModel,viewModel: LandingViewModel = hil
                     modifier = Modifier.wrapContentSize() // Only takes space needed
                 )
             }
+        }
+    }
+
+    currentSystemAlert.value?.let { alert ->
+        CommonAlertView(state = alert) {
+            viewModel.clearSystemAlert()
+            currentSystemAlert.value = null
         }
     }
 }
@@ -547,7 +599,7 @@ fun GuidelinesDialog(
                 modifier = Modifier.padding(8.dp)
             ) {
                 Text(
-                    "I Understand",
+                    "I Got It",
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 18.sp,
                     color = Color(0xFF007BFF) // Kiosk Blue
@@ -665,6 +717,104 @@ fun LedControlDialog(onDismiss: () -> Unit) {
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF44336))
                     ) { Text("ALL OFF") }
                 }
+            }
+        }
+    }
+
+
+    }
+@Composable
+fun ContinueShoppingDialog(
+    onMemberLogin: () -> Unit,
+    onGuestLogin: () -> Unit,
+    onDismiss: () -> Unit
+) {
+
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            shape = RoundedCornerShape(20.dp),
+            elevation = CardDefaults.cardElevation(8.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+
+                // 🛒 Icon
+                Icon(
+                    imageVector = Icons.Default.ShoppingCart,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(55.dp)
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Title
+                Text(
+                    text = "Continue Shopping",
+                    fontSize = 25.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Message
+                Text(
+                    text = "Choose how you’d like to proceed",
+                    fontSize = 20.sp,
+                    color = Color.Black,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // ⭐ Member Login Button
+                Button(
+                    onClick = {
+                        onMemberLogin()
+                        onDismiss()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Icon(Icons.Default.Person, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "Member Login",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // 🛍 Guest Button
+                OutlinedButton(
+                    onClick = {
+                        onGuestLogin()
+                        onDismiss()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Icon(Icons.Default.Person, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "Continue as Guest",
+                        fontSize = 16.sp
+                    )
+                }
+                Spacer(modifier = Modifier.height(20.dp))
             }
         }
     }

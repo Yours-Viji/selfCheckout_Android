@@ -52,6 +52,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.File
@@ -121,7 +123,7 @@ class HomeViewModel @Inject constructor(
     private val _canMakePayment = MutableStateFlow<Boolean>(false)
     val canMakePayment: StateFlow<Boolean> = _canMakePayment.asStateFlow()
 
-    private var initialTotalWeight: Double = 0.0
+     var initialTotalWeight: Double = 0.0
     private var finalTotalWeight: Double = 0.0
     private var finalWeightOfLc1: Double = 0.0
 
@@ -193,7 +195,8 @@ class HomeViewModel @Inject constructor(
     val canShowHelpDialog: StateFlow<Boolean> = _canShowHelpDialog.asStateFlow()
 
     private var notScannedTotalWeight = 0.0
-
+    private val printMutex = Mutex()
+    private var receiptPrinted = false
     init {
         viewModelScope.launch {
             val savedAppMode = preferencesManager.getAppMode()
@@ -301,6 +304,7 @@ class HomeViewModel @Inject constructor(
         cartId = ""
         clearCartDetails()
         createNewShoppingCart()
+        startNewTransaction()
     }
 
     fun clearCartDetails() {
@@ -497,16 +501,16 @@ class HomeViewModel @Inject constructor(
                     )
                     _productInfo.value = result.data
 
-                    val maxWeight = productInfo.value?.weightRange?.maxWeight?.toInt() ?: 0
+                   /* val maxWeight = productInfo.value?.weightRange?.maxWeight?.toInt() ?: 0
                     val canValidate = productInfo.value?.validateWG == true
                     if (canValidate && maxWeight < 25) {
                         addProductToShoppingCart(productInfo.value?.barcode.orEmpty(), 1)
                         _productInfo.value = null
                     } else {
                         getPriceDetails(barCode)
-                    }
+                    }*/
 
-                   //  addProductToShoppingCart(productInfo.value!!.barcode, 1)
+                     addProductToShoppingCart(productInfo.value!!.barcode, 1)
 
                 }
 
@@ -1154,12 +1158,12 @@ class HomeViewModel @Inject constructor(
                 // _errorMessage.value = "Weight is stable and within range."
             } else {
                 // Testing
-                /* _canMakePayment.value = true
-                 _canShowValidationErrorDialog.value = false*/
+                 _canMakePayment.value = true
+                 _canShowValidationErrorDialog.value = false
 
 
-                _canMakePayment.value = false
-                _canShowValidationErrorDialog.value = true
+              /*  _canMakePayment.value = false
+                _canShowValidationErrorDialog.value = true*/
                 // _errorMessage.value = "Weight mismatch detected!"
                 // Weight difference is greater than 30g
                 LedSerialConnection.setScenario(AppScenario.ERROR)
@@ -1279,13 +1283,14 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun printReceipt(context: Context) {
-        val pdfUrl = invoiceInfo.value?.pdfUrl
+    /*fun printReceipt(context: Context) {
+        var  pdfUrl = invoiceInfo.value?.pdfUrl
 
         if (pdfUrl.isNullOrBlank()) {
+            pdfUrl = "https://uat-api-retailetics-ops-mini-03.retailetics.com/invoices/invoice-000VGO-P0000002159.pdf"
             _errorMessage.value = "PDF URL is null or empty"
             Log.e("PDF", "PDF URL is null or empty")
-            return
+           // return
         }
 
         viewModelScope.launch(Dispatchers.IO) {
@@ -1305,13 +1310,138 @@ class HomeViewModel @Inject constructor(
                 Log.d("PDF", "Downloaded: ${pdfFile.absolutePath}")
 
                 //BixolonUsbPrinter(context).printPdf(pdfFile)
-                BixolonUsbPrinter(context).printPdfAsBitmap(context,pdfFile)
+                BixolonUsbPrinter(context).printPdfAsBitmap(pdfFile)
             } catch (e: Exception) {
                 Log.e("PDF", "Print failed", e)
             }
         }
-    }
+    }*/
 
+   /* fun printReceipt(context: Context) {
+
+        var pdfUrl = invoiceInfo.value?.pdfUrl
+
+        if (pdfUrl.isNullOrBlank()) {
+            pdfUrl =
+                "https://uat-api-retailetics-ops-mini-03.retailetics.com/invoices/invoice-000VGO-P0000002159.pdf"
+            _errorMessage.value = ("PDF URL is null or empty")
+            Log.e("PDF", "PDF URL is null or empty")
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+
+            // 🔒 Prevent parallel prints
+            printMutex.withLock {
+
+                if (isPrinting) {
+                    Log.w("PDF", "Print already in progress, skipping")
+                    return@withLock
+                }
+
+                isPrinting = true
+
+                var printer: BixolonUsbPrinter? = null
+
+                try {
+                    // Load native lib once
+                    val lib = File(
+                        context.applicationInfo.nativeLibraryDir,
+                        "libbxl_common.so"
+                    )
+                    if (lib.exists()) {
+                        System.load(lib.absolutePath)
+                    }
+
+                    // Download PDF
+                    val pdfFile = File(context.cacheDir, "receipt.pdf")
+                    URL(pdfUrl).openStream().use { input ->
+                        pdfFile.outputStream().use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+
+                    Log.d("PDF", "Downloaded: ${pdfFile.absolutePath}")
+
+                    // 🖨️ Print
+                    printer = BixolonUsbPrinter(context.applicationContext)
+                    printer.printPdfAsBitmap(pdfFile)
+
+                } catch (e: Exception) {
+                    Log.e("PDF", "Print failed", e)
+                    _errorMessage.value = (e.message ?: "Print failed")
+                } finally {
+                    // 🔓 ALWAYS release printer
+                    try {
+                        printer?.cleanupPrinter()   // or release() if you expose it
+                    } catch (e: Exception) {
+                        Log.e("PDF", "Printer close failed", e)
+                    }
+
+                    isPrinting = false
+                }
+            }
+        }
+    }*/
+   fun startNewTransaction() {
+       receiptPrinted = false
+   }
+    fun printReceipt(context: Context) {
+
+        if (receiptPrinted) {
+            Log.w("PDF", "Receipt already printed, ignoring request")
+            return
+        }
+
+        var pdfUrl = invoiceInfo.value?.pdfUrl
+
+        if (pdfUrl.isNullOrBlank()) {
+            pdfUrl =
+                "https://uat-api-retailetics-ops-mini-03.retailetics.com/invoices/invoice-000VGO-P0000002159.pdf"
+            Log.e("PDF", "PDF URL is null or empty")
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            printMutex.withLock {
+
+                if (receiptPrinted) return@withLock
+
+                receiptPrinted = true   // 🔒 HARD STOP AFTER THIS
+
+                var printer: BixolonUsbPrinter? = null
+
+                try {
+                    val lib = File(
+                        context.applicationInfo.nativeLibraryDir,
+                        "libbxl_common.so"
+                    )
+                    if (lib.exists()) {
+                        System.load(lib.absolutePath)
+                    }
+
+                    val pdfFile = File(context.cacheDir, "receipt.pdf")
+                    URL(pdfUrl).openStream().use { input ->
+                        pdfFile.outputStream().use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+
+                    Log.d("PDF", "Printing receipt")
+
+                    printer = BixolonUsbPrinter(context.applicationContext)
+                    printer.configure()
+                    printer.printPdfAsBitmap(pdfFile)
+
+                } catch (e: Exception) {
+                    receiptPrinted = false // allow retry if failed
+                    Log.e("PDF", "Print failed", e)
+                } finally {
+                    try {
+                        printer?.cleanupPrinter()
+                    } catch (_: Exception) {}
+                }
+            }
+        }
+    }
 
 
     private fun getInvoicePdf(referenceNumber: String) {

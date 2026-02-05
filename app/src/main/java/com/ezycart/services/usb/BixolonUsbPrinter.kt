@@ -237,11 +237,20 @@ class BixolonUsbPrinter(private val context: Context) {
 
 class BixolonUsbPrinter(private val context: Context) {
 
-    private val logicalName = "BK3_USB"
-    private val posPrinter = POSPrinter(context.applicationContext)
     private val TAG = "BixolonPDF"
+    private val logicalName = "BK3_USB"
 
-    private fun configure(): Boolean {
+    // SINGLE printer instance
+    private val posPrinter by lazy {
+        ensureJposXml(context)
+        POSPrinter(context.applicationContext)
+    }
+
+    // Prevent concurrent printing
+    private val printLock = Any()
+
+    /** Call ONCE (ex: app start) */
+    fun configure(): Boolean {
         return try {
             val loader = BXLConfigLoader(context)
             try {
@@ -259,6 +268,7 @@ class BixolonUsbPrinter(private val context: Context) {
                 ""
             )
             loader.saveFile()
+
             true
         } catch (e: Exception) {
             Log.e(TAG, "Config error", e)
@@ -266,103 +276,97 @@ class BixolonUsbPrinter(private val context: Context) {
         }
     }
 
-    fun printPdf(pdfFile: File) {
+    /** PUBLIC print API */
+    fun printPdfAsBitmap(pdfFile: File) {
         if (!pdfFile.exists()) {
-            Log.e("BixolonPDF", "PDF not found")
+            Log.e(TAG, "PDF not found")
             return
         }
 
-        try {
-            val loader = BXLConfigLoader(context)
-            try { loader.openFile() } catch (e: Exception) { loader.newFile() }
-
-            loader.removeEntry("BK3_USB")
-            loader.addEntry(
-                "BK3_USB",
-                BXLConfigLoader.DEVICE_CATEGORY_POS_PRINTER,
-                BXLConfigLoader.PRODUCT_NAME_BK3_3,
-                BXLConfigLoader.DEVICE_BUS_USB,
-                ""
-            )
-            loader.saveFile()
-
-            posPrinter.open("BK3_USB")
-            posPrinter.claim(5000)
-            posPrinter.deviceEnabled = true
-
-            val pdfPath = "file://${pdfFile.absolutePath}"
-            Log.d("BixolonPDF", "Printing: $pdfPath")
-
-            posPrinter.printPDFFile(
-                POSPrinterConst.PTR_S_RECEIPT,
-                Uri.parse(pdfPath),
-                576,                               // BK3-3 width
-                POSPrinterConst.PTR_BM_CENTER,
-                1
-            )
-
-            posPrinter.printNormal(
-                POSPrinterConst.PTR_S_RECEIPT,
-                "\u001b|3lF\u001b|fP"             // feed + full cut
-            )
-
-        } catch (e: JposException) {
-            Log.e("BixolonPDF", "JPOS ${e.errorCode}", e)
-        } finally {
+        synchronized(printLock) {
             try {
-                if (posPrinter.claimed) {
-                    posPrinter.deviceEnabled = false
-                    posPrinter.release()
+                posPrinter.open(logicalName)
+                posPrinter.claim(5000)
+                posPrinter.deviceEnabled = true
+
+                val bitmaps = renderPdfToBitmaps(pdfFile)
+
+                for (bitmap in bitmaps) {
+                    posPrinter.printBitmap(
+                        POSPrinterConst.PTR_S_RECEIPT,
+                        bitmap,
+                        POSPrinterConst.PTR_BM_CENTER,
+                        576
+                    )
                 }
-                posPrinter.close()
-            } catch (_: Exception) {}
+
+                // Feed + Full Cut
+                posPrinter.printNormal(
+                    POSPrinterConst.PTR_S_RECEIPT,
+                    "\u001b|3lF\u001b|fP"
+                )
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Print failed", e)
+
+            } finally {
+                cleanupPrinter()
+            }
         }
     }
 
+    /** Always release printer */
+     fun cleanupPrinter() {
+        try {
+            if (posPrinter.claimed) {
+                posPrinter.deviceEnabled = false
+                posPrinter.release()
+            }
+            posPrinter.close()
+        } catch (e: Exception) {
+            Log.e(TAG, "Cleanup failed", e)
+        }
+    }
+
+    /** PDF → scaled bitmap (BIG TEXT) */
     private fun renderPdfToBitmaps(pdfFile: File): List<Bitmap> {
         val result = mutableListOf<Bitmap>()
 
-        val fd = ParcelFileDescriptor.open(
-            pdfFile,
-            ParcelFileDescriptor.MODE_READ_ONLY
-        )
+        val fd = ParcelFileDescriptor.open(pdfFile, ParcelFileDescriptor.MODE_READ_ONLY)
         val renderer = PdfRenderer(fd)
 
         for (i in 0 until renderer.pageCount) {
             val page = renderer.openPage(i)
 
-           /* val targetWidth = 576
-            val targetHeight = (targetWidth * page.height) / page.width*/
+            val targetWidth = 576
+            val scale = 1.9f   // 👈 TEXT SIZE CONTROL HERE
 
-            val targetWidth = 576  // full width of printer
-            val scaleFactor = 1.5 // scale content 2x
-            val targetHeight = ((targetWidth * page.height / page.width) * scaleFactor).toInt()
+            val targetHeight = (targetWidth * page.height / page.width * scale).toInt()
 
-            // ✅ MUST be ARGB_8888 for PdfRenderer
-            val tempBitmap = Bitmap.createBitmap(
+            val bitmap = Bitmap.createBitmap(
                 targetWidth,
                 targetHeight,
                 Bitmap.Config.ARGB_8888
             )
 
-            // Force WHITE background (very important)
-            val canvas = Canvas(tempBitmap)
+            val canvas = Canvas(bitmap)
             canvas.drawColor(Color.WHITE)
 
+            val matrix = android.graphics.Matrix().apply {
+                postScale(scale, scale)
+            }
+
             page.render(
-                tempBitmap,
+                bitmap,
                 null,
-                null,
+                matrix,
                 PdfRenderer.Page.RENDER_MODE_FOR_PRINT
             )
 
             page.close()
 
-            // ✅ Convert to thermal-friendly bitmap
-            val monoBitmap = convertToMonochrome(tempBitmap)
-            tempBitmap.recycle()
-
-            result.add(monoBitmap)
+            result.add(convertToMonochrome(bitmap))
+            bitmap.recycle()
         }
 
         renderer.close()
@@ -370,88 +374,46 @@ class BixolonUsbPrinter(private val context: Context) {
 
         return result
     }
+
+    /** Thermal-friendly conversion */
     private fun convertToMonochrome(src: Bitmap): Bitmap {
-        val width = src.width
-        val height = src.height
+        val out = Bitmap.createBitmap(src.width, src.height, Bitmap.Config.RGB_565)
 
-        val out = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
-
-        for (y in 0 until height) {
-            for (x in 0 until width) {
+        for (y in 0 until src.height) {
+            for (x in 0 until src.width) {
                 val pixel = src.getPixel(x, y)
+                val gray =
+                    (0.299 * Color.red(pixel) +
+                            0.587 * Color.green(pixel) +
+                            0.114 * Color.blue(pixel)).toInt()
 
-                val r = Color.red(pixel)
-                val g = Color.green(pixel)
-                val b = Color.blue(pixel)
-
-                // Luminance formula
-                val gray = (0.299 * r + 0.587 * g + 0.114 * b).toInt()
-
-                // Threshold – tune if needed
-                val bw = if (gray < 160) Color.BLACK else Color.WHITE
-
-                out.setPixel(x, y, bw)
+                out.setPixel(x, y, if (gray < 160) Color.BLACK else Color.WHITE)
             }
         }
         return out
     }
-    fun printPdfAsBitmap(context: Context, pdfFile: File) {
-        val posPrinter = POSPrinter(context)
 
-        posPrinter.open("BK3_USB")
-        posPrinter.claim(5000)
-        posPrinter.deviceEnabled = true
+    private fun ensureJposXml(context: Context) {
+        val file = File(context.filesDir, "jpos.xml")
+        if (file.exists()) return
 
-        val bitmaps = renderPdfToBitmaps(pdfFile)
+        val xml = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <JposEntries>
+            <JposEntry logicalName="BK3_USB">
+                <creation factoryClass="com.bxl.services.posprinter.POSPrinterServiceInstanceFactory"/>
+                <vendor name="BIXOLON"/>
+                <jpos category="POSPrinter" version="1.14"/>
+                <product name="BK3-3"/>
+                <prop name="deviceBus" value="USB"/>
+                <prop name="deviceName" value="BK3-3"/>
+            </JposEntry>
+        </JposEntries>
+    """.trimIndent()
 
-        for (bitmap in bitmaps) {
-            posPrinter.printBitmap(
-                POSPrinterConst.PTR_S_RECEIPT,
-                bitmap,
-                POSPrinterConst.PTR_BM_CENTER,
-                576
-            )
-        }
-       /* posPrinter.printNormal(
-            POSPrinterConst.PTR_S_RECEIPT,
-            "\u001b|2C" + // double width
-                    "\u001b|2H" + // double height
-                    "BIG TEXT HERE\n"
-        )*/
-        posPrinter.printNormal(
-            POSPrinterConst.PTR_S_RECEIPT,
-            "\u001b|3lF\u001b|fP"
-        )
-
-        posPrinter.deviceEnabled = false
-        posPrinter.release()
-        posPrinter.close()
+        file.writeText(xml)
     }
 
-    private fun toMonochrome(src: Bitmap): Bitmap {
-        val width = src.width
-        val height = src.height
-
-        val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
-
-        for (y in 0 until height) {
-            for (x in 0 until width) {
-                val pixel = src.getPixel(x, y)
-
-                val r = Color.red(pixel)
-                val g = Color.green(pixel)
-                val b = Color.blue(pixel)
-
-                // Luminance formula
-                val gray = (0.299 * r + 0.587 * g + 0.114 * b).toInt()
-
-                // Threshold (tune if needed)
-                val bw = if (gray < 160) Color.BLACK else Color.WHITE
-
-                bmp.setPixel(x, y, bw)
-            }
-        }
-        return bmp
-    }
 }
+
 
