@@ -16,7 +16,7 @@ import kotlin.text.toByteArray
 
 
 @SuppressLint("StaticFieldLeak")
-object LoginWeightScaleSerialPort {
+object LoadCellSerialPort {
     private var mUsbManager: UsbManager? = null
 
     var mSerialIoManager: SerialInputOutputManager? = null

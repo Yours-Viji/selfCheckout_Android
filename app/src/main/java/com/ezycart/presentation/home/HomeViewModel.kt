@@ -1,20 +1,9 @@
 package com.ezycart.presentation.home
 
-import android.app.Activity
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Color
-import android.net.Uri
 import android.util.Log
-import android.view.View
-import android.view.ViewGroup
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import android.widget.FrameLayout
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bxl.config.editor.BXLConfigLoader
 import com.ezycart.data.datastore.PreferencesManager
 import com.ezycart.data.remote.dto.CartItem
 import com.ezycart.data.remote.dto.CreateJwtTokenRequest
@@ -37,11 +26,9 @@ import com.ezycart.services.usb.WeightValidationManager.ValidationResult
 import com.ezycart.services.usb.AppScenario
 import com.ezycart.services.usb.BixolonPrinterManager
 import com.ezycart.services.usb.LedSerialConnection
-import com.ezycart.services.usb.LoginWeightScaleSerialPort
+import com.ezycart.services.usb.LoadCellSerialPort
 
 import dagger.hilt.android.lifecycle.HiltViewModel
-import jpos.POSPrinter
-import jpos.POSPrinterConst
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -50,9 +37,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.File
@@ -912,7 +897,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun sendMessageToLoadCell(message: String) {
-        LoginWeightScaleSerialPort.sendMessageToWeightScale("$message\r\n")
+        LoadCellSerialPort.sendMessageToWeightScale("$message\r\n")
     }
     fun startShoppingLed(){
         LedSerialConnection.setScenario(AppScenario.START_SHOPPING)

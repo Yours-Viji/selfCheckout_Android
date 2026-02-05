@@ -12,7 +12,7 @@ object WeightScaleManager {
     fun init(viewModel: HomeViewModel) {
         try {
             if (commonListener == null) {
-                commonListener = LoginWeightScaleSerialPort.createCommonListener(viewModel)
+                commonListener = LoadCellSerialPort.createCommonListener(viewModel)
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -26,7 +26,7 @@ object WeightScaleManager {
         try {
             connectLed(context)
             commonListener?.let {listener ->
-                LoginWeightScaleSerialPort.connectPicoScaleDirectly(
+                LoadCellSerialPort.connectPicoScaleDirectly(
                     context,
                     listener
                 )
