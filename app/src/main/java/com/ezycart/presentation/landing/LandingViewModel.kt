@@ -3,6 +3,7 @@ package com.ezycart.presentation.landing
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ezycart.data.datastore.PreferencesManager
+import com.ezycart.services.usb.LoginWeightScaleSerialPort
 
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -55,6 +56,7 @@ class LandingViewModel @Inject constructor(
         _canStartShopping.value = value
     }
     fun clearSystemAlert() {
+        LoginWeightScaleSerialPort.sendMessageToWeightScale("2\r\n")
         _canStartShopping.value = false
         _canShowHelpDialog.value = false
     }

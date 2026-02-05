@@ -3537,7 +3537,7 @@ fun ManualBarcodeEntryDialog(
     onCancel: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    var barcode = remember { mutableStateOf("9556001601506") }
+    var barcode = remember { mutableStateOf("") }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(

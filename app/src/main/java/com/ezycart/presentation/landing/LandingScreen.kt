@@ -198,9 +198,9 @@ fun LandingScreen(homeViewModel: HomeViewModel,viewModel: LandingViewModel = hil
                             LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
                             viewModel.onStartClicked()
                         }else{
-                            LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
-                            viewModel.onStartClicked()
-                           // viewModel.setStartShopping(true)
+                           /* LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
+                            viewModel.onStartClicked()*/
+                            viewModel.setStartShopping(true)
                         }
 
                     },
