@@ -38,8 +38,7 @@ import com.ezycart.services.usb.AppScenario
 import com.ezycart.services.usb.BixolonPrinterManager
 import com.ezycart.services.usb.LedSerialConnection
 import com.ezycart.services.usb.LoginWeightScaleSerialPort
-import com.ezycart.services.usb.UsbSerialManager
-import dagger.hilt.android.internal.Contexts.getApplication
+
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jpos.POSPrinter
 import jpos.POSPrinterConst
@@ -288,16 +287,7 @@ class HomeViewModel @Inject constructor(
         return String.format("%.2f", shoppingCartInfo.value?.finalAmount ?: 0.0)
     }
 
-    private fun observeUsbData() {
-        viewModelScope.launch {
-            // This 'calls' the flow to start receiving data from the manager
-            UsbSerialManager.serialData.collect { rawJson ->
-                _errorMessage.value = "Data: $rawJson"
-                // Parse and handle your business logic (Status 0, -1, 1, 10)
-                // handleLoadCellLogic(rawJson)
-            }
-        }
-    }
+
 
     fun setPriceCheckerView(canShow: Boolean) {
         viewModelScope.launch {

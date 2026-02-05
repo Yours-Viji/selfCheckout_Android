@@ -1,7 +1,9 @@
 package com.ezycart.services.usb
 
 import android.annotation.SuppressLint
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.hardware.usb.UsbConstants
 import android.hardware.usb.UsbDeviceConnection
 import android.hardware.usb.UsbEndpoint
@@ -16,6 +18,9 @@ object LedSerialConnection {
     private var usbEndpointOut: UsbEndpoint? = null
     private var usbEndpointIn: UsbEndpoint? = null // Added IN endpoint
 
+
+    // Use the same action string as your manifest
+    private const val ACTION_USB_PERMISSION = "com.ezycart.USB_PERMISSION"
     @Volatile private var isSendingUsbCommand = false
     @Volatile private var pendingUsbCommand: String? = null
     private var currentOutputBitmask = 0
@@ -30,7 +35,7 @@ object LedSerialConnection {
     const val MASK_GREEN_LED = 0x04
     const val MASK_RED_LED = 0x08
 
-    fun connect(context: Context) {
+   /* fun connect(context: Context) {
         val usbManager = context.getSystemService(Context.USB_SERVICE) as UsbManager
         val device = usbManager.deviceList.values.find {
             it.vendorId == 1240 && it.productId == 58
@@ -48,6 +53,43 @@ object LedSerialConnection {
 
         usbConnection = usbManager.openDevice(device)
         usbConnection?.claimInterface(usbInterface, true)
+    }*/
+
+    fun connect(context: Context) {
+        val usbManager = context.getSystemService(Context.USB_SERVICE) as UsbManager
+
+        // VID 0x04D8 = 1240, PID 0x003A = 58
+        val device = usbManager.deviceList.values.find {
+            it.vendorId == 1240 && it.productId == 58
+        } ?: return
+
+        // --- ADDED PERMISSION CHECK START ---
+        if (!usbManager.hasPermission(device)) {
+            Log.d("LED_USB", "Requesting permission for LED Board...")
+            val intent = Intent(ACTION_USB_PERMISSION).setPackage(context.packageName)
+            val permissionIntent = PendingIntent.getBroadcast(
+                context,
+                0,
+                intent,
+                PendingIntent.FLAG_MUTABLE // Required for Android 12+
+            )
+            usbManager.requestPermission(device, permissionIntent)
+            return // Exit and wait for the user to click "Allow"
+        }
+        // --- ADDED PERMISSION CHECK END ---
+
+        val usbInterface = device.getInterface(0)
+        for (i in 0 until usbInterface.endpointCount) {
+            val ep = usbInterface.getEndpoint(i)
+            if (ep.type == UsbConstants.USB_ENDPOINT_XFER_BULK) {
+                if (ep.direction == UsbConstants.USB_DIR_OUT) usbEndpointOut = ep
+                else if (ep.direction == UsbConstants.USB_DIR_IN) usbEndpointIn = ep
+            }
+        }
+
+        usbConnection = usbManager.openDevice(device)
+        usbConnection?.claimInterface(usbInterface, true)
+        Log.d("LED_USB", "LED Board Connected successfully")
     }
 
     fun updateOutput(index: Int, turnOn: Boolean) {
