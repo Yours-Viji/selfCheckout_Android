@@ -327,7 +327,7 @@ fun HomeScreen(
 
     if(canShowPrintReceipt.value) {
         viewModel.hidePaymentView()
-        viewModel.printReceipt(/*"https://api-retailetics-ops-mini-03.retailetics.com/ezyCart/invoice/000VGO-P9900003312",*/context as Activity)
+
         currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
             title = "Thank You for Shopping with us.",
@@ -454,7 +454,7 @@ fun HomeScreen(
             showButton = true,
             negativeButtonText = "Print Receipt",
             onNegativeClick = {
-
+                viewModel.printReceipt(/*"https://api-retailetics-ops-mini-03.retailetics.com/ezyCart/invoice/000VGO-P9900003312",*/context as Activity)
                 currentSystemAlert.value = null
                 viewModel.timerDisplayForReceiptPrint()
 

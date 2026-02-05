@@ -807,14 +807,17 @@ class HomeViewModel @Inject constructor(
     }
 
     fun timerDisplayForReceiptPrint() {
-        viewModelScope.launch {
-            showPrintReceiptAlertView()
-            LedSerialConnection.setScenario(AppScenario.PRINTING)
-            delay(6000L)
 
-            clearSystemAlert()
+        try {
+            viewModelScope.launch(Dispatchers.Main) {
+                showPrintReceiptAlertView()          // UI-safe
+                LedSerialConnection.setScenario(AppScenario.PRINTING)
 
+                delay(10000L)                         // non-blocking delay
 
+                clearSystemAlert()                   // UI-safe
+            }
+        } catch (e: Exception) {
         }
     }
 
