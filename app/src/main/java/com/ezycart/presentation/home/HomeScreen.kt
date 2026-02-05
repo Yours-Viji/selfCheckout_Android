@@ -171,7 +171,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
-    //sensorSerialPortViewModel: SensorSerialPortViewModel = hiltViewModel(),
     onThemeChange: () -> Unit,
     onPaymentInitialize: () -> Unit,
     makeNearPayment: (String, String, NearPaymentListener?) -> Unit,
@@ -179,9 +178,6 @@ fun HomeScreen(
     goToPaymentScreen: () -> Unit,
     onTransactionCalled: () -> Unit
 ) {
-    // val loadCellState by sensorSerialPortViewModel.usbData.collectAsStateWithLifecycle()
-    //val weightData by sensorSerialPortViewModel.connectionLog.collectAsStateWithLifecycle()
-    // val weightState by sensorSerialPortViewModel.weightState.collectAsStateWithLifecycle()
 
 
     val state by viewModel.stateFlow.collectAsStateWithLifecycle()
@@ -193,10 +189,7 @@ fun HomeScreen(
     val productInfo by viewModel.productInfo.collectAsState()
     val shoppingCartInfo = viewModel.shoppingCartInfo.collectAsState()
     val canShowPriceChecker = viewModel.canShowPriceChecker.collectAsState()
-    val drawerState = rememberDrawerState(DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
-    // var canShowPriceChecker = remember { mutableStateOf(true) }
-    val appMode by viewModel.appMode.collectAsState()
+
     var scanBuffer = remember { mutableStateOf("") }
     // Correct way to declare the state
     val wavPayQrPaymentUrl = viewModel.wavPayQrPaymentUrl.collectAsState()
@@ -221,9 +214,7 @@ fun HomeScreen(
     var resetAndGoBack = viewModel.resetAndGoBack.collectAsState()
     var clearSystemAlert = viewModel.clearSystemAlert.collectAsState()
     var canShowDeleteDialog = viewModel.canShowDeleteDialog.collectAsState()
-    /* val commonListener = remember {
-         LoginWeightScaleSerialPort.createCommonListener(viewModel)
-     }*/
+
     val loadCellValidationLog = viewModel.loadCellValidationLog.collectAsState()
 
     var showLedDialog = viewModel.openLedTerminalDialog.collectAsState()
@@ -381,24 +372,7 @@ fun HomeScreen(
     if (showErrorMessage.value.isNotEmpty()) {
         DynamicToast.makeError(context, showErrorMessage.value).show()
     }
-    /* LaunchedEffect(Unit) {
 
-         try {
-             LoginWeightScaleSerialPort.connectScale(context, commonListener)
-         } catch (e: Exception) {
-             TODO("Not yet implemented")
-         }
-
-     }*/
-    /*if (showTerminal.value) {
-
-        WeightScaleManager.initOnce(viewModel)
-        WeightScaleManager.connectSafe(context)
-        UsbTerminalDialog(
-            onDismiss = { showTerminal.value = false },
-            viewModel = viewModel,
-        )
-    }*/
     if (proceedTapToPay.value) {
         shoppingCartInfo.value.let {
             val finalAmount = it?.finalAmount ?: 0.0
@@ -596,40 +570,7 @@ fun HomeScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            /*ModalNavigationDrawer(
-                drawerState = drawerState,
-                drawerContent = {
-                    DrawerContent(
-                        appMode = appMode,
-                        onTransActionSelected = {
-                            scope.launch {
-                                scope.launch { drawerState.close() }
-                                onTransactionCalled()
-                                delay(100)
-                                focusRequester.requestFocus()
-                            }
-                        },
-                        onAppModeUpdated = { appMode ->
-                            scope.launch {
-                                drawerState.close()
-                                delay(100)
-                                focusRequester.requestFocus()
-                            }
-                            viewModel.onAppModeChange(appMode)
 
-                        },
-                        isChecked = canShowPriceChecker.value,
-                        onCheckedChange = {
-                            scope.launch {
-                                drawerState.close()
-                                delay(100)
-                                focusRequester.requestFocus()
-                            }
-                            viewModel.setPriceCheckerView(it)
-                        }
-                    )
-                }
-            ) {*/
 
             BitesHeaderNew(
                 viewModel, cartCount = cartCount.value, onHelpClick = {
@@ -656,23 +597,6 @@ fun HomeScreen(
 
             }
 
-            /* Scaffold(
-                *//* topBar = {
-                    MyTopAppBar(
-
-                        employeeName = employeeName.value,
-                        cartCount = cartCount.value,
-                        onMenuClick = {
-                            scope.launch { drawerState.open() }
-                        },
-                        onFirstIconClick = { *//**//* notifications *//**//* },
-                        onLogout = onLogout,
-                        onRefresh = {
-                            viewModel.initNewShopping()
-                        }
-                    )
-                }*//*
-            ) { innerPadding ->*/
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -683,36 +607,6 @@ fun HomeScreen(
                 contentAlignment = Alignment.Center
             ) {
 
-                /* Button(
-                     onClick = {
-                         // Mock scanner input
-                         scanBuffer.value = "6936489101973"
-
-                         // Request focus and dispatch with delay
-                         focusRequester.requestFocus()
-
-                         // Use coroutine to ensure proper timing
-                         CoroutineScope(Dispatchers.Main).launch {
-                             delay(50) // Small delay to ensure focus is acquired
-
-                             val mockKeyEvent = android.view.KeyEvent(
-                                 android.view.KeyEvent.ACTION_DOWN, // Try ACTION_DOWN first
-                                 android.view.KeyEvent.KEYCODE_ENTER
-                             )
-                             localView.dispatchKeyEvent(mockKeyEvent)
-
-                             // Also send ACTION_UP
-                             val upEvent = android.view.KeyEvent(
-                                 android.view.KeyEvent.ACTION_UP,
-                                 android.view.KeyEvent.KEYCODE_ENTER
-                             )
-                             localView.dispatchKeyEvent(upEvent)
-                         }
-                     },
-                     modifier = Modifier.align(Alignment.Center)
-                 ) {
-                     Text("Mock Enter Key")
-                 }*/
 
                 PickersShoppingScreen(
                     viewModel,
@@ -1349,33 +1243,7 @@ fun PickersShoppingScreen(
     val shoppingCartInfo = viewModel.shoppingCartInfo.collectAsState()
     val isPickerModel = viewModel.isPickerModel.collectAsState()
 
-    /*val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true
-    )*/
-    //var showSheet = remember { mutableStateOf(false) }
 
-    /*if (showSheet.value) {
-        ModalBottomSheet(
-            onDismissRequest = { showSheet.value = false },
-            sheetState = sheetState,
-            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-            containerColor = Color.White,
-            dragHandle = null
-        ) {
-            // Wrap the content in a Box to control the height
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.7f) // This sets the height to 70% of the screen
-            ) {
-                CheckoutSummaryScreen(
-                    shoppingCartInfo = shoppingCartInfo,
-                    onQrPaymentClick = { onQrPaymentClick() },
-                    onTapToPayClick = { onTapToPayClick() }
-                )
-            }
-        }
-    }*/
 
     Row(
         modifier = Modifier
@@ -1463,171 +1331,6 @@ fun PickersShoppingScreen(
     }
 }
 
-/*@Composable
-fun CheckoutSummaryScreen(
-    shoppingCartInfo: State<ShoppingCartDetails?>,
-    onQrPaymentClick: () -> Unit,
-    onTapToPayClick: () -> Unit
-) {
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        val paymentSummary = shoppingCartInfo.value
-        Column {
-            BillRow(
-                "Sub Total",
-                "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.totalPrice ?: 0.0)}",
-                color = Color.Black
-            )
-            BillRow(
-                "Promo Discount",
-                "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.promotionSave ?: 0.0)}",
-                color = Color.Black
-            )
-            BillRow(
-                "Special Discount",
-                "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.totalDiscount ?: 0.0)}",
-                color = Color.Black
-            )
-            BillRow(
-                "Coupon Discount",
-                "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.couponAmount ?: 0.0)}",
-                color = Color.Black
-            )
-            BillRow(
-                "Voucher Discount",
-                "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.vourcherAmount ?: 0.0)}",
-                color = Color.Black
-            )
-            BillRow(
-                "Tax",
-                "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.totalTax ?: 0.0)}",
-                color = Color.Black
-            )
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
-            Spacer(modifier = Modifier.height(5.dp))
-            BillRow(
-                "Grand Total",
-                "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.finalAmount ?: 0.0)}",
-                isBold = true,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // Apply Coupon / Voucher Button
-        *//* Button(
-             onClick = {
-
-             },
-             modifier = Modifier
-                 .fillMaxWidth()
-                 .height(45.dp),
-             shape = RoundedCornerShape(50.dp),
-             colors = ButtonDefaults.buttonColors(
-                 containerColor = colorResource(R.color.colorGreen),      // background color
-                 contentColor = Color.White,              // default for text & icons
-                 disabledContainerColor = Color.Gray,     // background when disabled
-                 disabledContentColor = Color.LightGray   // text/icon when disabled
-             )
-         ) {
-             Icon(
-                 painter = painterResource(id = R.drawable.ic_coupon_white),
-                 contentDescription = null,
-                 modifier = Modifier.size(25.dp)
-             )
-             Spacer(modifier = Modifier.width(8.dp))
-             Text(
-                 text = "Apply Coupon / Voucher",
-                 style = MaterialTheme.typography.headlineSmall.copy(
-                     fontWeight = FontWeight.Bold,
-                     fontSize = 17.sp,
-                     color = Color.White
-                 )
-             )
-         }*//*
-
-        // Take up remaining space → pushes "Total Payable" to bottom
-        Spacer(modifier = Modifier.weight(1f))
-
-        // Total Payable
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            AnimatedPayableText()
-            Spacer(modifier = Modifier.height(10.dp))
-            Text(
-                text = "${Constants.currencySymbol} ${paymentSummary?.finalAmount ?: 0.0}",
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 40.sp,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            )
-            Spacer(modifier = Modifier.height(20.dp))
-            Button(
-                onClick = {
-                    onTapToPayClick()
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(45.dp),
-                shape = RoundedCornerShape(50.dp)
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.outline_contactless_24),
-                    contentDescription = null,
-                    modifier = Modifier.size(25.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Credit / Debit Tap To Pay",
-                    style = MaterialTheme.typography.headlineSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 17.sp,
-                        color = Color.White
-                    )
-                )
-            }
-            Spacer(modifier = Modifier.height(15.dp))
-            Button(
-                onClick = {
-                    onQrPaymentClick()
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(45.dp),
-                shape = RoundedCornerShape(50.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = colorResource(R.color.colorAccent),      // background color
-                    contentColor = Color.White,              // default for text & icons
-                    disabledContainerColor = Color.Gray,     // background when disabled
-                    disabledContentColor = Color.LightGray   // text/icon when disabled
-                )
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.outline_qr_code_24),
-                    contentDescription = null,
-                    modifier = Modifier.size(25.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "QR Payment",
-                    style = MaterialTheme.typography.headlineSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 17.sp,
-                        color = Color.White
-                    )
-                )
-            }
-        }
-    }
-}*/
 
 @Composable
 fun AnimatedPayableText() {
@@ -1658,62 +1361,7 @@ fun AnimatedPayableText() {
     )
 }
 
-@Composable
-fun ManualBarcodeEntryButton(
-    onEnterBarcodeManually: () -> Unit,
-    modifier: Modifier = Modifier,
-    fontSize: Float
-) {
-    Button(
-        onClick = onEnterBarcodeManually,
-        modifier = modifier,
-        shape = RoundedCornerShape(50),
-        colors = ButtonDefaults.buttonColors(colorResource(R.color.colorGreen))
-    ) {
-        Icon(
-            modifier = Modifier.size(22.dp),
-            painter = painterResource(id = R.drawable.ic_edit),
-            contentDescription = null,
-            tint = Color.White
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            "Enter Barcode", style = MaterialTheme.typography.bodyLarge.copy(
-                fontWeight = FontWeight.SemiBold,
-                color = Color.White,
-                fontSize = fontSize.sp
-            )
-        )
-    }
-}
 
-@Composable
-fun ScannerButton(onScanBarcode: () -> Unit, modifier: Modifier = Modifier, fontSize: Float) {
-    Button(
-        onClick = onScanBarcode,
-        modifier = modifier,
-        shape = RoundedCornerShape(50),
-        colors = ButtonDefaults.buttonColors(colorResource(R.color.colorPrimary))
-    ) {
-        Icon(
-            modifier = Modifier.size(33.dp),
-            painter = painterResource(id = R.drawable.ic_scan),
-            contentDescription = null,
-            tint = Color.White
-        )
-
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            "Scan Barcode",
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontWeight = FontWeight.SemiBold,
-                color = Color.White,
-                fontSize = fontSize.sp
-            )
-        )
-
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -2012,215 +1660,6 @@ fun CartScreen(
     }
 }
 
-@Composable
-fun ActionButton(
-    modifier: Modifier,
-    label: String,
-    icon: Int,
-    color: Color,
-    onClick: () -> Unit
-) {
-    Button(
-        onClick = onClick,
-        modifier = modifier.height(55.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = color),
-        contentPadding = PaddingValues(0.dp) // Ensures content fits in small weights
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                painter = painterResource(id = icon),
-                contentDescription = null,
-                modifier = Modifier.size(22.dp),
-                tint = Color.White
-            )
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall.copy(
-                    color = Color.White,
-                    fontSize = 9.sp
-                ),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
-}
-
-/*@Composable
-fun CartItemCard(
-    productInfo: CartItem,
-    onRemove: (CartItem) -> Unit,
-    modifier: Modifier = Modifier,
-    onEditProduct: (String, Int, Int) -> Unit,
-) {
-    var showDeleteDialog = remember { mutableStateOf(false) }
-    var showEditDialog = remember { mutableStateOf(false) }
-    var selectedCartItem = remember { mutableStateOf<CartItem?>(null) }
-
-    if (showDeleteDialog.value && selectedCartItem.value != null) {
-        DeleteProductDialog(
-            productName = selectedCartItem.value?.productName ?: "",
-            productCode = selectedCartItem.value?.barcode ?: "",
-            oldPrice = "${Constants.currencySymbol} ${selectedCartItem.value?.originalPrice ?: 0.0}",
-            newPrice = "${Constants.currencySymbol} ${selectedCartItem.value?.finalPrice ?: 0.0}",
-            imageRes = selectedCartItem.value?.imageUrl ?: "",
-            onRemove = {
-                // handle remove
-                onRemove(selectedCartItem.value!!)
-                showDeleteDialog.value = false
-            },
-            onDismiss = { showDeleteDialog.value = false }
-        )
-    }
-    if (showEditDialog.value && selectedCartItem.value != null) {
-        EditProductDialog(
-            productName = selectedCartItem.value?.productName ?: "",
-            productCode = selectedCartItem.value?.barcode ?: "",
-            oldPrice = "${Constants.currencySymbol} ${selectedCartItem.value?.originalPrice ?: 0.0}",
-            newPrice = "${Constants.currencySymbol} ${selectedCartItem.value?.finalPrice ?: 0.0}",
-            imageRes = selectedCartItem.value?.imageUrl ?: "",
-            currentQuantity = selectedCartItem.value?.quantity ?: 1,
-            onEdit = { updatedQuantity ->
-                if (selectedCartItem.value?.quantity != updatedQuantity) {
-                    selectedCartItem.value?.let {
-                        onEditProduct(
-                            it.barcode,
-                            it.id,
-                            updatedQuantity
-                        )
-                    }
-                }
-                showEditDialog.value = false
-            },
-            onDismiss = { showEditDialog.value = false }
-        )
-    }
-    Card(
-        modifier = modifier
-            .height(110.dp)
-            .fillMaxWidth()
-            .padding(horizontal = 3.dp, vertical = 2.dp),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically // Keeps everything aligned in the middle vertically
-        ) {
-            // --- 1. LEFT: IMAGE ---
-            Box(
-                modifier = Modifier
-                    .size(90.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFFF2F2F2)),
-                contentAlignment = Alignment.Center
-            ) {
-                AsyncImage(
-                    model = productInfo.imageUrl,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                    placeholder = painterResource(R.drawable.ic_no_product_image),
-                    error = painterResource(R.drawable.ic_no_product_image)
-                )
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // --- 2. CENTER: PRODUCT NAME & DISCOUNT ---
-            Column(
-                modifier = Modifier.weight(1f), // Takes up all available middle space
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = productInfo.productName,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 20.sp
-                    ),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Discount Row
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_discount_icon),
-                        contentDescription = "discount",
-                        tint = colorResource(R.color.colorOrange),
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "Buy One Get One",
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
-                            color = colorResource(R.color.colorOrange)
-                        )
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // --- 3. RIGHT: PRICE DETAILS ---
-            Column(
-                horizontalAlignment = Alignment.End, // Aligns text to the right
-                verticalArrangement = Arrangement.Center
-            ) {
-                // Quantity x Unit Price
-                Text(
-                    text = "${productInfo.displayQty} x ${Constants.currencySymbol}${
-                        "%.2f".format(
-                            productInfo.unitPrice
-                        )
-                    }",
-                    style = TextStyle(
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 16.sp,
-                        color = Color.Gray
-                    )
-                )
-
-                // Strikethrough Price (if discount exists)
-                if (productInfo.finalPriceBeforeDiscount != productInfo.finalPrice) {
-                    Text(
-                        text = "${Constants.currencySymbol}${"%.2f".format(productInfo.finalPriceBeforeDiscount)}",
-                        style = TextStyle(
-                            fontWeight = FontWeight.Normal,
-                            fontSize = 16.sp,
-                            textDecoration = TextDecoration.LineThrough,
-                            color = Color.Red
-                        )
-                    )
-                }
-                Spacer(modifier = Modifier.height(10.dp))
-                // Final Price
-                Text(
-                    text = "${Constants.currencySymbol}${"%.2f".format(productInfo.finalPrice)}",
-                    style = TextStyle(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 22.sp, // Made slightly larger for prominence
-                        color = colorResource(R.color.colorPrimary)
-                    )
-                )
-            }
-        }
-    }
-
-
-}*/
 @Composable
 fun CartItemCard(
     productInfo: CartItem,
@@ -2547,237 +1986,6 @@ fun CartIconWithBadge(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun RoundedDropdownSpinner(
-    items: List<String>,
-    selectedItem: String,
-    onItemSelected: (String) -> Unit
-) {
-    var expanded = remember { mutableStateOf(false) }
-
-    ExposedDropdownMenuBox(
-        expanded = expanded.value,
-        onExpandedChange = { expanded.value = !expanded.value },
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        TextField(
-            value = selectedItem,
-            onValueChange = {},
-            readOnly = true,
-            label = {
-                Text(
-                    text = "Select Customer's Pick List",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 12.sp,
-                        color = Color.Black
-                    )
-                )
-            },
-            trailingIcon = {
-                Icon(
-                    imageVector = if (expanded.value) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            },
-            colors = TextFieldDefaults.colors(
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                disabledIndicatorColor = Color.Transparent,
-                errorIndicatorColor = Color.Transparent,
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent,
-                disabledContainerColor = Color.Transparent,
-                focusedTextColor = MaterialTheme.colorScheme.primary,
-                unfocusedTextColor = MaterialTheme.colorScheme.primary
-            ),
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier
-                .menuAnchor()
-                .fillMaxWidth()
-                .border(
-                    width = 1.dp,
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = RoundedCornerShape(12.dp)
-                )
-        )
-
-        ExposedDropdownMenu(
-            expanded = expanded.value,
-            onDismissRequest = { expanded.value = false }
-        ) {
-            items.forEach { item ->
-                DropdownMenuItem(
-                    text = { Text(item) },
-                    onClick = {
-                        onItemSelected(item)
-                        expanded.value = false
-                    }
-                )
-            }
-        }
-    }
-}
-
-/*private fun normalize(s: String): String {
-    return s.lowercase(Locale.getDefault())
-        .replace(Regex("[^a-z0-9\\s]"), " ")
-        .replace(Regex("\\s+"), " ")
-        .trim()
-}*/
-
-@Composable
-fun ProductPickList(
-    items: List<String>,
-    cartItems: List<CartItem> // pass from ViewModel
-) {
-    // Precompute normalized cart product names once per cartItems change
-    val normalizedCart = remember(cartItems) {
-        cartItems.map { normalize(it.productName) }
-    }
-
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        itemsIndexed(items) { index, name ->
-            val normName = normalize(name)
-
-            // Exact match only - check if the normalized name exists exactly in cart
-            val isSelected = normalizedCart.any { cart ->
-                cart == normName
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Count
-                Text(
-                    text = "${index + 1}.",
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.primary
-                    ),
-                    modifier = Modifier.weight(0.2f)
-                )
-
-                // Name with strikethrough when matched
-                Text(
-                    text = name,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                        textDecoration = if (isSelected) TextDecoration.LineThrough else TextDecoration.None,
-                        color = if (isSelected) Color(0xFF2E7D32) else MaterialTheme.colorScheme.primary
-                    ),
-                    modifier = Modifier.weight(1f)
-                )
-
-                // Read-only checkbox that reflects cart membership
-                Checkbox(
-                    checked = isSelected,
-                    onCheckedChange = {},
-                    enabled = true,
-                    colors = CheckboxDefaults.colors(
-                        checkedColor = Color(0xFF2E7D32),
-                        uncheckedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        checkmarkColor = Color.White
-                    )
-                )
-            }
-        }
-    }
-}
-
-// Your normalize function (make sure it's consistent)
-private fun normalize(text: String): String {
-    return text.trim().lowercase()
-}
-/*@Composable
-fun ProductPickList(
-    items: List<String>,
-    cartItems: List<CartItem> // pass from ViewModel
-) {
-    // Precompute normalized cart product names once per cartItems change
-    val normalizedCart = remember(cartItems) {
-        cartItems.map { normalize(it.productName) }
-    }
-
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        itemsIndexed(items) { index, name ->
-            val normName = normalize(name)
-            val nameTokens = normName.split(" ").filter { it.isNotBlank() }
-
-            // isSelected -> true if any cart item matches the checklist item
-            val isSelected = normalizedCart.any { cart ->
-                // 1) whole-phrase word-boundary match: "green apple" in "green apple xyz"
-                val phraseMatch = Regex("\\b${Regex.escape(normName)}\\b").containsMatchIn(cart)
-
-                // 2) any token matches as whole word OR token-prefix (covers plural/suffix)
-                val tokenMatch = nameTokens.any { token ->
-                    val wholeWord = Regex("\\b${Regex.escape(token)}\\b").containsMatchIn(cart)
-                    val prefix = cart.split(" ").any { cartToken ->
-                        cartToken.startsWith(token)
-                    }
-                    wholeWord || prefix
-                }
-
-                phraseMatch || tokenMatch
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Count
-                Text(
-                    text = "${index + 1}.",
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.primary
-                    ),
-                    modifier = Modifier.weight(0.2f)
-                )
-
-                // Name with strikethrough when matched
-                Text(
-                    text = name,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                        textDecoration = if (isSelected) TextDecoration.LineThrough else TextDecoration.None,
-                        color = if (isSelected) Color(0xFF2E7D32) else MaterialTheme.colorScheme.primary // use your green
-                    ),
-                    modifier = Modifier.weight(1f)
-                )
-
-                // Read-only checkbox that reflects cart membership
-                Checkbox(
-                    checked = isSelected,
-                    onCheckedChange = {}, // no-op (keeps it controlled by cartDataList)
-                    enabled = true, // ✅ keep it enabled so green shows
-                    colors = CheckboxDefaults.colors(
-                        checkedColor = Color(0xFF2E7D32), // your green
-                        uncheckedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        checkmarkColor = Color.White
-                    )
-                )
-            }
-        }
-    }
-}*/
 
 @androidx.annotation.OptIn(ExperimentalGetImage::class)
 @Composable
@@ -3634,143 +2842,6 @@ fun ManualBarcodeEntryDialog(
     }
 }
 
-@Composable
-fun DrawerContent(
-    appMode: AppMode,
-    onTransActionSelected: () -> Unit,
-    onAppModeUpdated: (AppMode) -> Unit,
-    isChecked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-
-    Column(
-        modifier = Modifier
-            .fillMaxHeight()
-            .width(300.dp)
-            .background(MaterialTheme.colorScheme.surface),
-        verticalArrangement = Arrangement.Top
-    ) {
-        Spacer(Modifier.height(50.dp))
-        /* Image(
-             painter = painterResource(id = R.drawable.ic_merchant_logo),
-             contentDescription = "Ad Banner",
-             contentScale = ContentScale.Crop,
-             modifier = Modifier.fillMaxWidth().height(70.dp)
-         )
-
-         Divider()*/
-
-        Spacer(Modifier.height(16.dp))
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onTransActionSelected() }
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.transaction),
-                contentDescription = "transaction",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(22.dp)
-            )
-            Spacer(modifier = Modifier.width(10.dp))
-            Text(
-                text = "View Transaction",
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            )
-        }
-        Divider()
-        /*Spacer(modifier = Modifier.height(20.dp))
-        Text(modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 5.dp),
-            text = "App Mode",
-            style = MaterialTheme.typography.bodyLarge.copy(
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        )
-        SingleSelectCheckboxes(
-            onSelectionChanged = onAppModeUpdated,
-            selected = appMode
-        )
-        Divider()*/
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            /* Icon(
-                 painter = painterResource(id = icon),
-                 contentDescription = text,
-                 tint = MaterialTheme.colorScheme.primary,
-                 modifier = Modifier.size(24.dp)
-             )*/
-            Spacer(modifier = Modifier.width(10.dp))
-            Text(
-                text = "Show Price Checker",
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    color = MaterialTheme.colorScheme.onSurface
-                ),
-                modifier = Modifier.weight(1f) // 👈 pushes switch to the right
-            )
-            Switch(
-                checked = isChecked,
-                onCheckedChange = onCheckedChange
-            )
-        }
-
-    }
-}
-
-@Composable
-fun SingleSelectCheckboxes(
-    options: List<Pair<AppMode, String>> = listOf(
-        AppMode.EzyCartPicker to "EzyCartPicker",
-        AppMode.EzyLite to "EzyLite"
-    ),
-    selected: AppMode = AppMode.EzyLite,
-    modifier: Modifier = Modifier,
-    onSelectionChanged: (AppMode) -> Unit = {}
-) {
-    var selected = remember { mutableStateOf(selected) }
-
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        options.forEach { (mode, label) ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .clickable {
-                        selected.value = mode
-                        onSelectionChanged(mode)
-                    }
-                    .padding(4.dp)
-            ) {
-                Checkbox(
-                    checked = selected.value == mode,
-                    onCheckedChange = {
-                        selected.value = mode
-                        onSelectionChanged(mode)
-                    },
-                    colors = CheckboxDefaults.colors(
-                        checkedColor = MaterialTheme.colorScheme.primary,
-                        checkmarkColor = Color.White
-                    )
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = label, style = MaterialTheme.typography.bodyLarge)
-            }
-        }
-    }
-}
 
 
 @SuppressLint("SetJavaScriptEnabled")
