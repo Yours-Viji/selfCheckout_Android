@@ -243,13 +243,18 @@ fun HomeScreen(
     }
 
     LockScreenOrientation(context, ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
-if (resetAndGoBack.value){
-    currentSystemAlert.value = null
-    viewModel.resetProductInfoDetails()
-    viewModel.resetLoadCell()
-    viewModel.clearCartDetails()
-    onLogout()
-}
+
+    LaunchedEffect(resetAndGoBack.value) {
+        if (resetAndGoBack.value) {
+            currentSystemAlert.value = null
+            viewModel.resetProductInfoDetails()
+            viewModel.resetLoadCell()
+            viewModel.clearCartDetails()
+            viewModel.resetAndGoBackSetDefault()
+            onLogout()
+
+        }
+    }
     if (clearSystemAlert.value){
         currentSystemAlert.value = null
     }
@@ -368,7 +373,7 @@ if (resetAndGoBack.value){
             onConfirm = {
                 viewModel.clearCartDetails()
                 clearTransAction.value = false
-                onLogout()
+                viewModel.resetAndGoBack()
             },
             onDismiss = { clearTransAction.value = false }
         )
@@ -458,7 +463,7 @@ if (resetAndGoBack.value){
             onPositiveClick = {
                 currentSystemAlert.value = null
                 viewModel.resetLoadCell()
-                onLogout()
+                viewModel.resetAndGoBack()
             }
         )
         LedSerialConnection.setScenario(AppScenario.PAYMENT_SUCCESS)

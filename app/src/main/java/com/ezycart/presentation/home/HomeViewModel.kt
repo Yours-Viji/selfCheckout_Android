@@ -253,6 +253,7 @@ class HomeViewModel @Inject constructor(
         _canShowPaymentProcessDialog.value = false
         _canShowHelpDialog.value = false
         _canShowDeleteDialog.value = false
+        _canShowPrintReceiptDialog.value = false
     }
     fun showDeleteProductDialog(){
         _canShowDeleteDialog.value = true
@@ -262,6 +263,10 @@ class HomeViewModel @Inject constructor(
     }
     fun resetAndGoBack(){
         _resetAndGoBack.value = true
+    }
+
+    fun resetAndGoBackSetDefault(){
+        _resetAndGoBack.value = false
     }
     fun clearLog() {
         _loadCellValidationLog.value = ">>Loadcell Validation"
@@ -794,7 +799,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             clearSystemAlert()
             showPaymentProcessAlertView()
-            delay(10000L)
+            delay(5000L)
 
             clearSystemAlert()
             timerDisplayForPaymentSuccess()
@@ -805,7 +810,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             showPrintReceiptAlertView()
             LedSerialConnection.setScenario(AppScenario.PRINTING)
-            delay(5000L)
+            delay(6000L)
 
             clearSystemAlert()
 
@@ -1445,6 +1450,7 @@ class HomeViewModel @Inject constructor(
                     Log.e("PDF", "Print failed", e)
                 } finally {
                     try {
+                        resetAndGoBack()
                         printer?.cleanupPrinter()
                     } catch (_: Exception) {}
                 }
