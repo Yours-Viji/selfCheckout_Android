@@ -6,7 +6,12 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
+import android.graphics.Matrix
+import android.graphics.Paint
 import android.graphics.pdf.PdfRenderer
+import android.hardware.usb.UsbManager
 import android.net.Uri
 import android.os.ParcelFileDescriptor
 import android.util.Log
@@ -16,226 +21,17 @@ import jpos.POSPrinter
 import jpos.POSPrinterConst
 import jpos.JposException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.net.URL
 
-/*
-class BixolonUsbPrinter(private val context: Context) {
-
-    private val posPrinter = POSPrinter(context)
-    private val logicalName = "USB_Printer"
-    private val TAG = "BixolonPrinter"
-
-    private fun configureUsb(productName: String): Boolean {
-        val configLoader = BXLConfigLoader(context)
-        try {
-            try {
-                configLoader.openFile()
-            } catch (e: Exception) {
-                configLoader.newFile()
-            }
-            configLoader.removeEntry(logicalName)
-            configLoader.addEntry(
-                logicalName,
-                BXLConfigLoader.DEVICE_CATEGORY_POS_PRINTER,
-                productName,
-                BXLConfigLoader.DEVICE_BUS_USB,
-                ""
-            )
-            configLoader.saveFile()
-            return true
-        } catch (e: Exception) {
-            Log.e(TAG, "Config Error: ${e.message}")
-            return false
-        }
-    }
-
-    fun printReceiptPdf(productName: String, pdfFile: File) {
-        if (!pdfFile.exists()) {
-            Log.e(TAG, "File not found: ${pdfFile.absolutePath}")
-            return
-        }
-
-        try {
-            if (!configureUsb(productName)) return
-
-            posPrinter.open(logicalName)
-            posPrinter.claim(5000)
-            posPrinter.deviceEnabled = true
-
-            // Use Uri.fromFile for the SDK requirement
-            val pdfUri = Uri.fromFile(pdfFile)
-
-            // BK3-3 (80mm) = 576 dots width
-            val width = 576
-            val alignment = POSPrinterConst.PTR_BM_CENTER
-
-            // Print Command
-            posPrinter.printPDFFile(
-                POSPrinterConst.PTR_S_RECEIPT,
-                pdfUri,
-                width,
-                alignment,
-                0 // Prints all pages
-            )
-
-            // BK3-3 Cut Command: Feed and Full Cut
-            // \u001b|fP is the standard escape for cut
-            posPrinter.printNormal(POSPrinterConst.PTR_S_RECEIPT, "\u001b|fP")
-
-        } catch (e: JposException) {
-            Log.e(TAG, "Jpos Error: ${e.errorCode}")
-        } finally {
-            try {
-                if (posPrinter.claimed) {
-                    posPrinter.deviceEnabled = false
-                    posPrinter.release()
-                }
-                posPrinter.close()
-            } catch (e: Exception) {}
-        }
-    }
-}*/
 
 
-/*
-class BixolonUsbPrinter(private val context: Context) {
-    private val posPrinter = POSPrinter(context.applicationContext)
-    //private val posPrinter = POSPrinter(context)
-    private val logicalName = "USB_Printer"
-    private val TAG = "BixolonPrinter"
-
-    private fun configureUsb(productName: String): Boolean {
-        val configLoader = BXLConfigLoader(context)
-        try {
-            try {
-                configLoader.openFile()
-            } catch (e: Exception) {
-                configLoader.newFile()
-            }
-            configLoader.removeEntry(logicalName)
-            configLoader.addEntry(
-                logicalName,
-                BXLConfigLoader.DEVICE_CATEGORY_POS_PRINTER,
-                productName,
-                BXLConfigLoader.DEVICE_BUS_USB,
-                "" // Leaving this empty for auto-detection of USB
-            )
-            configLoader.saveFile()
-
-            return true
-        } catch (e: Exception) {
-            Log.e(TAG, "Config Error: ${e.message}")
-            return false
-        }
-    }
-
-    fun printReceiptPdf(productName: String, pdfFile: File) {
-        if (!pdfFile.exists()) {
-            Log.e(TAG, "File not found: ${pdfFile.absolutePath}")
-            return
-        }
-
-        try {
-            if (!configureUsb(productName)) return
-
-            posPrinter.open(logicalName)
-            posPrinter.claim(5000)
-            posPrinter.deviceEnabled = true
-
-            // BK3-3 (80mm) setup
-            val width = 576
-            val alignment = POSPrinterConst.PTR_BM_CENTER
-
-            // Some versions of Bixolon SDK require the absolute path string
-            // others require Uri.toString(). We'll use absolutePath for JPOS.
-            posPrinter.printPDFFile(
-                POSPrinterConst.PTR_S_RECEIPT,
-                pdfFile.absolutePath as Uri?,
-                width,
-                alignment,
-                0
-            )
-
-            // BK3-3 Cut: Feed 3 lines then Cut to ensure the logo isn't cut off
-            // \u001b|3lF = Feed 3 lines
-            // \u001b|fP = Full Cut
-            posPrinter.printNormal(POSPrinterConst.PTR_S_RECEIPT, "\u001b|3lF" + "\u001b|fP")
-
-        } catch (e: JposException) {
-            Log.e(TAG, "Jpos Error: ${e.errorCode} - ${e.message}")
-        } finally {
-            try {
-                if (posPrinter.claimed) {
-                    posPrinter.deviceEnabled = false
-                    posPrinter.release()
-                }
-                posPrinter.close()
-            } catch (e: Exception) {
-                Log.e(TAG, "Close Error: ${e.message}")
-            }
-        }
-    }
-     fun setupPrinter(context: Context) {
-        val bxlConfig = BXLConfigLoader(context)
-        try {
-            bxlConfig.openFile()
-            // Clear old entries to avoid conflicts
-            val entries = bxlConfig.getEntries()
-            for (entry in entries) {
-                bxlConfig.removeEntry(entry.logicalName)
-            }
-
-            // Add the new entry (Change parameters based on your connection)
-            bxlConfig.addEntry(
-                "Printer1",                       // Logical Name used in posPrinter.open()
-                BXLConfigLoader.DEVICE_CATEGORY_POS_PRINTER,
-                BXLConfigLoader.PRODUCT_NAME_BK3_3, // Replace with your model, e.g., SRP_350III
-                BXLConfigLoader.DEVICE_BUS_USB,       // Use DEVICE_BUS_BLUETOOTH if using BT
-                ""                                    // Address (Leave empty for USB)
-            )
-
-            bxlConfig.saveFile()
-        } catch (e: Exception) {
-            Log.e("Printer", "Config Error: ${e.message}")
-        } finally {
-        }
-    }
-
-    fun triggerSelfTest(productName: String) {
-        try {
-            if (!configureUsb(productName)) return
-
-            posPrinter.open(logicalName)
-            posPrinter.claim(5000)
-            posPrinter.deviceEnabled = true
-
-            // ESC/POS Command to trigger Self-Test: GS ( A pL pH n m
-            // Hex: 1D 28 41 02 00 00 02
-            val selfTestCommand = "\u001d\u0028\u0041\u0002\u0000\u0000\u0002"
-
-            posPrinter.printNormal(POSPrinterConst.PTR_S_RECEIPT, selfTestCommand)
-
-        } catch (e: JposException) {
-            Log.e(TAG, "Self-test trigger failed: ${e.errorCode}")
-        } finally {
-            // Standard cleanup
-            if (posPrinter.claimed) {
-                posPrinter.deviceEnabled = false
-                posPrinter.release()
-            }
-            posPrinter.close()
-        }
-    }
-
-
-
-
-}*/
-
-class BixolonUsbPrinter(private val context: Context) {
+/*class BixolonUsbPrinter(private val context: Context) {
 
     private val TAG = "BixolonPDF"
     private val logicalName = "BK3_USB"
@@ -249,7 +45,7 @@ class BixolonUsbPrinter(private val context: Context) {
     // Prevent concurrent printing
     private val printLock = Any()
 
-    /** Call ONCE (ex: app start) */
+    *//** Call ONCE (ex: app start) *//*
     fun configure(): Boolean {
         return try {
             val loader = BXLConfigLoader(context)
@@ -276,7 +72,7 @@ class BixolonUsbPrinter(private val context: Context) {
         }
     }
 
-    /** PUBLIC print API */
+    *//** PUBLIC print API *//*
     fun printPdfAsBitmap(pdfFile: File) {
         if (!pdfFile.exists()) {
             Log.e(TAG, "PDF not found")
@@ -315,7 +111,7 @@ class BixolonUsbPrinter(private val context: Context) {
         }
     }
 
-    /** Always release printer */
+    *//** Always release printer *//*
      fun cleanupPrinter() {
         try {
             if (posPrinter.claimed) {
@@ -328,7 +124,7 @@ class BixolonUsbPrinter(private val context: Context) {
         }
     }
 
-    /** PDF → scaled bitmap (BIG TEXT) */
+    *//** PDF → scaled bitmap (BIG TEXT) *//*
     private fun renderPdfToBitmaps(pdfFile: File): List<Bitmap> {
         val result = mutableListOf<Bitmap>()
 
@@ -375,7 +171,7 @@ class BixolonUsbPrinter(private val context: Context) {
         return result
     }
 
-    /** Thermal-friendly conversion */
+    *//** Thermal-friendly conversion *//*
     private fun convertToMonochrome(src: Bitmap): Bitmap {
         val out = Bitmap.createBitmap(src.width, src.height, Bitmap.Config.RGB_565)
 
@@ -414,6 +210,194 @@ class BixolonUsbPrinter(private val context: Context) {
         file.writeText(xml)
     }
 
+}*/
+
+
+
+/**
+ * ARCHITECTURE FOR ANDROID BOX + USB HUB:
+ * 1. Singleton pattern to avoid driver re-init collisions.
+ * 2. Extended timeout for USB Hub handshake latency.
+ * 3. Aggressive cleanup to prevent 'Resource Busy' on the Hub.
+ */
+object BixolonPrinterManager {
+    private const val TAG = "BixolonManager"
+    private const val LOGICAL_NAME = "BK3_USB"
+
+    private val printerSemaphore = Semaphore(1)
+    private var posPrinter: POSPrinter? = null
+
+    private const val PRINTER_WIDTH = 576 // BK3-3 Standard width
+
+
+    private fun getPrinter(context: Context): POSPrinter {
+        if (posPrinter == null) {
+            val loader = BXLConfigLoader(context)
+            try { loader.openFile() } catch (e: Exception) { loader.newFile() }
+            loader.removeEntry(LOGICAL_NAME)
+            loader.addEntry(LOGICAL_NAME, BXLConfigLoader.DEVICE_CATEGORY_POS_PRINTER,
+                BXLConfigLoader.PRODUCT_NAME_BK3_3, BXLConfigLoader.DEVICE_BUS_USB, "")
+            loader.saveFile()
+
+            posPrinter = POSPrinter(context.applicationContext)
+        }
+        return posPrinter!!
+    }
+
+    suspend fun printPdf(context: Context, pdfFile: File): Boolean = withContext(Dispatchers.IO) {
+        // 1. Physical Presence Check
+        val usbManager = context.getSystemService(Context.USB_SERVICE) as UsbManager
+        val hasHardware = usbManager.deviceList.values.any { it.vendorId == 1046 }
+        if (!hasHardware) {
+            Log.e(TAG, "BK3-3 not detected. Check Hub connection.")
+            return@withContext false
+        }
+
+        // 2. Queue Management
+        if (!printerSemaphore.tryAcquire()) return@withContext false
+
+        val printer = getPrinter(context)
+        var success = false
+
+        try {
+            // 3. The 'Hub-Friendly' Connection Bridge
+            var connected = false
+            for (i in 1..3) {
+                try {
+                    if (printer.state != jpos.JposConst.JPOS_S_CLOSED) {
+                        printer.close()
+                    }
+                    printer.open(LOGICAL_NAME)
+                    // Increased to 5000ms because Hubs are slow to handshake
+                    printer.claim(5000)
+                    printer.deviceEnabled = true
+                    connected = true
+                    break
+                } catch (e: Exception) {
+                    Log.w(TAG, "Hub latency hit. Retry $i/3...")
+                    try { printer.close() } catch (ex: Exception) {}
+                    // Critical delay to let the Hub reset its port power
+                    Thread.sleep(800)
+                }
+            }
+
+            if (!connected) throw Exception("USB Hub failed to bridge connection")
+
+            // 4. Print Logic
+            //val bitmaps = renderPdf(pdfFile)
+            val bitmaps = renderPdfToHighQualityBitmaps(pdfFile)
+            for (bitmap in bitmaps) {
+                printer.printBitmap(POSPrinterConst.PTR_S_RECEIPT, bitmap, POSPrinterConst.PTR_BM_CENTER, 576)
+                bitmap.recycle()
+            }
+
+            printer.printNormal(POSPrinterConst.PTR_S_RECEIPT, "\u001b|3lF\u001b|fP")
+            success = true
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Final Print Error: ${e.message}")
+        } finally {
+            // 5. Hard Reset (Mandatory for Hubs)
+            try {
+                if (printer.deviceEnabled) printer.deviceEnabled = false
+                if (printer.claimed) printer.release()
+                printer.close()
+            } catch (e: Exception) {
+                Log.e(TAG, "Cleanup failed")
+            }
+            printerSemaphore.release()
+        }
+        return@withContext success
+    }
+
+    private fun renderPdf(file: File): List<Bitmap> {
+        val bitmaps = mutableListOf<Bitmap>()
+        val fd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+        val renderer = PdfRenderer(fd)
+        for (i in 0 until renderer.pageCount) {
+            val page = renderer.openPage(i)
+            val bitmap = Bitmap.createBitmap(576, (576 * page.height / page.width), Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            canvas.drawColor(Color.WHITE)
+            page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_PRINT)
+            bitmaps.add(convertToMonochrome(bitmap))
+            bitmap.recycle()
+            page.close()
+        }
+        renderer.close()
+        fd.close()
+        return bitmaps
+    }
+
+    private fun convertToMonochrome(src: Bitmap): Bitmap {
+        val out = Bitmap.createBitmap(src.width, src.height, Bitmap.Config.RGB_565)
+        val canvas = Canvas(out)
+        val paint = Paint()
+        val colorMatrix = ColorMatrix().apply { setSaturation(0f) }
+        paint.colorFilter = ColorMatrixColorFilter(colorMatrix)
+        canvas.drawBitmap(src, 0f, 0f, paint)
+        return out
+    }
+
+
+    private fun renderPdfToHighQualityBitmaps(file: File): List<Bitmap> {
+        val bitmaps = mutableListOf<Bitmap>()
+        val fd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+        val renderer = PdfRenderer(fd)
+
+        val paint = Paint().apply {
+            isAntiAlias = true
+            isFilterBitmap = true
+            isDither = true
+        }
+
+        for (i in 0 until renderer.pageCount) {
+            val page = renderer.openPage(i)
+
+            // 1. Calculate height perfectly to avoid empty bottom space
+            val aspectRatio = page.height.toFloat() / page.width.toFloat()
+            val targetHeight = (PRINTER_WIDTH * aspectRatio).toInt()
+
+            // 2. Use RGB_565 to save memory on Android Box
+            val bitmap = Bitmap.createBitmap(PRINTER_WIDTH, targetHeight, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            canvas.drawColor(Color.WHITE)
+
+            // 3. High Quality Scaling Matrix
+            val matrix = Matrix()
+            val scaleFactor = PRINTER_WIDTH.toFloat() / page.width.toFloat()
+            matrix.postScale(scaleFactor, scaleFactor)
+
+            page.render(bitmap, null, matrix, PdfRenderer.Page.RENDER_MODE_FOR_PRINT)
+
+            // 4. Clean Grayscale conversion
+            val grayscaleBitmap = applyThermalOptimization(bitmap, paint)
+            bitmaps.add(grayscaleBitmap)
+
+            bitmap.recycle()
+            page.close()
+        }
+        renderer.close()
+        fd.close()
+        return bitmaps
+    }
+
+    private fun applyThermalOptimization(src: Bitmap, paint: Paint): Bitmap {
+        val dest = Bitmap.createBitmap(src.width, src.height, Bitmap.Config.RGB_565)
+        val canvas = Canvas(dest)
+
+        // ColorMatrix handles the "Blur" by increasing contrast
+        val cm = ColorMatrix(floatArrayOf(
+            2f, 0f, 0f, 0f, -100f, // Increase Red contrast
+            0f, 2f, 0f, 0f, -100f, // Increase Green contrast
+            0f, 0f, 2f, 0f, -100f, // Increase Blue contrast
+            0f, 0f, 0f, 1f, 0f
+        ))
+
+        paint.colorFilter = ColorMatrixColorFilter(cm)
+        canvas.drawBitmap(src, 0f, 0f, paint)
+        return dest
+    }
 }
 
 

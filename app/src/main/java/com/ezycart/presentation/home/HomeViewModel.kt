@@ -35,7 +35,7 @@ import com.ezycart.services.usb.WeightUpdate
 import com.ezycart.services.usb.WeightValidationManager
 import com.ezycart.services.usb.WeightValidationManager.ValidationResult
 import com.ezycart.services.usb.AppScenario
-import com.ezycart.services.usb.BixolonUsbPrinter
+import com.ezycart.services.usb.BixolonPrinterManager
 import com.ezycart.services.usb.LedSerialConnection
 import com.ezycart.services.usb.LoginWeightScaleSerialPort
 import com.ezycart.services.usb.UsbSerialManager
@@ -1269,7 +1269,7 @@ class HomeViewModel @Inject constructor(
     }
 
 
-    fun testPrinter(context: Context) {
+   /* fun testPrinter(context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
 
             // --- ADD THE CODE HERE ---
@@ -1298,7 +1298,7 @@ class HomeViewModel @Inject constructor(
                 Log.e("PrinterTest", "Printer Init Failed: ${e.message}")
             }
         }
-    }
+    }*/
 
     /*fun printReceipt(context: Context) {
         var  pdfUrl = invoiceInfo.value?.pdfUrl
@@ -1402,7 +1402,45 @@ class HomeViewModel @Inject constructor(
    fun startNewTransaction() {
        receiptPrinted = false
    }
+
     fun printReceipt(context: Context) {
+        if (receiptPrinted) return
+        val appContext = context.applicationContext
+
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                var pdfUrl = invoiceInfo.value?.pdfUrl
+                if (pdfUrl.isNullOrBlank()) {
+                    pdfUrl = "https://uat-api-retailetics-ops-mini-03.retailetics.com/invoices/invoice-000VGO-P0000002159.pdf"
+                }
+
+                // 1. Download the file
+                val pdfFile = File(appContext.cacheDir, "receipt.pdf")
+                URL(pdfUrl).openStream().use { input ->
+                    pdfFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+
+                // 2. Call the Solid Singleton (Matches the code provided in the previous step)
+                // Note: We use the Boolean return to verify success
+                val isSuccess = BixolonPrinterManager.printPdf(appContext, pdfFile)
+
+                if (isSuccess) {
+                    withContext(Dispatchers.Main) {
+                        receiptPrinted = true
+                        resetAndGoBack()
+                    }
+                } else {
+                    Log.e("PRINTER_TASK", "Print failed: Check hardware or USB permission")
+                }
+
+            } catch (e: Exception) {
+                Log.e("PRINTER_TASK", "Final Failure: ${e.message}")
+            }
+        }
+    }
+    /*fun printReceipt(context: Context) {
 
         if (receiptPrinted) {
             Log.w("PDF", "Receipt already printed, ignoring request")
@@ -1459,7 +1497,7 @@ class HomeViewModel @Inject constructor(
                 }
             }
         }
-    }
+    }*/
 
 
     private fun getInvoicePdf(referenceNumber: String) {
