@@ -242,7 +242,7 @@ fun LanguageSelectionScreen(viewModel: LandingViewModel,onLanguageSelected: (Str
         currentSystemAlert.value = AlertState(
             title = "Help is on the way",
             message = "Please wait for our Staff to assist you.",
-            lottieFileName = "anim_warning_circle.json",
+            lottieFileName = "anim_help_support.json",
             type = AlertType.INFO,
             isDismissible = false,
             showButton = true,

@@ -265,7 +265,7 @@ fun HomeScreen(
         currentSystemAlert.value = AlertState(
             title = "Please Wait, Support Will Assist You To Delete",
             message = "",
-            lottieFileName = "anim_warning_circle.json",
+            lottieFileName = "anim_help_support.json",
             type = AlertType.INFO,
             isDismissible = true,
             showButton = true
@@ -471,7 +471,7 @@ fun HomeScreen(
         currentSystemAlert.value = AlertState(
             title = "Help is on the way",
             message = "Please wait for our Staff to assist you.",
-            lottieFileName = "anim_warning_circle.json",
+            lottieFileName = "anim_help_support.json",
             type = AlertType.INFO,
             isDismissible = false,
             showButton = true,
