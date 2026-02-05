@@ -1768,7 +1768,7 @@ fun CartScreen(
 
 
 
-                    Spacer(modifier = Modifier.weight(1f)) // Pushes content to the bottom
+                   // Spacer(modifier = Modifier.weight(1f)) // Pushes content to the bottom
 
                     // --- ACTION SECTION (Camera + Buttons) ---
                     Row(
@@ -1780,8 +1780,8 @@ fun CartScreen(
                         Box(
                             modifier = Modifier
                                 .size(
-                                    width = 300.dp,
-                                    height = 290.dp
+                                    width = 310.dp,
+                                    height = 250.dp
                                 ) // Fixed Aspect Ratio for Camera
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(Color.Black)
@@ -1975,7 +1975,7 @@ fun CartScreen(
                 val productList = cartItems.reversed()
                 itemsIndexed(productList) { index, productData ->
                     CartItemCard(
-                        productInfo = cartItems[index],
+                        productInfo = productList[index],
                         onRemove = { onRemoveItem(it) },
                         onEditProduct = { barCode, id, updatedQuantity ->
                             onEditProduct(barCode, id, updatedQuantity)
