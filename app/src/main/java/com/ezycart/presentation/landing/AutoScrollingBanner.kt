@@ -1,6 +1,7 @@
 package com.ezycart.presentation.landing
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -14,7 +15,8 @@ import androidx.compose.ui.res.painterResource
 fun AutoScrollingBanner(
     banners: List<Int>,
     currentIndex: Int,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onImageClick:()-> Unit,
 ) {
     val pagerState = rememberPagerState(pageCount = { banners.size })
 
@@ -31,7 +33,9 @@ fun AutoScrollingBanner(
         Image(
             painter = painterResource(id = banners[page]),
             contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().clickable {
+                onImageClick()
+            },
             contentScale = ContentScale.FillBounds // Fill the large 22-inch screen
         )
     }

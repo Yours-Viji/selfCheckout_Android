@@ -95,6 +95,8 @@ fun LandingScreen(homeViewModel: HomeViewModel,viewModel: LandingViewModel = hil
     var continueShoppingDialog = remember { mutableStateOf(false) }
     var currentSystemAlert = remember { mutableStateOf<AlertState?>(null)}
     var canStartShopping= viewModel.canStartShopping.collectAsState()
+    var showAdminDialog = remember { mutableStateOf(false) }
+    var settingsOpenCounter = 0
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
     }
@@ -154,6 +156,37 @@ fun LandingScreen(homeViewModel: HomeViewModel,viewModel: LandingViewModel = hil
             }
         )
     }
+    if (showAdminDialog.value) {
+        settingsOpenCounter = 0
+        AdminSettingsDialog(
+            onDismiss = { showAdminDialog.value = false },
+            onOpenTerminal = { type ->
+                // Logic to open specific terminal
+                when(type) {
+                    "Loadcell" -> {
+                        viewModel.activateLoadCellTerminal()
+                    }
+                    "LED" -> {
+                        viewModel.activateLedTerminal()
+                    }
+                    "Printer" -> {
+                        viewModel.activatePrinterTerminal()
+                    }
+                }
+                showAdminDialog.value = false
+            },
+
+            onTransferCart = { targetCart ->
+                // viewModel.transferCurrentCartTo(targetCart)
+                showAdminDialog.value = false
+            },
+            //currentThreshold = threshold,
+            currentThreshold = viewModel.getWeightThreshold(),
+            onThresholdChange = { newValue ->
+                viewModel.updateThreshold(newValue)
+            }
+        )
+    }
     Column(modifier = Modifier
         .fillMaxSize()
         .background(Color.Black)) {
@@ -172,7 +205,16 @@ fun LandingScreen(homeViewModel: HomeViewModel,viewModel: LandingViewModel = hil
                         banners = uiState.value.banners,
                         currentIndex = uiState.value.currentBannerIndex,
                         modifier = Modifier.fillMaxSize().focusRequester(focusRequester)
-                            .focusable()
+                            .focusable(),
+                        onImageClick= {
+                            if (!showAdminDialog.value){
+                                settingsOpenCounter ++
+                                if (settingsOpenCounter > 5){
+                                    showAdminDialog.value = true
+                                }
+                            }
+
+                        }
                     )
                 } else {
                     // Replace with Language Selection after click
@@ -182,7 +224,8 @@ fun LandingScreen(homeViewModel: HomeViewModel,viewModel: LandingViewModel = hil
                         continueShoppingDialog.value = true
 
 
-                    })
+                    },
+                        onSettingsSelected={showAdminDialog.value = true})
                 }
             }
         }
@@ -197,6 +240,7 @@ fun LandingScreen(homeViewModel: HomeViewModel,viewModel: LandingViewModel = hil
                     // ADD THIS: It pushes the content up away from the system navigation buttons
                     .navigationBarsPadding()
                     .clickable(enabled = !uiState.value.isStarted) {
+                        settingsOpenCounter = 0
                         if (homeViewModel.initialTotalWeight >50){
                             LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
                             viewModel.onStartClicked()
@@ -237,7 +281,7 @@ fun LandingScreen(homeViewModel: HomeViewModel,viewModel: LandingViewModel = hil
 }
 
 @Composable
-fun LanguageSelectionScreen(viewModel: LandingViewModel,onLanguageSelected: (String) -> Unit) {
+fun LanguageSelectionScreen(viewModel: LandingViewModel,onLanguageSelected: (String) -> Unit,onSettingsSelected:()-> Unit) {
     var currentSystemAlert = remember { mutableStateOf<AlertState?>(null)}
     var canShowHelpDialog= viewModel.canShowHelpDialog.collectAsState()
     if(canShowHelpDialog.value){
@@ -275,7 +319,7 @@ fun LanguageSelectionScreen(viewModel: LandingViewModel,onLanguageSelected: (Str
             contentScale = ContentScale.Inside,
             alpha = 0.6f
         )*/
-        BitesHeader(viewModel,onHelpClick = { viewModel.showHelpDialog()  })
+        BitesHeader(viewModel,onHelpClick = { viewModel.showHelpDialog()  },onSettingsSelected={onSettingsSelected()})
 
             Column(
                 modifier = Modifier
@@ -370,40 +414,11 @@ fun GlassyKioskBackground(
 @Composable
 fun BitesHeader(
     viewModel: LandingViewModel,
-    onHelpClick: () -> Unit
+    onHelpClick: () -> Unit,
+    onSettingsSelected:()-> Unit
 ) {
     val focusRequester = remember { FocusRequester() }
-    var showAdminDialog = remember { mutableStateOf(false) }
-    if (showAdminDialog.value) {
-        AdminSettingsDialog(
-            onDismiss = { showAdminDialog.value = false },
-            onOpenTerminal = { type ->
-                // Logic to open specific terminal
-                when(type) {
-                    "Loadcell" -> {
-                        viewModel.activateLoadCellTerminal()
-                    }
-                    "LED" -> {
-                        viewModel.activateLedTerminal()
-                    }
-                    "Printer" -> {
-                        viewModel.activatePrinterTerminal()
-                    }
-                }
-                showAdminDialog.value = false
-            },
 
-            onTransferCart = { targetCart ->
-               // viewModel.transferCurrentCartTo(targetCart)
-                showAdminDialog.value = false
-            },
-            //currentThreshold = threshold,
-            currentThreshold = viewModel.getWeightThreshold(),
-            onThresholdChange = { newValue ->
-                viewModel.updateThreshold(newValue)
-            }
-        )
-    }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -449,7 +464,7 @@ fun BitesHeader(
                 modifier = Modifier
                     .align(Alignment.CenterStart) // Force to far left
                     .size(32.dp)
-                    .clickable { showAdminDialog.value = true },
+                    .clickable { onSettingsSelected() },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
