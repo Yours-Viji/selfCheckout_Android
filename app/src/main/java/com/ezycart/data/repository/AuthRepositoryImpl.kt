@@ -192,6 +192,41 @@ class AuthRepositoryImpl @Inject constructor(
             }
     }
 
+    override suspend fun memberLogin(memberNumber: String): NetworkResponse<MemberLoginResponse> {
+        return safeApiCallRaw { authApi.memberLoginApi(MemberLoginRequest(memberNumber)) }
+            .also { result ->
+                if (result is NetworkResponse.Success) {
+                    //Constants.nearPaySessionID=result.data.sessionId
+                }
+            }
+    }
+
+    override suspend fun applyVoucher(voucherNumber: String): NetworkResponse<ShoppingCartDetails> {
+        return safeApiCallRaw { authApi.applyCouponVoucher(cartId = preferencesManager.getShoppingCartId(),ApplyCouponVoucherRequest(voucherNumber)) }
+            .also { result ->
+                if (result is NetworkResponse.Success) {
+                    //Constants.nearPaySessionID=result.data.sessionId
+                }
+            }
+    }
+
+    override suspend fun deleteVoucher(voucherCode: String): NetworkResponse<ShoppingCartDetails> {
+        return safeApiCallRaw { authApi.deleteCouponVoucher(cartId = preferencesManager.getShoppingCartId(), voucherCode = voucherCode) }
+            .also { result ->
+                if (result is NetworkResponse.Success) {
+                    //Constants.nearPaySessionID=result.data.sessionId
+                }
+            }
+    }
+    override suspend fun createHelpTicket(helpRequest: HelpRequest): NetworkResponse<HelpResponse> {
+        return safeApiCallRaw { authApi.createNewHelpApi(helpRequest) }
+            .also { result ->
+                if (result is NetworkResponse.Success) {
+                    //Constants.nearPaySessionID=result.data.sessionId
+                }
+            }
+    }
+
     private suspend fun getMerchantParam(): HashMap<String, String> {
         val params = HashMap<String, String>()
         params["merchantId"] = "" + preferencesManager.getMerchantId()
@@ -200,7 +235,6 @@ class AuthRepositoryImpl @Inject constructor(
 
         return params
     }
-
 
         private suspend fun getCreateCartRequestData(): CreateCartRequest {
             val prefs = preferencesManager.userPreferencesFlow.first()

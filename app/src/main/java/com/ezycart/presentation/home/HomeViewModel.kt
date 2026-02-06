@@ -4,10 +4,13 @@ import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+
 import com.ezycart.data.datastore.PreferencesManager
 import com.ezycart.data.remote.dto.CartItem
 import com.ezycart.data.remote.dto.CreateJwtTokenRequest
+import com.ezycart.data.remote.dto.HelpRequest
 import com.ezycart.data.remote.dto.InvoiceResponse
+import com.ezycart.data.remote.dto.MemberLoginResponse
 import com.ezycart.data.remote.dto.NetworkResponse
 import com.ezycart.data.remote.dto.PaymentRequest
 import com.ezycart.data.remote.dto.ShoppingCartDetails
@@ -15,8 +18,10 @@ import com.ezycart.data.remote.dto.UpdatePaymentRequest
 import com.ezycart.domain.model.AppMode
 import com.ezycart.domain.usecase.GetCartIdUseCase
 import com.ezycart.domain.usecase.LoadingManager
+import com.ezycart.domain.usecase.LoginUseCase
 import com.ezycart.domain.usecase.PaymentUseCase
 import com.ezycart.domain.usecase.ShoppingUseCase
+import com.ezycart.model.EmployeeLoginResponse
 import com.ezycart.model.ProductInfo
 import com.ezycart.model.ProductPriceInfo
 import com.ezycart.presentation.common.data.Constants
@@ -39,7 +44,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.File
 import java.net.URL
@@ -49,6 +53,7 @@ import kotlin.math.abs
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val shoppingUseCase: ShoppingUseCase,
+    private val loginUseCase: LoginUseCase,
     private val paymentUseCase: PaymentUseCase,
     private val getCartIdUseCase: GetCartIdUseCase,
     private val preferencesManager: PreferencesManager,
@@ -125,6 +130,12 @@ class HomeViewModel @Inject constructor(
 
     private val _invoiceInfo = MutableStateFlow<InvoiceResponse?>(null)
     val invoiceInfo: StateFlow<InvoiceResponse?> = _invoiceInfo.asStateFlow()
+
+    private val _employeeLoginData = MutableStateFlow<EmployeeLoginResponse?>(null)
+    val employeeLoginData: StateFlow<EmployeeLoginResponse?> = _employeeLoginData.asStateFlow()
+
+    private val _memberLoginData = MutableStateFlow<MemberLoginResponse?>(null)
+    val memberLoginData: StateFlow<MemberLoginResponse?> = _memberLoginData.asStateFlow()
 
     sealed class PaymentStatusState {
         object Idle : PaymentStatusState()
@@ -259,6 +270,10 @@ class HomeViewModel @Inject constructor(
     }
     fun showHelpDialog(){
         _canShowHelpDialog.value = true
+        try {
+            createNewHelpTicket()
+        } catch (e: Exception) {
+        }
     }
     fun resetAndGoBack(){
          initialTotalWeight= 0.0
@@ -1523,6 +1538,145 @@ class HomeViewModel @Inject constructor(
                 }
             }
         } catch (e: Exception) {
+        }
+    }
+     fun isProbablyQRCode(barCodeData: String): Boolean {
+        return barCodeData.contains(":") ||
+                barCodeData.contains("http", ignoreCase = true) ||
+                barCodeData.length < 4 ||
+                barCodeData.length > 20 ||
+                barCodeData.lowercase().matches("[a-zA-Z]+".toRegex())
+    }
+    fun createNewHelpTicket() {
+        viewModelScope.launch {
+
+            when (val result =
+                shoppingUseCase.createHelpTicket(HelpRequest(
+                    cartId = cartId, description = "Assist Customer", deviceId = "50", requestType = "self_checkout_issue",
+                    trolleyId = "50", userId = 0, cartZone = "Self Checkout", merchantId = preferencesManager.getMerchantId(),
+                    outletId = preferencesManager.getOutletId(), barcode = "", productName = ""
+                ))) {
+                is NetworkResponse.Success -> {
+
+                }
+
+                is NetworkResponse.Error -> {
+
+                }
+            }
+        }
+    }
+
+     fun employeeLogin(pinNumber: String) {
+         clearSystemAlert()
+        loadingManager.show()
+        try {
+            viewModelScope.launch {
+                _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
+
+                when (val result = loginUseCase(pinNumber)) {
+                    is NetworkResponse.Success -> {
+                        _stateFlow.value = _stateFlow.value.copy(
+                            isLoading = false
+                        )
+                        _employeeLoginData.value = result.data
+                         loadingManager.hide()
+                    }
+
+                    is NetworkResponse.Error -> {
+                         _stateFlow.value = _stateFlow.value.copy(
+                             isLoading = false,
+                             error = result.message,
+                         )
+                         loadingManager.hide()
+                    }
+                }
+            }
+        } catch (e: Exception) {
+        }
+    }
+
+    fun memberLogin(memberNumber: String) {
+        loadingManager.show()
+        try {
+            viewModelScope.launch {
+                _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
+
+                when (val result = shoppingUseCase.memberLogin(memberNumber)) {
+                    is NetworkResponse.Success -> {
+                        _stateFlow.value = _stateFlow.value.copy(
+                            isLoading = false
+                        )
+                        _memberLoginData.value = result.data
+                        loadingManager.hide()
+                    }
+
+                    is NetworkResponse.Error -> {
+                        _stateFlow.value = _stateFlow.value.copy(
+                            isLoading = false,
+                            error = result.message,
+                        )
+                        loadingManager.hide()
+                    }
+                }
+            }
+        } catch (e: Exception) {
+        }
+    }
+
+    fun applyVoucher(voucherCode: String) {
+        loadingManager.show()
+        viewModelScope.launch {
+            _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
+            when (val result = shoppingUseCase.applyVoucher(voucherCode)) {
+                is NetworkResponse.Success -> {
+                    _stateFlow.value = _stateFlow.value.copy(
+                        isLoading = false
+                    )
+                    _cartDataList.value = result.data.cartItems
+                    _cartCount.value = result.data.totalItems
+                    loadingManager.hide()
+                    getPaymentSummary()
+
+                }
+
+                is NetworkResponse.Error -> {
+                    _stateFlow.value = _stateFlow.value.copy(
+                        isLoading = false,
+                        error = result.message,
+                    )
+                    loadingManager.hide()
+                }
+            }
+            _productInfo.value = null
+        }
+    }
+
+    fun deleteVoucher(voucherCode: String) {
+        loadingManager.show()
+        viewModelScope.launch {
+            _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
+            when (val result = shoppingUseCase.deleteVoucher(voucherCode)) {
+                is NetworkResponse.Success -> {
+                    _stateFlow.value = _stateFlow.value.copy(
+                        isLoading = false
+                    )
+                    _cartDataList.value = result.data.cartItems
+                    _cartCount.value = result.data.totalItems
+                    loadingManager.hide()
+                    getPaymentSummary()
+
+                }
+
+                is NetworkResponse.Error -> {
+                    _stateFlow.value = _stateFlow.value.copy(
+                        isLoading = false,
+                        error = result.message,
+                    )
+                    loadingManager.hide()
+                }
+            }
+            _productInfo.value = null
         }
     }
 }

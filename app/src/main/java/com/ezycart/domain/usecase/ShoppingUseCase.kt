@@ -1,7 +1,10 @@
 package com.ezycart.domain.usecase
 
 import com.ezycart.data.remote.dto.CreateCartResponse
+import com.ezycart.data.remote.dto.HelpRequest
+import com.ezycart.data.remote.dto.HelpResponse
 import com.ezycart.data.remote.dto.InvoiceResponse
+import com.ezycart.data.remote.dto.MemberLoginResponse
 import com.ezycart.data.remote.dto.NetworkResponse
 import com.ezycart.data.remote.dto.PaymentRequest
 import com.ezycart.data.remote.dto.PaymentResponse
@@ -61,6 +64,22 @@ class ShoppingUseCase @Inject constructor(
 
     suspend  fun getInvoicePdf(referenceNo: String): NetworkResponse<InvoiceResponse> {
         return authRepository.getInvoicePdf(referenceNo)
+    }
+
+    suspend  fun memberLogin(memberNumber: String): NetworkResponse<MemberLoginResponse> {
+        return authRepository.memberLogin(memberNumber)
+    }
+
+    suspend  fun applyVoucher(voucherCode: String): NetworkResponse<ShoppingCartDetails> {
+        return authRepository.applyVoucher(voucherCode)
+    }
+
+    suspend  fun deleteVoucher(voucherCode: String): NetworkResponse<ShoppingCartDetails> {
+        return authRepository.deleteVoucher(voucherCode)
+    }
+
+    suspend  fun createHelpTicket(helpRequest: HelpRequest): NetworkResponse<HelpResponse> {
+        return authRepository.createHelpTicket(helpRequest)
     }
 
 }

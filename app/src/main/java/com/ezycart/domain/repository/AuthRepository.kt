@@ -1,10 +1,14 @@
 package com.ezycart.domain.repository
 
+import com.ezycart.data.remote.dto.ApplyCouponVoucherRequest
 import com.ezycart.data.remote.dto.CreateCartResponse
 import com.ezycart.data.remote.dto.CreateJwtTokenRequest
 import com.ezycart.data.remote.dto.DeviceDetailsResponse
+import com.ezycart.data.remote.dto.HelpRequest
+import com.ezycart.data.remote.dto.HelpResponse
 import com.ezycart.data.remote.dto.InvoiceResponse
 import com.ezycart.data.remote.dto.JwtTokenResponse
+import com.ezycart.data.remote.dto.MemberLoginResponse
 import com.ezycart.data.remote.dto.NearPaymentSessionResponse
 import com.ezycart.data.remote.dto.NetworkResponse
 import com.ezycart.data.remote.dto.PaymentRequest
@@ -43,6 +47,10 @@ interface AuthRepository {
     suspend fun saveAuthToken(token: String)
     suspend fun getAuthToken(): String?
     suspend fun getInvoicePdf(referenceNo: String): NetworkResponse<InvoiceResponse>
+    suspend fun memberLogin(memberNumber: String): NetworkResponse<MemberLoginResponse>
+    suspend fun applyVoucher(voucherCode: String): NetworkResponse<ShoppingCartDetails>
+    suspend fun deleteVoucher(voucherCode: String): NetworkResponse<ShoppingCartDetails>
+    suspend fun createHelpTicket(helpRequest: HelpRequest): NetworkResponse<HelpResponse>
     //suspend fun refreshInterceptor()
     fun isDeviceActivated(): Flow<Boolean>
     fun getCartId(): Flow<String>

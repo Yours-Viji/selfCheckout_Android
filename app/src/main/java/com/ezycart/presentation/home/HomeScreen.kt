@@ -566,17 +566,39 @@ fun HomeScreen(
                     when (keyEvent.key) {
                         androidx.compose.ui.input.key.Key.Enter, androidx.compose.ui.input.key.Key.NumPadEnter -> {
                             if (scanBuffer.value.isNotBlank()) {
-                                if(canShowVoucherDialog.value){
-                                    // Call voucher API
-                                    viewModel.clearSystemAlert()
-                                }else if(canShowMemberDialog.value){
-                                    // Call Member login API
-                                    viewModel.clearSystemAlert()
-                                }else{
-                                    // Product barcode // Get Product info
-                                    viewModel.resetProductInfoDetails()
-                                    viewModel.getProductDetails(scanBuffer.value)
+
+                                val re = Regex("[^a-zA-Z0-9]")
+                                var barCode = scanBuffer.value
+                                val isQR = viewModel.isProbablyQRCode(barCode)
+                                val containsEmp = barCode.lowercase().contains(":")
+                                when {
+                                    isQR && containsEmp -> {
+                                        val pinList = barCode.split(":")
+                                        if (pinList.size > 1) {
+                                            val empPin = re.replace(pinList[1], "")
+                                            viewModel.employeeLogin(empPin)
+                                        }
+                                    }
+
+                                    !isQR -> {
+                                        if(canShowVoucherDialog.value){
+                                            // Call voucher API
+                                            viewModel.clearSystemAlert()
+                                            viewModel.applyVoucher(barCode)
+                                        }else if(canShowMemberDialog.value){
+                                            // Call Member login API
+                                            viewModel.clearSystemAlert()
+                                            viewModel.memberLogin(barCode)
+                                        }else{
+                                            // Product barcode // Get Product info
+                                            viewModel.resetProductInfoDetails()
+                                            viewModel.getProductDetails(barCode)
+                                        }
+                                    } else -> {
+                                        // Alert to scan barcode and hide qr code
                                 }
+                                }
+
 
                                 focusRequester.requestFocus()
 

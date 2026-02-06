@@ -2,16 +2,21 @@ package com.ezycart.data.remote.api
 
 import com.ezycart.data.remote.dto.AddProductToCartRequest
 import com.ezycart.data.remote.dto.ApiResponse
+import com.ezycart.data.remote.dto.ApplyCouponVoucherRequest
 import com.ezycart.data.remote.dto.CreateCartRequest
 import com.ezycart.data.remote.dto.CreateCartResponse
 import com.ezycart.data.remote.dto.CreateJwtTokenRequest
 import com.ezycart.data.remote.dto.DeleteProductInCartRequest
 import com.ezycart.data.remote.dto.DeviceDetailsResponse
 import com.ezycart.data.remote.dto.EditProductRequest
+import com.ezycart.data.remote.dto.HelpRequest
+import com.ezycart.data.remote.dto.HelpResponse
 import com.ezycart.data.remote.dto.InvoiceResponse
 import com.ezycart.data.remote.dto.JwtTokenResponse
 import com.ezycart.data.remote.dto.LoginRequest
 import com.ezycart.data.remote.dto.LoginResponse
+import com.ezycart.data.remote.dto.MemberLoginRequest
+import com.ezycart.data.remote.dto.MemberLoginResponse
 import com.ezycart.data.remote.dto.NearPaymentSessionResponse
 import com.ezycart.data.remote.dto.PaymentRequest
 import com.ezycart.data.remote.dto.PaymentResponse
@@ -135,6 +140,25 @@ interface AuthApi {
     @GET("ezycart/invoice/{reference_no}/pdf-url")
     suspend fun getPdfInvoice(
         @Path(value = "reference_no", encoded = true) referenceNo: String): Response<InvoiceResponse>
+
+    @POST("/v1/ezyCart/member/login")
+    suspend fun memberLoginApi(@Body memberLoginRequest: MemberLoginRequest): Response<MemberLoginResponse>
+
+    @POST("/v2/ezyCart/cart/coupon-voucher/{cart_id}")
+    suspend fun applyCouponVoucher(
+        @Path(value = "cart_id", encoded = true) cartId: String,
+        @Body applyCouponVoucherRequest: ApplyCouponVoucherRequest
+    ): Response<ShoppingCartDetails>
+
+    @DELETE("/v2/ezyCart/cart/coupon-voucher/{cart_id}/{voucher_code}")
+    suspend fun deleteCouponVoucher(
+        @Path(value = "cart_id", encoded = true) cartId: String,
+        @Path(value = "voucher_code", encoded = true) voucherCode: String
+    ): Response<ShoppingCartDetails>
+
+    @POST("/ezyCart/cs/ticket")
+    suspend fun createNewHelpApi(@Body helpRequest: HelpRequest): Response<HelpResponse>
+
     /* @POST("/Login")
     fun loginApi(@Body loginRequest: LoginRequest): Call<Any>
     @GET("ezcart/product")

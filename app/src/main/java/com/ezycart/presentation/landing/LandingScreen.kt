@@ -473,7 +473,7 @@ fun BitesHeader(
             )
 
             // 3. RIGHT SIDE: Help Content
-            Row(
+           /* Row(
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
                     .clip(RoundedCornerShape(50))
@@ -501,7 +501,7 @@ fun BitesHeader(
                     fontSize = 27.sp,
                     fontWeight = FontWeight.Bold
                 )
-            }
+            }*/
 
         }
 
