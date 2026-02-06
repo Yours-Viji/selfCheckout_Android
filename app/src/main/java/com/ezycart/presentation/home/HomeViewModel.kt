@@ -183,6 +183,12 @@ class HomeViewModel @Inject constructor(
     private val _canShowHelpDialog = MutableStateFlow<Boolean>(false)
     val canShowHelpDialog: StateFlow<Boolean> = _canShowHelpDialog.asStateFlow()
 
+    private val _canShowVoucherDialog = MutableStateFlow<Boolean>(false)
+    val canShowVoucherDialog: StateFlow<Boolean> = _canShowVoucherDialog.asStateFlow()
+
+    private val _canShowMemberDialog = MutableStateFlow<Boolean>(false)
+    val canShowMemberDialog: StateFlow<Boolean> = _canShowMemberDialog.asStateFlow()
+
     private var notScannedTotalWeight = 0.0
     private val printMutex = Mutex()
     private var receiptPrinted = false
@@ -239,6 +245,14 @@ class HomeViewModel @Inject constructor(
         _canShowHelpDialog.value = false
         _canShowDeleteDialog.value = false
         _canShowPrintReceiptDialog.value = false
+        _canShowVoucherDialog.value = false
+        _canShowMemberDialog.value = false
+    }
+    fun showVoucherDialog(){
+        _canShowVoucherDialog.value = true
+    }
+    fun showMemberDialog(){
+        _canShowMemberDialog.value = true
     }
     fun showDeleteProductDialog(){
         _canShowDeleteDialog.value = true
@@ -502,7 +516,7 @@ class HomeViewModel @Inject constructor(
                         getPriceDetails(barCode)
                     }
 
-                    // addProductToShoppingCart(productInfo.value!!.barcode, 1)
+                   //  addProductToShoppingCart(productInfo.value!!.barcode, 1)
 
                 }
 

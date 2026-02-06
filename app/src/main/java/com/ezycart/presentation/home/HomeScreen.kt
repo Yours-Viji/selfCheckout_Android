@@ -220,6 +220,8 @@ fun HomeScreen(
     var showLedDialog = viewModel.openLedTerminalDialog.collectAsState()
     var openLoadCellTerminalDialog = viewModel.openLoadCellTerminalDialog.collectAsState()
     var canShowHelpDialog= viewModel.canShowHelpDialog.collectAsState()
+    var canShowVoucherDialog= viewModel.canShowVoucherDialog.collectAsState()
+    var canShowMemberDialog= viewModel.canShowMemberDialog.collectAsState()
     if (openLoadCellTerminalDialog.value){
         WeightScaleManager.initOnce(viewModel)
         WeightScaleManager.connectSafe(context)
@@ -257,6 +259,28 @@ fun HomeScreen(
             lottieFileName = "anim_warning_circle.json",
             type = AlertType.INFO,
             isDismissible = true,
+            showButton = true
+        )
+    }
+    if(canShowVoucherDialog.value) {
+        currentSystemAlert.value = null
+        currentSystemAlert.value = AlertState(
+            title = "Redeem Voucher",
+            message = "Scan your Voucher barcode.",
+            lottieFileName = "anim_scanner.json",
+            type = AlertType.INFO,
+            isDismissible = false,
+            showButton = true
+        )
+    }
+    if(canShowMemberDialog.value) {
+        currentSystemAlert.value = null
+        currentSystemAlert.value = AlertState(
+            title = "Member Login",
+            message = "Scan your Member code",
+            lottieFileName = "anim_scanner.json",
+            type = AlertType.INFO,
+            isDismissible = false,
             showButton = true
         )
     }
@@ -542,8 +566,18 @@ fun HomeScreen(
                     when (keyEvent.key) {
                         androidx.compose.ui.input.key.Key.Enter, androidx.compose.ui.input.key.Key.NumPadEnter -> {
                             if (scanBuffer.value.isNotBlank()) {
-                                viewModel.resetProductInfoDetails()
-                                viewModel.getProductDetails(scanBuffer.value)
+                                if(canShowVoucherDialog.value){
+                                    // Call voucher API
+                                    viewModel.clearSystemAlert()
+                                }else if(canShowMemberDialog.value){
+                                    // Call Member login API
+                                    viewModel.clearSystemAlert()
+                                }else{
+                                    // Product barcode // Get Product info
+                                    viewModel.resetProductInfoDetails()
+                                    viewModel.getProductDetails(scanBuffer.value)
+                                }
+
                                 focusRequester.requestFocus()
 
                                 scanBuffer.value = ""
@@ -1293,7 +1327,9 @@ fun PickersShoppingScreen(
                     onLogout = onLogout,
                     onDeleteItemClick = {
                         viewModel.showDeleteProductDialog()
-                    }
+                    },
+                    onVoucherClick= {viewModel.showVoucherDialog()},
+                onMemberClick= {viewModel.showMemberDialog()},
                 )
             }
         }
@@ -1378,6 +1414,8 @@ fun CartScreen(
     onPayNowClick: () -> Unit,
     onLogout: () -> Unit,
     onDeleteItemClick: () -> Unit,
+    onVoucherClick: () -> Unit,
+    onMemberClick: () -> Unit,
 ) {
     var isRecording = remember { mutableStateOf(false) }
     var startFunc = remember { mutableStateOf<(() -> Unit)?>(null) }
@@ -1526,7 +1564,7 @@ fun CartScreen(
 
                                 // MEMBER LOGIN BUTTON (LEFT)
                                 OutlinedButton(
-                                    onClick = { /* Member login logic */ },
+                                    onClick = { onMemberClick() },
                                     modifier = Modifier
                                         .weight(1f)
                                         .fillMaxHeight(),
@@ -1551,7 +1589,7 @@ fun CartScreen(
 
                                 // APPLY VOUCHER BUTTON (RIGHT)
                                 OutlinedButton(
-                                    onClick = { /* Voucher logic */ },
+                                    onClick = { onVoucherClick() },
                                     modifier = Modifier
                                         .weight(1f)
                                         .fillMaxHeight(),
