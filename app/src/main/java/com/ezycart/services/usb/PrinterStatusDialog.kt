@@ -40,6 +40,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Divider
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.graphics.RectangleShape
@@ -53,6 +54,7 @@ fun PrinterStatusDialog(
 ) {
     var paperStatus = remember { mutableStateOf("TAP TO CHECK") }
     var hasPermission = remember { mutableStateOf(printer.hasUsbPermission()) }
+    var isTesting = remember { mutableStateOf(false) } // State for button feedback
 
     val (statusLabel, statusColor) = when(paperStatus.value) {
         "OK" -> "Paper Ready" to Color(0xFF2E7D32)
@@ -77,6 +79,7 @@ fun PrinterStatusDialog(
                 modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // 1. Header
                 Box(
                     modifier = Modifier
                         .size(64.dp)
@@ -106,7 +109,6 @@ fun PrinterStatusDialog(
                     subtitle = if (hasPermission.value) "Hardware Linked" else "Access Required",
                     isError = !hasPermission.value,
                     buttonLabel = if (hasPermission.value) "Re-check" else "Authorize",
-                    // Added Icon for Permission
                     buttonIcon = if (hasPermission.value) Icons.Default.CheckCircle else Icons.Default.Warning,
                     onAction = {
                         printer.requestUsbPermission { hasPermission.value = it }
@@ -121,15 +123,36 @@ fun PrinterStatusDialog(
                     subtitle = statusLabel,
                     isError = paperStatus.value == "EMPTY",
                     buttonLabel = "Check Paper",
-                    // Added Icon for Paper
                     buttonIcon = Icons.Default.Info,
                     onAction = {
                         paperStatus.value = printer.checkPaperStatus()
                     }
                 )
 
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 4. NEW: Test Print Section
+                StatusActionRow(
+                    title = "Printer Function",
+                    subtitle = if (isTesting.value) "Printing..." else "Ready to Test",
+                    isError = false,
+                    buttonLabel = "Test Print",
+                    buttonIcon = Icons.Default.PlayArrow, // Using Play icon for "Action"
+                    onAction = {
+                        if (hasPermission.value) {
+                            isTesting.value = true
+                            // Run on background thread to avoid UI lag
+                            Thread {
+                                printer.printTestPage()
+                                isTesting.value = false
+                            }.start()
+                        }
+                    }
+                )
+
                 Spacer(modifier = Modifier.height(32.dp))
 
+                // 5. Close Button
                 Button(
                     onClick = onDismiss,
                     modifier = Modifier

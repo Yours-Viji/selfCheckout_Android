@@ -458,7 +458,7 @@ fun HomeScreen(
             showButton = true,
             negativeButtonText = "Print Receipt",
             onNegativeClick = {
-                viewModel.printReceipt(/*"https://api-retailetics-ops-mini-03.retailetics.com/ezyCart/invoice/000VGO-P9900003312",*/context as Activity)
+                viewModel.printReceipt(context as Activity)
                 currentSystemAlert.value = null
                 viewModel.timerDisplayForReceiptPrint()
 
@@ -640,10 +640,8 @@ fun HomeScreen(
                     viewModel.showHelpDialog()
                                                                       },
                 onTitleClick = {
-                    viewModel.printReceipt(/*"https://uat-api-retailetics-ops-mini-03.retailetics.com/invoices/invoice-000VGO-P0000002159.pdf",*/context)
-
-                  /*   showMainLogs.value = !showMainLogs.value
-                    viewModel.clearLog()*/
+                     showMainLogs.value = !showMainLogs.value
+                    viewModel.clearLog()
                 },
                 onClearClick ={clearTransAction.value = true})
             if (showMainLogs.value) {

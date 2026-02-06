@@ -177,6 +177,34 @@ class BixolonUsbPrinter(private val context: Context) {
         }
     }
 
+    fun printTestPage() {
+        synchronized(printLock) {
+            try {
+                posPrinter.open(logicalName)
+                posPrinter.claim(5000)
+                posPrinter.deviceEnabled = true
+
+                // Print a simple header and a timestamp
+                val time = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
+
+                posPrinter.printNormal(
+                    POSPrinterConst.PTR_S_RECEIPT,
+                    "\u001b|cA\u001b|2C*** TEST PRINT ***\n" +
+                            "\u001b|cAConnection: USB (Bixolon BK3)\n" +
+                            "\u001b|cATime: $time\n\n" +
+                            "\u001b|cAStatus: SUCCESSFUL\n" +
+                            "\u001b|3lF\u001b|fP" // Feed 3 lines and Cut
+                )
+
+            } catch (e: Exception) {
+                Log.e("BixolonTest", "Test print failed", e)
+            } finally {
+                cleanupPrinter()
+            }
+        }
+    }
+
+
     /*private fun renderPdfToBitmaps(pdfFile: File): List<Bitmap> {
         val result = mutableListOf<Bitmap>()
 
