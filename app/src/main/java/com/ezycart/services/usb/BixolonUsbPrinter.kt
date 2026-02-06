@@ -38,11 +38,11 @@ import java.net.URL
 
 
 
-/*class BixolonUsbPrinter(private val context: Context) {
+class BixolonUsbPrinter(private val context: Context) {
 
     private val TAG = "BixolonPDF"
     private val logicalName = "BK3_USB"
-
+    private  val PRINTER_WIDTH = 576
     // SINGLE printer instance
     private val posPrinter by lazy {
         ensureJposXml(context)
@@ -52,7 +52,6 @@ import java.net.URL
     // Prevent concurrent printing
     private val printLock = Any()
 
-    *//** Call ONCE (ex: app start) *//*
     fun configure(): Boolean {
         return try {
             val loader = BXLConfigLoader(context)
@@ -79,7 +78,6 @@ import java.net.URL
         }
     }
 
-    *//** PUBLIC print API *//*
     fun printPdfAsBitmap(pdfFile: File) {
         if (!pdfFile.exists()) {
             Log.e(TAG, "PDF not found")
@@ -92,7 +90,7 @@ import java.net.URL
                 posPrinter.claim(5000)
                 posPrinter.deviceEnabled = true
 
-                val bitmaps = renderPdfToBitmaps(pdfFile)
+                val bitmaps = renderPdfToHighQualityBitmaps(pdfFile)
 
                 for (bitmap in bitmaps) {
                     posPrinter.printBitmap(
@@ -118,7 +116,6 @@ import java.net.URL
         }
     }
 
-    *//** Always release printer *//*
      fun cleanupPrinter() {
         try {
             if (posPrinter.claimed) {
@@ -131,8 +128,8 @@ import java.net.URL
         }
     }
 
-    *//** PDF → scaled bitmap (BIG TEXT) *//*
-    private fun renderPdfToBitmaps(pdfFile: File): List<Bitmap> {
+
+    /*private fun renderPdfToBitmaps(pdfFile: File): List<Bitmap> {
         val result = mutableListOf<Bitmap>()
 
         val fd = ParcelFileDescriptor.open(pdfFile, ParcelFileDescriptor.MODE_READ_ONLY)
@@ -178,7 +175,7 @@ import java.net.URL
         return result
     }
 
-    *//** Thermal-friendly conversion *//*
+
     private fun convertToMonochrome(src: Bitmap): Bitmap {
         val out = Bitmap.createBitmap(src.width, src.height, Bitmap.Config.RGB_565)
 
@@ -194,8 +191,65 @@ import java.net.URL
             }
         }
         return out
+    }*/
+    private fun renderPdfToHighQualityBitmaps(file: File): List<Bitmap> {
+        val bitmaps = mutableListOf<Bitmap>()
+        val fd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+        val renderer = PdfRenderer(fd)
+
+        val paint = Paint().apply {
+            isAntiAlias = true
+            isFilterBitmap = true
+            isDither = true
+        }
+
+        for (i in 0 until renderer.pageCount) {
+            val page = renderer.openPage(i)
+
+            // 1. Calculate height perfectly to avoid empty bottom space
+            val aspectRatio = page.height.toFloat() / page.width.toFloat()
+            val targetHeight = (PRINTER_WIDTH * aspectRatio).toInt()
+
+            // 2. Use RGB_565 to save memory on Android Box
+            val bitmap = Bitmap.createBitmap(PRINTER_WIDTH, targetHeight, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            canvas.drawColor(Color.WHITE)
+
+            // 3. High Quality Scaling Matrix
+            val matrix = Matrix()
+            val scaleFactor = PRINTER_WIDTH.toFloat() / page.width.toFloat()
+            matrix.postScale(scaleFactor, scaleFactor)
+
+            page.render(bitmap, null, matrix, PdfRenderer.Page.RENDER_MODE_FOR_PRINT)
+
+            // 4. Clean Grayscale conversion
+            val grayscaleBitmap = applyThermalOptimization(bitmap, paint)
+            bitmaps.add(grayscaleBitmap)
+
+            bitmap.recycle()
+            page.close()
+        }
+        renderer.close()
+        fd.close()
+        return bitmaps
     }
 
+    private fun applyThermalOptimization(src: Bitmap, paint: Paint): Bitmap {
+        val dest = Bitmap.createBitmap(src.width, src.height, Bitmap.Config.RGB_565)
+        val canvas = Canvas(dest)
+
+        // ColorMatrix handles the "Blur" by increasing contrast
+        val cm = ColorMatrix(floatArrayOf(
+            2f, 0f, 0f, 0f, -100f, // Increase Red contrast
+            0f, 2f, 0f, 0f, -100f, // Increase Green contrast
+            0f, 0f, 2f, 0f, -100f, // Increase Blue contrast
+            0f, 0f, 0f, 1f, 0f
+        ))
+
+        paint.colorFilter = ColorMatrixColorFilter(cm)
+        canvas.drawBitmap(src, 0f, 0f, paint)
+        return dest
+    }
     private fun ensureJposXml(context: Context) {
         val file = File(context.filesDir, "jpos.xml")
         if (file.exists()) return
@@ -217,7 +271,7 @@ import java.net.URL
         file.writeText(xml)
     }
 
-}*/
+}
 
 
 
@@ -227,8 +281,8 @@ import java.net.URL
  * 2. Extended timeout for USB Hub handshake latency.
  * 3. Aggressive cleanup to prevent 'Resource Busy' on the Hub.
  */
-/*
-object BixolonPrinterManager {
+
+/*object BixolonPrinterManager {
     private const val TAG = "BixolonManager"
     private const val LOGICAL_NAME = "BK3_USB"
 
@@ -406,11 +460,11 @@ object BixolonPrinterManager {
         canvas.drawBitmap(src, 0f, 0f, paint)
         return dest
     }
-}
-*/
+}*/
 
 
-object BixolonPrinterManager {
+
+/*object BixolonPrinterManager {
     private const val TAG = "BixolonManager"
     private const val LOGICAL_NAME = "BK3_USB"
     private const val ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION"
@@ -433,8 +487,8 @@ object BixolonPrinterManager {
         return posPrinter!!
     }
 
-    /** * MAIN PRINT FUNCTION
-     */
+    *//** * MAIN PRINT FUNCTION
+     *//*
     suspend fun printPdf(context: Context, pdfFile: File): Boolean = withContext(Dispatchers.IO) {
         // 1. Physical Presence Check (Vendor 1046 = Bixolon)
         val usbManager = context.getSystemService(Context.USB_SERVICE) as UsbManager
@@ -506,9 +560,9 @@ object BixolonPrinterManager {
         return@withContext success
     }
 
-    /**
+    *//**
      * ASYNC PERMISSION REQUEST
-     */
+     *//*
     private suspend fun requestUsbPermission(context: Context, manager: UsbManager, device: UsbDevice): Boolean {
         if (manager.hasPermission(device)) return true
 
@@ -600,6 +654,6 @@ object BixolonPrinterManager {
         canvas.drawBitmap(src, 0f, 0f, paint)
         return dest
     }
-}
+}*/
 
 

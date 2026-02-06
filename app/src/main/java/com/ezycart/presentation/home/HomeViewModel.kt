@@ -24,7 +24,7 @@ import com.ezycart.services.usb.WeightUpdate
 import com.ezycart.services.usb.WeightValidationManager
 import com.ezycart.services.usb.WeightValidationManager.ValidationResult
 import com.ezycart.services.usb.AppScenario
-import com.ezycart.services.usb.BixolonPrinterManager
+import com.ezycart.services.usb.BixolonUsbPrinter
 import com.ezycart.services.usb.LedSerialConnection
 import com.ezycart.services.usb.LoadCellSerialPort
 
@@ -38,6 +38,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.File
@@ -1378,7 +1379,7 @@ class HomeViewModel @Inject constructor(
        receiptPrinted = false
    }
 
-    fun printReceipt(context: Context) {
+    /*fun printReceipt(context: Context) {
         if (receiptPrinted) return
         val appContext = context.applicationContext
 
@@ -1414,8 +1415,8 @@ class HomeViewModel @Inject constructor(
                 Log.e("PRINTER_TASK", "Final Failure: ${e.message}")
             }
         }
-    }
-    /*fun printReceipt(context: Context) {
+    }*/
+    fun printReceipt(context: Context) {
 
         if (receiptPrinted) {
             Log.w("PDF", "Receipt already printed, ignoring request")
@@ -1472,7 +1473,7 @@ class HomeViewModel @Inject constructor(
                 }
             }
         }
-    }*/
+    }
 
 
     private fun getInvoicePdf(referenceNumber: String) {

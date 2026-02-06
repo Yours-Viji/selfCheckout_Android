@@ -35,6 +35,7 @@ import com.ezycart.presentation.home.WebViewScreen
 import com.ezycart.presentation.landing.LandingScreen
 import com.ezycart.services.usb.AppScenario
 import com.ezycart.services.usb.LedSerialConnection
+import com.ezycart.services.usb.LoadCellSerialPort
 import com.ezycart.services.usb.WeightScaleManager
 import com.meticha.permissions_compose.PermissionManagerConfig
 import dagger.hilt.android.AndroidEntryPoint
@@ -148,7 +149,28 @@ class MainActivity : ComponentActivity() {
                                             popUpTo("landing") { inclusive = true }
                                         }
 
-                                    })
+                                    },
+                                        reConnectLoadCell = {
+                                            try {
+                                                lifecycleScope.launch {
+                                                    repeat(2) { attempt ->
+                                                        try {
+                                                            WeightScaleManager.initOnce(homeViewModel)
+                                                            WeightScaleManager.connectSafe(context)
+                                                            return@launch // success → exit
+                                                        } catch (e: Exception) {
+                                                            if (attempt == 1) {
+                                                                e.printStackTrace()
+                                                            }
+                                                        }
+                                                    }
+
+                                                    delay(100)
+                                                    LoadCellSerialPort.sendMessageToWeightScale("2\r\n")
+                                                }
+                                            } catch (e: Exception) {
+                                            }
+                                        })
                                     /* LoginScreen(
 
                                          onThemeChange = {

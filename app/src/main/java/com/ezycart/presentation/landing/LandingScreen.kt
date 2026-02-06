@@ -85,7 +85,7 @@ import com.ezycart.services.usb.WeightScaleManager
 
 @Composable
 fun LandingScreen(homeViewModel: HomeViewModel,viewModel: LandingViewModel = hiltViewModel(),
-                  goToHomeScreen: () -> Unit) {
+                  goToHomeScreen: () -> Unit,reConnectLoadCell : ()-> Unit) {
     val uiState = viewModel.uiState.collectAsStateWithLifecycle()
     var showGuidelines = remember { mutableStateOf(false) }
     var showLedDialog = viewModel.openLedTerminalDialog.collectAsState()
@@ -120,14 +120,17 @@ fun LandingScreen(homeViewModel: HomeViewModel,viewModel: LandingViewModel = hil
     if(canStartShopping.value){
         currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
-            title = "Please Add All your products in Tray 1",
+            title = "Please, Place all your products in Tray 1",
             message = "",
             lottieFileName = "anim_warning_circle.json",
             type = AlertType.INFO,
             isDismissible = false,
             showButton = true,
             positiveButtonText = "Ok",
-            onPositiveClick = {viewModel.clearSystemAlert()}
+            onPositiveClick = {
+                reConnectLoadCell()
+                viewModel.clearSystemAlert()
+            }
         )
     }
     if (openLoadCellTerminalDialog.value){

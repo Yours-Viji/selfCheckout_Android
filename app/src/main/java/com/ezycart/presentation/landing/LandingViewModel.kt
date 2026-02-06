@@ -56,7 +56,7 @@ class LandingViewModel @Inject constructor(
         _canStartShopping.value = value
     }
     fun clearSystemAlert() {
-        LoadCellSerialPort.sendMessageToWeightScale("2\r\n")
+        //LoadCellSerialPort.sendMessageToWeightScale("2\r\n")
         _canStartShopping.value = false
         _canShowHelpDialog.value = false
     }
