@@ -247,6 +247,9 @@ class HomeViewModel @Inject constructor(
         _canShowHelpDialog.value = true
     }
     fun resetAndGoBack(){
+         initialTotalWeight= 0.0
+       finalTotalWeight= 0.0
+       finalWeightOfLc1= 0.0
         _resetAndGoBack.value = true
     }
 
