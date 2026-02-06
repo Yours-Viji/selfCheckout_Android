@@ -156,7 +156,9 @@ import com.ezycart.presentation.common.data.Constants
 import com.ezycart.presentation.landing.LedControlDialog
 import com.ezycart.presentation.payment.BitesPaymentDialog
 import com.ezycart.services.usb.AppScenario
+import com.ezycart.services.usb.BixolonUsbPrinter
 import com.ezycart.services.usb.LedSerialConnection
+import com.ezycart.services.usb.PrinterStatusDialog
 
 import com.ezycart.services.usb.WeightScaleManager
 import com.google.mlkit.vision.barcode.BarcodeScanning
@@ -222,6 +224,7 @@ fun HomeScreen(
     var canShowHelpDialog= viewModel.canShowHelpDialog.collectAsState()
     var canShowVoucherDialog= viewModel.canShowVoucherDialog.collectAsState()
     var canShowMemberDialog= viewModel.canShowMemberDialog.collectAsState()
+    var openPrinterTerminalDialog = viewModel.openPrinterTerminalDialog.collectAsState()
     if (openLoadCellTerminalDialog.value){
         WeightScaleManager.initOnce(viewModel)
         WeightScaleManager.connectSafe(context)
@@ -354,7 +357,10 @@ fun HomeScreen(
         )
 
     }
-
+    if (openPrinterTerminalDialog.value) {
+        val printer = BixolonUsbPrinter(context.applicationContext)
+        PrinterStatusDialog(printer, onDismiss = { viewModel.activatePrinterTerminal() })
+    }
     LaunchedEffect(state.error) {
         state.error?.let { errorMessage ->
             if (errorMessage.isNotEmpty()) {

@@ -65,12 +65,26 @@ object LoadCellSerialPort {
     }
 
 
-    fun sendMessageToWeightScale(message: String) {
+   /* fun sendMessageToWeightScale(message: String) {
         try {
             mSerialIoManager!!.writeAsync(message.toByteArray())
         } catch (e: Exception) {
         }
 
+    }*/
+
+    fun sendMessageToWeightScale(message: String) {
+        try {
+            // Option 1: Try via IO Manager
+            if (mSerialIoManager != null) {
+                mSerialIoManager!!.writeAsync(message.toByteArray())
+            } else {
+                // Option 2: Direct write if manager isn't ready
+                serialPort?.write(message.toByteArray(), 1000)
+            }
+        } catch (e: Exception) {
+            Log.e("USB_SEND", "Error: ${e.message}")
+        }
     }
 
 // Common Buffer to handle data chunks

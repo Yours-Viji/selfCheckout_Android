@@ -35,7 +35,8 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.net.URL
-
+import jpos.events.StatusUpdateEvent
+import jpos.events.StatusUpdateListener
 
 
 class BixolonUsbPrinter(private val context: Context) {
@@ -128,6 +129,53 @@ class BixolonUsbPrinter(private val context: Context) {
         }
     }
 
+    // Add these to your BixolonUsbPrinter class
+    fun checkPaperStatus(): String {
+        return try {
+            // We open and claim briefly to check status properties
+            if (!posPrinter.claimed) {
+                posPrinter.open(logicalName)
+                posPrinter.claim(1000)
+                posPrinter.deviceEnabled = true
+            }
+
+            // UPOS properties for paper status
+            val status = when {
+                posPrinter.recEmpty -> "EMPTY" //
+                posPrinter.recNearEnd -> "NEAR_EMPTY" //
+                else -> "OK" //
+            }
+            status
+        } catch (e: Exception) {
+            "ERROR"
+        } finally {
+            // Only cleanup if we aren't in the middle of a print job
+           // if (!isPrinting) cleanupPrinter()
+        }
+    }
+
+    fun hasUsbPermission(): Boolean {
+        val usbManager = context.getSystemService(Context.USB_SERVICE) as UsbManager
+        val deviceList = usbManager.deviceList
+        // Search for Bixolon Vendor ID (typically 0x154f)
+        for (device in deviceList.values) {
+            if (device.vendorId == 0x154F || device.vendorId == 0x0483) { // common Bixolon VIDs
+                return usbManager.hasPermission(device)
+            }
+        }
+        return false
+    }
+
+    fun requestUsbPermission(onResult: (Boolean) -> Unit) {
+        val usbManager = context.getSystemService(Context.USB_SERVICE) as UsbManager
+        val deviceList = usbManager.deviceList
+        val bixolonDevice = deviceList.values.find { it.vendorId == 0x154F || it.vendorId == 0x0483 }
+
+        bixolonDevice?.let { device ->
+            val permissionIntent = PendingIntent.getBroadcast(context, 0, Intent("com.android.example.USB_PERMISSION"), PendingIntent.FLAG_IMMUTABLE)
+            usbManager.requestPermission(device, permissionIntent)
+        }
+    }
 
     /*private fun renderPdfToBitmaps(pdfFile: File): List<Bitmap> {
         val result = mutableListOf<Bitmap>()
