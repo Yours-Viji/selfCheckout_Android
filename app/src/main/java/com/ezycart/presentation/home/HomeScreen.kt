@@ -1383,6 +1383,7 @@ fun CartScreen(
     var startFunc = remember { mutableStateOf<(() -> Unit)?>(null) }
     var stopFunc = remember { mutableStateOf<(() -> Unit)?>(null) }
     val paymentSummary = shoppingCartInfo.value
+    var autoStarted = remember { mutableStateOf(false) }
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = Color.White,
@@ -1449,8 +1450,8 @@ fun CartScreen(
                         Box(
                             modifier = Modifier
                                 .size(
-                                    width = 310.dp,
-                                    height = 250.dp
+                                    width = 380.dp,
+                                    height = 260.dp
                                 ) // Fixed Aspect Ratio for Camera
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(Color.Black)
@@ -1469,6 +1470,11 @@ fun CartScreen(
                                 onCaptureReady = { start, stop ->
                                     startFunc.value = start
                                     stopFunc.value = stop
+
+                                    if (!autoStarted.value) {
+                                        autoStarted.value = true
+                                        start()
+                                    }
                                 }
                             )
                             // Live Badge
@@ -1630,10 +1636,10 @@ fun CartScreen(
                 Text("Your cart is empty", color = Color.Gray)
             }
         } else {
-            if (!isRecording.value) {
+           /* if (!isRecording.value) {
                 startFunc?.value?.invoke()
                 isRecording.value = true
-            }
+            }*/
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -2745,7 +2751,7 @@ fun ManualBarcodeEntryDialog(
     onCancel: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    var barcode = remember { mutableStateOf("") }
+    var barcode = remember { mutableStateOf("9556041601269") }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
