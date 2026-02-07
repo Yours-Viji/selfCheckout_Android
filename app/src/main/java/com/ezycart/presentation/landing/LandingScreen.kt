@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -64,7 +65,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ezycart.R
 import com.ezycart.services.usb.LedSerialConnection
 import androidx.compose.foundation.shape.CircleShape
@@ -101,6 +101,12 @@ import com.ezycart.services.usb.StatusActionRow
 import com.ezycart.services.usb.WeightScaleManager
 import com.pranavpandey.android.dynamic.toasts.DynamicToast
 import java.util.Locale
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import kotlinx.coroutines.delay
 
 @Composable
 fun LandingScreen(
@@ -362,14 +368,18 @@ fun LandingScreen(
                     LanguageSelectionScreen(
                         viewModel, onLanguageSelected = { lang ->
                             Log.d("Kiosk", "Selected: $lang")
-                            Constants.selectedLanguage = lang
-                            continueShoppingDialog.value = true
+
 
                             val activity = context as Activity
 
-                            val langCode = languageToCode(lang)
-                            updateAppLanguage(activity, langCode)
-                           // activity.recreate()
+                            //val langCode = languageToCode(lang)
+                            updateAppLanguage(activity, lang)
+                            //activity.recreate()
+
+                            //delay(100)
+                            Constants.selectedLanguage = lang
+                            continueShoppingDialog.value = true
+
 
                         },
                         onSettingsSelected = { showAdminDialog.value = true })
@@ -441,8 +451,16 @@ fun LanguageSelectionScreen(
 ) {
     var currentSystemAlert = remember { mutableStateOf<AlertState?>(null) }
     var canShowHelpDialog = viewModel.canShowHelpDialog.collectAsState()
+
+    val languages = listOf(
+        LanguageItem("English", "en", "🇺🇸"),
+        LanguageItem("Bahasa Malaysia", "ms", "🇲🇾"),
+        LanguageItem("中文", "zh", "🇨🇳"),
+        LanguageItem("日本語", "ja", "🇯🇵"),
+        LanguageItem("한국어", "ko", "🇰🇷")
+    )
+
     if (canShowHelpDialog.value) {
-        currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
             title = stringResource(R.string.help_is_on_the_way),
             message = stringResource(R.string.please_wait_for_our_staff_to_assist_you),
@@ -458,76 +476,103 @@ fun LanguageSelectionScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFE5D9F2), // Light lavender at top
-                        Color(0xFFF3F0F7), // Very light grey-white in middle
-                        Color(0xFFE0D7EA)  // Soft purple at bottom
-                    )
-                )
-            )
+            // Using the circle color as the main solid background
+            .background(Color(0xFF6A1B9A).copy(alpha = 0.05f))
     ) {
-        // Decorative background illustrations (place in corners)
-        /* Image(
-             painter = painterResource(id = R.drawable.veg_illustration),
-             contentDescription = null,
-             modifier = Modifier.fillMaxSize(),
-             contentScale = ContentScale.Inside,
-             alpha = 0.6f
-         )*/
-        BitesHeader(
-            viewModel,
-            onHelpClick = { viewModel.showHelpDialog() },
-            onSettingsSelected = { onSettingsSelected() })
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 40.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = stringResource(R.string.please_select_your_preferred_language),
-                fontSize = 28.sp,
-                textAlign = TextAlign.Center,
-                color = Color.DarkGray,
-                modifier = Modifier.padding(bottom = 48.dp)
+        Column(modifier = Modifier.fillMaxSize()) {
+            BitesHeader(
+                viewModel,
+                onHelpClick = { viewModel.showHelpDialog() },
+                onSettingsSelected = { onSettingsSelected() }
             )
 
-            val languages = listOf("Bahasa Malaysia", "中文", "English", "日本語", "한국인")
-            languages.forEach { lang ->
-                LanguageButton(text = lang) { onLanguageSelected(lang) }
-                Spacer(modifier = Modifier.height(24.dp))
-            }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 40.dp)
+                    .verticalScroll(rememberScrollState()), // Allows scrolling if list gets long
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = stringResource(R.string.please_select_your_preferred_language),
+                    style = TextStyle(
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        textAlign = TextAlign.Center,
+                        color = Color(0xFF2D3436)
+                    ),
+                    modifier = Modifier.padding(bottom = 48.dp)
+                )
 
+                // Vertical list of buttons
+                languages.forEach { lang ->
+                    LanguageRowCard(lang) {
+                        onLanguageSelected(lang.code)
+                    }
+                    Spacer(modifier = Modifier.height(20.dp))
+                }
+            }
         }
     }
 
     currentSystemAlert.value?.let { alert ->
-        CommonAlertView(state = alert) {
-            currentSystemAlert.value = null
-        }
+        CommonAlertView(state = alert) { currentSystemAlert.value = null }
     }
 }
 
 @Composable
-fun LanguageButton(text: String, onClick: () -> Unit) {
-    Button(
+fun LanguageRowCard(language: LanguageItem, onClick: () -> Unit) {
+    Surface(
         onClick = onClick,
         modifier = Modifier
-            .fillMaxWidth(0.6f)
-            .height(90.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, Color.LightGray),
-        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+            .fillMaxWidth(0.7f) // Wide enough for a kiosk but not touching edges
+            .height(100.dp),
+        shape = RoundedCornerShape(24.dp),
+        color = Color.White,
+        shadowElevation = 6.dp,
+        border = BorderStroke(1.dp, Color(0xFFEDEDED))
     ) {
-        Text(text = text, color = Color.Black, fontSize = 24.sp)
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 24.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start
+        ) {
+            // Circle Flag container
+            Box(
+                modifier = Modifier
+                    .size(60.dp)
+                    .background(Color(0xFFF8F9FA), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(language.flag, fontSize = 36.sp)
+            }
+
+            Spacer(modifier = Modifier.width(24.dp))
+
+            Text(
+                text = language.name,
+                style = TextStyle(
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF2D3436)
+                )
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            // Subtle arrow to indicate action
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowRight,
+                contentDescription = null,
+                tint = Color.LightGray,
+                modifier = Modifier.size(32.dp)
+            )
+        }
     }
 }
-
 @Composable
 fun GlassyKioskBackground(
     content: @Composable ColumnScope.() -> Unit
@@ -1198,3 +1243,4 @@ fun ContinueShoppingDialog(
     }
 
 }
+data class LanguageItem(val name: String, val code: String, val flag: String)

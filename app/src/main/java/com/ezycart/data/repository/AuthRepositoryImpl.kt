@@ -274,7 +274,7 @@ class AuthRepositoryImpl @Inject constructor(
                 merchantId = merchantId,
                 appMode = "sco",
                 trolleyNo = "51",
-                language = Constants.getSelectedLanguageCode()
+                language = Constants.selectedLanguage
             )
         }
 
