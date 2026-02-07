@@ -204,7 +204,7 @@ class HomeViewModel @Inject constructor(
 
     private val _canShowMemberDialog = MutableStateFlow<Boolean>(false)
     val canShowMemberDialog: StateFlow<Boolean> = _canShowMemberDialog.asStateFlow()
-    private val _canViewAdminSettings = MutableStateFlow<Boolean>(false)
+    private val _canViewAdminSettings = MutableStateFlow<Boolean>(true)
     val canViewAdminSettings: StateFlow<Boolean> = _canViewAdminSettings.asStateFlow()
     private var notScannedTotalWeight = 0.0
     private val printMutex = Mutex()
@@ -1794,4 +1794,52 @@ class HomeViewModel @Inject constructor(
             _productInfo.value = null
         }
     }
+    fun onReCallTransactionCalled(trolleyNumber: String){
+        viewModelScope.launch {
+            var trolleyNumber  =
+                "${preferencesManager.getMerchantId()}${preferencesManager.getOutletId()}${
+                    trolleyNumber.replace("Trolley", "")
+                        .replace(" ", "")
+                }"
+            reCallTransaction("${Constants.RECALL_API}$trolleyNumber")
+        }
+
+    }
+    private fun reCallTransaction(url: String) {
+        loadingManager.show()
+        // resetProductInfoDetails()
+        viewModelScope.launch {
+            _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
+            when (val result = shoppingUseCase.reCallTransaction(url)) {
+                is NetworkResponse.Success -> {
+                    _stateFlow.value = _stateFlow.value.copy(
+                        isLoading = false
+                    )
+                   clearSystemAlert()
+                    cartId = result.data.cartId
+                    weightAtRemovalDeltaW2 = 0.0
+                    _cartDataList.value = result.data.cartItems
+                    _cartCount.value = result.data.totalItems
+                    loadingManager.hide()
+                    getPaymentSummary()
+
+                }
+
+                is NetworkResponse.Error -> {
+                    _stateFlow.value = _stateFlow.value.copy(
+                        isLoading = false,
+                        error = result.message,
+                    )
+                    loadingManager.hide()
+                }
+            }
+            _productInfo.value = null
+            resetProductInfoDetails()
+        }
+    }
+
+
+
+
+
 }

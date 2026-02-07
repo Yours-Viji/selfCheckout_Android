@@ -53,6 +53,7 @@ interface AuthRepository {
     suspend fun deleteVoucher(voucherCode: String): NetworkResponse<ShoppingCartDetails>
     suspend fun createHelpTicket(helpRequest: HelpRequest): NetworkResponse<HelpResponse>
     suspend fun sendLogsToBackend(cmsLogRequest: CmsLogRequest): NetworkResponse<Any>
+    suspend fun reCallTransaction(url: String): NetworkResponse<ShoppingCartDetails>
     //suspend fun refreshInterceptor()
     fun isDeviceActivated(): Flow<Boolean>
     fun getCartId(): Flow<String>

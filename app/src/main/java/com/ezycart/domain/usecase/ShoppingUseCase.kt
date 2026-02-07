@@ -87,4 +87,8 @@ class ShoppingUseCase @Inject constructor(
         return authRepository.sendLogsToBackend(cmsLogRequest)
     }
 
+    suspend  fun reCallTransaction(url: String): NetworkResponse<ShoppingCartDetails> {
+        return authRepository.reCallTransaction(url)
+    }
+
 }

@@ -44,7 +44,7 @@ data class CartItem(
     val uom: String,
    /* var weight: Int,
     val unitWeight: Int,*/
-    val productWeight: Int,
+    val productWeight: Double,
     val validateWG: Boolean,
     val isFreshItem: Boolean,
     val isAlcoholProduct: Boolean,
@@ -102,6 +102,6 @@ data class DiscountDetails(
     val stkNo:String
 )
 data class WeightRange(
-    val maxWeight: Int?,
-    val startWeight: Int?
+    val maxWeight: Double?,
+    val startWeight: Double?
 )

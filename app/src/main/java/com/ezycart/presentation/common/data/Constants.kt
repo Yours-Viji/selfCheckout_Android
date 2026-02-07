@@ -13,6 +13,7 @@ object Constants {
 
     var EZY_LITE_TRANSACTION_URL = "${BASE_URL}/ezycart/lite-transactions/15/23"
     val LOG_URL = "${LOGS_BASE_URL}/api/v1/log"
+    var RECALL_API="/v1/ezyCart/cart/trolley/"
     var currencySymbol = BuildConfig.CURRENCY_SYMBOL
     const val CONTENT_TYPE = "Content-Type"
     const val ACCEPT = "Accept"

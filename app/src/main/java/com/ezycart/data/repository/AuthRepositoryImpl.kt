@@ -236,6 +236,18 @@ class AuthRepositoryImpl @Inject constructor(
             }
     }
 
+    override suspend fun reCallTransaction(url: String): NetworkResponse<ShoppingCartDetails> {
+        return safeApiCallRaw { authApi.retrieveCartTransaction(url) }
+            .also { result ->
+                if (result is NetworkResponse.Success) {
+                    preferencesManager.saveCartId(result.data.cartId)
+                    preferencesManager.saveAuthToken(result.data.token)
+                }
+            }
+    }
+
+
+
     private suspend fun getMerchantParam(): HashMap<String, String> {
         val params = HashMap<String, String>()
         params["merchantId"] = "" + preferencesManager.getMerchantId()

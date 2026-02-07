@@ -356,13 +356,14 @@ fun LandingScreen(
                     .navigationBarsPadding()
                     .clickable(enabled = !uiState.value.isStarted) {
                         settingsOpenCounter = 0
-                        if (homeViewModel.initialTotalWeight > 50) {
+                        if (Constants.isAdminLogin || homeViewModel.initialTotalWeight > 50) {
                             LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
                             viewModel.onStartClicked()
                         } else {
-                            /* LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
-                             viewModel.onStartClicked()*/
+                            /*LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
+                            viewModel.onStartClicked()*/
                             viewModel.setStartShopping(true)
+
                         }
 
                     },

@@ -712,7 +712,7 @@ fun BitesHeaderNew(
             },
 
             onTransferCart = { targetCart ->
-                // viewModel.transferCurrentCartTo(targetCart)
+                viewModel.onReCallTransactionCalled(targetCart)
                 showAdminDialog.value = false
             },
             //currentThreshold = threshold,
