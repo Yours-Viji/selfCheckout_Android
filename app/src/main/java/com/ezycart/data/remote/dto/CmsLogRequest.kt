@@ -20,5 +20,9 @@ class CmsLogRequest {
     var totalItems=0
     var software_total_weight=""
     var loadcell_total_weight=""
+    var appMode =""
+    var language=""
+
+
 
 }

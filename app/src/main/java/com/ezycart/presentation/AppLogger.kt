@@ -51,6 +51,9 @@ class AppLogger @Inject constructor(
 
                     software_total_weight = softwareWeightInfo
                     loadcell_total_weight = loadCellWeightInfo
+
+                    appMode = "sco"
+                    language = Constants.getSelectedLanguageCode()
                 }
 
                 shoppingUseCase.sendLogsToBackEnd(cmsLogRequest)
