@@ -62,6 +62,9 @@ class LandingViewModel @Inject constructor(
     private val _canViewAdminSettings = MutableStateFlow<Boolean>(false)
     val canViewAdminSettings: StateFlow<Boolean> = _canViewAdminSettings.asStateFlow()
 
+    private val _errorMessage = MutableStateFlow("")
+    val errorMessage: StateFlow<String> = _errorMessage.asStateFlow()
+
     init {
         startAutoScroll()
     }
@@ -218,6 +221,7 @@ class LandingViewModel @Inject constructor(
                    }
 
                    is NetworkResponse.Error -> {
+                       _errorMessage.value = result.message
                      /*  _stateFlow.value = _stateFlow.value.copy(
                            isLoading = false,
                            error = result.message,

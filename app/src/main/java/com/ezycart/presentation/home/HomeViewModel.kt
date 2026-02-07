@@ -1627,6 +1627,7 @@ class HomeViewModel @Inject constructor(
                              error = result.message,
                          )
                          loadingManager.hide()
+                        _errorMessage.value = result.message
                     }
                 }
             }
@@ -1663,6 +1664,7 @@ class HomeViewModel @Inject constructor(
                             error = result.message,
                         )
                         loadingManager.hide()
+                        _errorMessage.value = result.message
                     }
                 }
             }
@@ -1692,6 +1694,7 @@ class HomeViewModel @Inject constructor(
                         error = result.message,
                     )
                     loadingManager.hide()
+                    _errorMessage.value = result.message
                 }
             }
             _productInfo.value = null
@@ -1720,6 +1723,7 @@ class HomeViewModel @Inject constructor(
                         error = result.message,
                     )
                     loadingManager.hide()
+                    _errorMessage.value = result.message
                 }
             }
             _productInfo.value = null
