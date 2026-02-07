@@ -96,7 +96,11 @@ MEMBER_LOGIN(
     message = "Member Login"
 ),
     // ───────────── PAYMENT ─────────────
-
+    TRAY_EMPTY_BEFORE_PAYMENT(
+        level = LogLevel.ERROR,
+        method = "tray_empty_before_payment",
+        message = "Tray Empty Before Payment"
+    ),
     PAYMENT_ERROR(
         level = LogLevel.ERROR,
         method = "payment_error_log",

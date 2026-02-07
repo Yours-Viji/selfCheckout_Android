@@ -118,7 +118,7 @@ class HomeViewModel @Inject constructor(
     private val _canMakePayment = MutableStateFlow<Boolean>(false)
     val canMakePayment: StateFlow<Boolean> = _canMakePayment.asStateFlow()
 
-     var initialTotalWeight: Double = 0.0
+    var initialTotalWeight: Double = 0.0
     private var finalTotalWeight: Double = 0.0
     private var finalWeightOfLc1: Double = 0.0
 
@@ -141,6 +141,7 @@ class HomeViewModel @Inject constructor(
 
     private val _memberLoginData = MutableStateFlow<MemberLoginResponse?>(null)
     val memberLoginData: StateFlow<MemberLoginResponse?> = _memberLoginData.asStateFlow()
+    private var isPaymentSuccess = false
 
     sealed class PaymentStatusState {
         object Idle : PaymentStatusState()
@@ -206,11 +207,15 @@ class HomeViewModel @Inject constructor(
     val canShowMemberDialog: StateFlow<Boolean> = _canShowMemberDialog.asStateFlow()
     private val _canViewAdminSettings = MutableStateFlow<Boolean>(true)
     val canViewAdminSettings: StateFlow<Boolean> = _canViewAdminSettings.asStateFlow()
+    private val _showAlertWhenPaymentTrayEmpty = MutableStateFlow<Boolean>(true)
+    val showAlertWhenPaymentTrayEmpty: StateFlow<Boolean> =
+        _showAlertWhenPaymentTrayEmpty.asStateFlow()
     private var notScannedTotalWeight = 0.0
     private val printMutex = Mutex()
     private var receiptPrinted = false
-    private var logsDeltaW1=0.0
-    private var logsDeltaW2=0.0
+    private var logsDeltaW1 = 0.0
+    private var logsDeltaW2 = 0.0
+
     init {
         viewModelScope.launch {
             val savedAppMode = preferencesManager.getAppMode()
@@ -267,41 +272,48 @@ class HomeViewModel @Inject constructor(
         _canShowVoucherDialog.value = false
         _canShowMemberDialog.value = false
     }
-    fun showVoucherDialog(){
+
+    fun showVoucherDialog() {
         _canShowVoucherDialog.value = true
     }
-    fun showMemberDialog(){
+
+    fun showMemberDialog() {
         _canShowMemberDialog.value = true
     }
+
     fun onProductDeleteClick(barCode: String, id: Int, quantity: Int) {
-        if (_canViewAdminSettings.value){
-            deleteProductFromShoppingCart(barCode,id)
-        }else{
+        if (_canViewAdminSettings.value) {
+            deleteProductFromShoppingCart(barCode, id)
+        } else {
             showDeleteProductDialog()
         }
     }
-   private fun showDeleteProductDialog(){
+
+    private fun showDeleteProductDialog() {
         _canShowDeleteDialog.value = true
     }
-    fun showHelpDialog(){
+
+    fun showHelpDialog() {
         _canShowHelpDialog.value = true
         try {
             createNewHelpTicket()
         } catch (e: Exception) {
         }
     }
-    fun resetAndGoBack(){
-         initialTotalWeight= 0.0
-       finalTotalWeight= 0.0
-       finalWeightOfLc1= 0.0
+
+    fun resetAndGoBack() {
+        initialTotalWeight = 0.0
+        finalTotalWeight = 0.0
+        finalWeightOfLc1 = 0.0
         Constants.clearMemberData()
         Constants.clearAdminData()
         _resetAndGoBack.value = true
     }
 
-    fun resetAndGoBackSetDefault(){
+    fun resetAndGoBackSetDefault() {
         _resetAndGoBack.value = false
     }
+
     fun clearLog() {
         _loadCellValidationLog.value = ">>Loadcell Validation"
     }
@@ -321,7 +333,6 @@ class HomeViewModel @Inject constructor(
     fun getFormatedFinalAmount(): String {
         return String.format("%.2f", shoppingCartInfo.value?.finalAmount ?: 0.0)
     }
-
 
 
     fun setPriceCheckerView(canShow: Boolean) {
@@ -548,7 +559,7 @@ class HomeViewModel @Inject constructor(
                         getPriceDetails(barCode)
                     }
 
-                   //  addProductToShoppingCart(productInfo.value!!.barcode, 1)
+                    //  addProductToShoppingCart(productInfo.value!!.barcode, 1)
 
                 }
 
@@ -773,6 +784,8 @@ class HomeViewModel @Inject constructor(
                         // Payment successful - stop polling
                         _paymentStatusState.value = PaymentStatusState.Success(result.data)
                         _canShowPaymentSuccessDialog.value = true
+                        isPaymentSuccess = true
+                        sendLog(LogEvent.PAYMENT_SUCCESS)
                         return // Stop recursion
                     }
                     // Payment still pending - continue polling
@@ -791,6 +804,8 @@ class HomeViewModel @Inject constructor(
                         _paymentStatusState.value =
                             PaymentStatusState.Error("Payment Failed, Please Try Again")
                         _canShowPaymentSuccessDialog.value = false
+                        sendLog(LogEvent.PAYMENT_ERROR)
+                        isPaymentSuccess = false
                         _canShowPaymentErrorDialog.value = true
                         //Show Payment Error message
                         return // Stop recursion
@@ -856,7 +871,7 @@ class HomeViewModel @Inject constructor(
             }
             //delay(4000L)
 
-           // clearSystemAlert()
+            // clearSystemAlert()
 
 
         }
@@ -878,6 +893,8 @@ class HomeViewModel @Inject constructor(
 
     fun showPaymentSuccessAlertView() {
         _canShowPaymentSuccessDialog.value = true
+        isPaymentSuccess = true
+        sendLog(LogEvent.PAYMENT_SUCCESS)
     }
 
     fun hidePaymentSuccessAlertView() {
@@ -949,12 +966,15 @@ class HomeViewModel @Inject constructor(
     fun sendMessageToLoadCell(message: String) {
         LoadCellSerialPort.sendMessageToWeightScale("$message\r\n")
     }
-    fun startShoppingLed(){
+
+    fun startShoppingLed() {
         LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
     }
+
     private fun getWeightRangeForLogs(weightRange: WeightRange): String {
         return "${weightRange.startWeight} - ${weightRange.maxWeight}"
     }
+
     fun handleWeightUpdate(update: WeightUpdate) {
         val message =
             "Status=${update.status} - w1=${update.w1} - w2=${update.w2} - deltaw1=${update.delta_w1}-deltaw2=${update.delta_w2}"
@@ -976,48 +996,53 @@ class HomeViewModel @Inject constructor(
                 1 -> {
                     finalWeightOfLc1 = update.w1
                     finalTotalWeight = update.w2
-                    logsDeltaW1=update.delta_w1
-                    logsDeltaW2=update.delta_w2
+                    logsDeltaW1 = update.delta_w1
+                    logsDeltaW2 = update.delta_w2
                     val product = _productInfo.value
                     //addProductToShoppingCart("9556001601506", 1)
                     if (product != null && update.delta_w2 > 20.0 && update.loadcell_id == 1) {
-                       if (_canViewAdminSettings.value){
-                           // Admin
-                           addProductToShoppingCart(product.barcode, 1)
-                           notScannedTotalWeight = 0.0
-                           sendLog(LogEvent.PRODUCT_ADDED_BY_ADMIN)
+                        if (_canViewAdminSettings.value) {
+                            // Admin
+                            addProductToShoppingCart(product.barcode, 1)
+                            notScannedTotalWeight = 0.0
+                            sendLog(LogEvent.PRODUCT_ADDED_BY_ADMIN)
 
-                       }else{
-                           // Customer
-                           val result = validationManager.productValidation(
-                               product = product,
-                               deltaW2 = update.delta_w2
-                           )
-                           if (product.validateWG) {
-                               if (result is ValidationResult.Success) {
-                                   addProductToShoppingCart(product.barcode, 1)
-                                   notScannedTotalWeight = 0.0
-                               } else {
-                                   notScannedTotalWeight = notScannedTotalWeight.plus(update.delta_w2)
-                                   _canShowProductMismatchDialog.value = true
-                                   // Mismatch
-                                   sendLog(LogEvent.PRODUCT_WEIGHT_MISMATCH)
+                        } else {
+                            // Customer
+                            val result = validationManager.productValidation(
+                                product = product,
+                                deltaW2 = update.delta_w2
+                            )
+                            if (product.validateWG) {
+                                if (result is ValidationResult.Success) {
+                                    addProductToShoppingCart(product.barcode, 1)
+                                    notScannedTotalWeight = 0.0
+                                } else {
+                                    notScannedTotalWeight =
+                                        notScannedTotalWeight.plus(update.delta_w2)
+                                    _canShowProductMismatchDialog.value = true
+                                    // Mismatch
+                                    sendLog(LogEvent.PRODUCT_WEIGHT_MISMATCH)
 
-                               }
-                           } else {
-                               notScannedTotalWeight = 0.0
-                               addProductToShoppingCart(product.barcode, 1)
-                               sendLog(LogEvent.BACKEND_RETURNED_ZERO_WEIGHT)
+                                }
+                            } else {
+                                notScannedTotalWeight = 0.0
+                                addProductToShoppingCart(product.barcode, 1)
+                                sendLog(LogEvent.BACKEND_RETURNED_ZERO_WEIGHT)
 
-                           }
-                       }
-
+                            }
+                        }
+                        if (finalTotalWeight == finalWeightOfLc1 && _showAlertWhenPaymentTrayEmpty.value) {
+                            _showAlertWhenPaymentTrayEmpty.value = false
+                            clearSystemAlert()
+                            LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
+                        }
 
                         // _productInfo.value = null
                     } else {
                         if (update.delta_w2 > 20.0 && update.loadcell_id == 1) {
                             // Added without scan
-                            if (!_canViewAdminSettings.value){
+                            if (!_canViewAdminSettings.value) {
                                 _canShowProductNotScannedDialog.value = true
                                 //_errorMessage.value = "Please scan and to add!"
                                 LedSerialConnection.setScenario(AppScenario.ERROR)
@@ -1044,22 +1069,23 @@ class HomeViewModel @Inject constructor(
                         }
                     }
                 }*/
-                -1,  -> {
-                    logsDeltaW1=update.delta_w1
-                    logsDeltaW2=update.delta_w2
-                    if (_canViewAdminSettings.value){
+                -1 -> {
+                    logsDeltaW1 = update.delta_w1
+                    logsDeltaW2 = update.delta_w2
+                    if (_canViewAdminSettings.value) {
                         clearSystemAlert()
                         LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
                         notScannedTotalWeight = 0.0
-                    }else{
+                    } else {
                         if (update.delta_w2 <= 50 && canShowProductNotScannedDialog.value && update.loadcell_id == 1) {
                             LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
                             clearSystemAlert()
 
                         }
                         if (update.delta_w2 <= 50 && canShowProductMismatchDialog.value && update.loadcell_id == 1) {
-                            notScannedTotalWeight = notScannedTotalWeight.minus(Math.abs(update.delta_w2))
-                            if (notScannedTotalWeight < 50.0){
+                            notScannedTotalWeight =
+                                notScannedTotalWeight.minus(Math.abs(update.delta_w2))
+                            if (notScannedTotalWeight < 50.0) {
                                 LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
                                 clearSystemAlert()
                                 notScannedTotalWeight = 0.0
@@ -1072,6 +1098,11 @@ class HomeViewModel @Inject constructor(
                              _resetAndGoBack.value = true*/
 
                             //LedSerialConnection.setScenario(AppScenario.ALL_OFF)
+                        }
+                        if (update.w2 <= 50 && !isPaymentSuccess) {
+                            _showAlertWhenPaymentTrayEmpty.value = false
+                            LedSerialConnection.setScenario(AppScenario.ERROR)
+                            sendLog(LogEvent.TRAY_EMPTY_BEFORE_PAYMENT)
                         }
                     }
 
@@ -1201,6 +1232,7 @@ class HomeViewModel @Inject constructor(
             }
         }*/
     }
+
     fun checkPaymentWeightValidation() {
         try {
             val loadCellTotalWeight = finalTotalWeight
@@ -1220,11 +1252,11 @@ class HomeViewModel @Inject constructor(
                 // Weight difference is greater than 30g
                 println("Weight mismatch detected!")
             }*/
-            if (_canViewAdminSettings.value){
+            if (_canViewAdminSettings.value) {
                 _canMakePayment.value = true
                 _canShowValidationErrorDialog.value = false
                 sendLog(LogEvent.ADMIN_ASSISTED_PAYMENT)
-            }else{
+            } else {
                 val difference = abs(loadCellTotalWeight - initialTotalWeight)
                 _loadCellValidationLog.value =
                     "W1 = ${initialTotalWeight} // w2 = $loadCellTotalWeight // Final W1 = $finalWeightOfLc1 // Difference =  $difference"
@@ -1331,36 +1363,36 @@ class HomeViewModel @Inject constructor(
     }
 
 
-   /* fun testPrinter(context: Context) {
-        viewModelScope.launch(Dispatchers.IO) {
+    /* fun testPrinter(context: Context) {
+         viewModelScope.launch(Dispatchers.IO) {
 
-            // --- ADD THE CODE HERE ---
-            val libFile = File(context.applicationInfo.nativeLibraryDir, "libbxl_common.so")
-            if (libFile.exists()) {
-                Log.d("PrinterTest", "FILE EXISTS AT: ${libFile.absolutePath}")
-                try {
-                    System.load(libFile.absolutePath)
-                    Log.d("PrinterTest", "Manual load success!")
-                } catch (e: Exception) {
-                    Log.e("PrinterTest", "Manual load failed: ${e.message}")
-                }
-            } else {
-                Log.e(
-                    "PrinterTest",
-                    "FILE DOES NOT EXIST IN LIB DIR: ${context.applicationInfo.nativeLibraryDir}"
-                )
-            }
-            // -------------------------
+             // --- ADD THE CODE HERE ---
+             val libFile = File(context.applicationInfo.nativeLibraryDir, "libbxl_common.so")
+             if (libFile.exists()) {
+                 Log.d("PrinterTest", "FILE EXISTS AT: ${libFile.absolutePath}")
+                 try {
+                     System.load(libFile.absolutePath)
+                     Log.d("PrinterTest", "Manual load success!")
+                 } catch (e: Exception) {
+                     Log.e("PrinterTest", "Manual load failed: ${e.message}")
+                 }
+             } else {
+                 Log.e(
+                     "PrinterTest",
+                     "FILE DOES NOT EXIST IN LIB DIR: ${context.applicationInfo.nativeLibraryDir}"
+                 )
+             }
+             // -------------------------
 
-            try {
-                // Now try the printer logic
-                val printer = BixolonUsbPrinter(context)
-               // printer.triggerSelfTest("BK3-3")
-            } catch (e: Exception) {
-                Log.e("PrinterTest", "Printer Init Failed: ${e.message}")
-            }
-        }
-    }*/
+             try {
+                 // Now try the printer logic
+                 val printer = BixolonUsbPrinter(context)
+                // printer.triggerSelfTest("BK3-3")
+             } catch (e: Exception) {
+                 Log.e("PrinterTest", "Printer Init Failed: ${e.message}")
+             }
+         }
+     }*/
 
     /*fun printReceipt(context: Context) {
         var  pdfUrl = invoiceInfo.value?.pdfUrl
@@ -1396,74 +1428,74 @@ class HomeViewModel @Inject constructor(
         }
     }*/
 
-   /* fun printReceipt(context: Context) {
+    /* fun printReceipt(context: Context) {
 
-        var pdfUrl = invoiceInfo.value?.pdfUrl
+         var pdfUrl = invoiceInfo.value?.pdfUrl
 
-        if (pdfUrl.isNullOrBlank()) {
-            pdfUrl =
-                "https://uat-api-retailetics-ops-mini-03.retailetics.com/invoices/invoice-000VGO-P0000002159.pdf"
-            _errorMessage.value = ("PDF URL is null or empty")
-            Log.e("PDF", "PDF URL is null or empty")
-        }
+         if (pdfUrl.isNullOrBlank()) {
+             pdfUrl =
+                 "https://uat-api-retailetics-ops-mini-03.retailetics.com/invoices/invoice-000VGO-P0000002159.pdf"
+             _errorMessage.value = ("PDF URL is null or empty")
+             Log.e("PDF", "PDF URL is null or empty")
+         }
 
-        viewModelScope.launch(Dispatchers.IO) {
+         viewModelScope.launch(Dispatchers.IO) {
 
-            // 🔒 Prevent parallel prints
-            printMutex.withLock {
+             // 🔒 Prevent parallel prints
+             printMutex.withLock {
 
-                if (isPrinting) {
-                    Log.w("PDF", "Print already in progress, skipping")
-                    return@withLock
-                }
+                 if (isPrinting) {
+                     Log.w("PDF", "Print already in progress, skipping")
+                     return@withLock
+                 }
 
-                isPrinting = true
+                 isPrinting = true
 
-                var printer: BixolonUsbPrinter? = null
+                 var printer: BixolonUsbPrinter? = null
 
-                try {
-                    // Load native lib once
-                    val lib = File(
-                        context.applicationInfo.nativeLibraryDir,
-                        "libbxl_common.so"
-                    )
-                    if (lib.exists()) {
-                        System.load(lib.absolutePath)
-                    }
+                 try {
+                     // Load native lib once
+                     val lib = File(
+                         context.applicationInfo.nativeLibraryDir,
+                         "libbxl_common.so"
+                     )
+                     if (lib.exists()) {
+                         System.load(lib.absolutePath)
+                     }
 
-                    // Download PDF
-                    val pdfFile = File(context.cacheDir, "receipt.pdf")
-                    URL(pdfUrl).openStream().use { input ->
-                        pdfFile.outputStream().use { output ->
-                            input.copyTo(output)
-                        }
-                    }
+                     // Download PDF
+                     val pdfFile = File(context.cacheDir, "receipt.pdf")
+                     URL(pdfUrl).openStream().use { input ->
+                         pdfFile.outputStream().use { output ->
+                             input.copyTo(output)
+                         }
+                     }
 
-                    Log.d("PDF", "Downloaded: ${pdfFile.absolutePath}")
+                     Log.d("PDF", "Downloaded: ${pdfFile.absolutePath}")
 
-                    // 🖨️ Print
-                    printer = BixolonUsbPrinter(context.applicationContext)
-                    printer.printPdfAsBitmap(pdfFile)
+                     // 🖨️ Print
+                     printer = BixolonUsbPrinter(context.applicationContext)
+                     printer.printPdfAsBitmap(pdfFile)
 
-                } catch (e: Exception) {
-                    Log.e("PDF", "Print failed", e)
-                    _errorMessage.value = (e.message ?: "Print failed")
-                } finally {
-                    // 🔓 ALWAYS release printer
-                    try {
-                        printer?.cleanupPrinter()   // or release() if you expose it
-                    } catch (e: Exception) {
-                        Log.e("PDF", "Printer close failed", e)
-                    }
+                 } catch (e: Exception) {
+                     Log.e("PDF", "Print failed", e)
+                     _errorMessage.value = (e.message ?: "Print failed")
+                 } finally {
+                     // 🔓 ALWAYS release printer
+                     try {
+                         printer?.cleanupPrinter()   // or release() if you expose it
+                     } catch (e: Exception) {
+                         Log.e("PDF", "Printer close failed", e)
+                     }
 
-                    isPrinting = false
-                }
-            }
-        }
-    }*/
-   fun startNewTransaction() {
-       receiptPrinted = false
-   }
+                     isPrinting = false
+                 }
+             }
+         }
+     }*/
+    fun startNewTransaction() {
+        receiptPrinted = false
+    }
 
     /*fun printReceipt(context: Context) {
         if (receiptPrinted) return
@@ -1563,7 +1595,8 @@ class HomeViewModel @Inject constructor(
                     try {
                         resetAndGoBack()
                         printer?.cleanupPrinter()
-                    } catch (_: Exception) {}
+                    } catch (_: Exception) {
+                    }
                 }
             }
         }
@@ -1579,23 +1612,24 @@ class HomeViewModel @Inject constructor(
                     weightRange = getWeightRangeForLogs(it.weightRange)
                 }
                 appLogger.sendLogData(
-                        preferencesManager.getMerchantId(),
-                        preferencesManager.getOutletId(),
-                        barcode,
-                        weightRange,
-                        "DeltaW1=$logsDeltaW1,DeltaW2=$logsDeltaW2",
-                        logEvent,
-                        cartId,
-                        cartCount.value,
-                        "LC1-W1=$initialTotalWeight,LC2-W2=$finalTotalWeight",
-                        ""
-                    )
+                    preferencesManager.getMerchantId(),
+                    preferencesManager.getOutletId(),
+                    barcode,
+                    weightRange,
+                    "DeltaW1=$logsDeltaW1,DeltaW2=$logsDeltaW2",
+                    logEvent,
+                    cartId,
+                    cartCount.value,
+                    "LC1-W1=$initialTotalWeight,LC2-W2=$finalTotalWeight",
+                    ""
+                )
 
             }
         } catch (e: Exception) {
         }
 
     }
+
     private fun getInvoicePdf(referenceNumber: String) {
         //loadingManager.show()
         try {
@@ -1608,7 +1642,7 @@ class HomeViewModel @Inject constructor(
                             isLoading = false
                         )*/
                         _invoiceInfo.value = result.data
-                       // loadingManager.hide()
+                        // loadingManager.hide()
                         /*  if(!isJwtTokenCreated){
                               isJwtTokenCreated = true
                               createNewJwtToken()
@@ -1617,33 +1651,45 @@ class HomeViewModel @Inject constructor(
                     }
 
                     is NetworkResponse.Error -> {
-                       /* _stateFlow.value = _stateFlow.value.copy(
-                            isLoading = false,
-                            error = result.message,
-                        )
-                        loadingManager.hide()*/
+                        /* _stateFlow.value = _stateFlow.value.copy(
+                             isLoading = false,
+                             error = result.message,
+                         )
+                         loadingManager.hide()*/
                     }
                 }
             }
         } catch (e: Exception) {
         }
     }
-     fun isProbablyQRCode(barCodeData: String): Boolean {
+
+    fun isProbablyQRCode(barCodeData: String): Boolean {
         return barCodeData.contains(":") ||
                 barCodeData.contains("http", ignoreCase = true) ||
                 barCodeData.length < 4 ||
                 barCodeData.length > 20 ||
                 barCodeData.lowercase().matches("[a-zA-Z]+".toRegex())
     }
+
     fun createNewHelpTicket() {
         viewModelScope.launch {
 
             when (val result =
-                shoppingUseCase.createHelpTicket(HelpRequest(
-                    cartId = cartId, description = "Assist Customer", deviceId = "50", requestType = "self_checkout_issue",
-                    trolleyId = "50", userId = 0, cartZone = "Self Checkout", merchantId = preferencesManager.getMerchantId(),
-                    outletId = preferencesManager.getOutletId(), barcode = "", productName = ""
-                ))
+                shoppingUseCase.createHelpTicket(
+                    HelpRequest(
+                        cartId = cartId,
+                        description = "Assist Customer",
+                        deviceId = "50",
+                        requestType = "self_checkout_issue",
+                        trolleyId = "50",
+                        userId = 0,
+                        cartZone = "Self Checkout",
+                        merchantId = preferencesManager.getMerchantId(),
+                        outletId = preferencesManager.getOutletId(),
+                        barcode = "",
+                        productName = ""
+                    )
+                )
             ) {
                 is NetworkResponse.Success -> {
                     sendLog(LogEvent.HELP_CALLED)
@@ -1657,8 +1703,8 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-     fun employeeLogin(pinNumber: String) {
-         clearSystemAlert()
+    fun employeeLogin(pinNumber: String) {
+        clearSystemAlert()
         loadingManager.show()
         try {
             viewModelScope.launch {
@@ -1670,7 +1716,7 @@ class HomeViewModel @Inject constructor(
                             isLoading = false
                         )
                         _employeeLoginData.value = result.data
-                         loadingManager.hide()
+                        loadingManager.hide()
                         Constants.isAdminLogin = true
                         _canViewAdminSettings.value = true
                         employeeLoginData.value?.let {
@@ -1682,11 +1728,11 @@ class HomeViewModel @Inject constructor(
                     }
 
                     is NetworkResponse.Error -> {
-                         _stateFlow.value = _stateFlow.value.copy(
-                             isLoading = false,
-                             error = result.message,
-                         )
-                         loadingManager.hide()
+                        _stateFlow.value = _stateFlow.value.copy(
+                            isLoading = false,
+                            error = result.message,
+                        )
+                        loadingManager.hide()
                         _errorMessage.value = result.message
                     }
                 }
@@ -1794,9 +1840,10 @@ class HomeViewModel @Inject constructor(
             _productInfo.value = null
         }
     }
-    fun onReCallTransactionCalled(trolleyNumber: String){
+
+    fun onReCallTransactionCalled(trolleyNumber: String) {
         viewModelScope.launch {
-            var trolleyNumber  =
+            var trolleyNumber =
                 "${preferencesManager.getMerchantId()}${preferencesManager.getOutletId()}${
                     trolleyNumber.replace("Trolley", "")
                         .replace(" ", "")
@@ -1805,6 +1852,7 @@ class HomeViewModel @Inject constructor(
         }
 
     }
+
     private fun reCallTransaction(url: String) {
         loadingManager.show()
         // resetProductInfoDetails()
@@ -1815,7 +1863,7 @@ class HomeViewModel @Inject constructor(
                     _stateFlow.value = _stateFlow.value.copy(
                         isLoading = false
                     )
-                   clearSystemAlert()
+                    clearSystemAlert()
                     cartId = result.data.cartId
                     weightAtRemovalDeltaW2 = 0.0
                     _cartDataList.value = result.data.cartItems
@@ -1837,9 +1885,6 @@ class HomeViewModel @Inject constructor(
             resetProductInfoDetails()
         }
     }
-
-
-
 
 
 }

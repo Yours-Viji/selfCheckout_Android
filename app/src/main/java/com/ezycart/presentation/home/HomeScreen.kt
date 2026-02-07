@@ -211,6 +211,7 @@ fun HomeScreen(
     var canShowVoucherDialog= viewModel.canShowVoucherDialog.collectAsState()
     var canShowMemberDialog= viewModel.canShowMemberDialog.collectAsState()
     var openPrinterTerminalDialog = viewModel.openPrinterTerminalDialog.collectAsState()
+    var showAlertWhenPaymentTrayEmpty = viewModel.showAlertWhenPaymentTrayEmpty.collectAsState()
     if (openLoadCellTerminalDialog.value){
         WeightScaleManager.initOnce(viewModel)
         WeightScaleManager.connectSafe(context)
@@ -249,6 +250,17 @@ fun HomeScreen(
             type = AlertType.INFO,
             isDismissible = true,
             showButton = true
+        )
+    }
+    if (showAlertWhenPaymentTrayEmpty.value){
+        currentSystemAlert.value = null
+        currentSystemAlert.value = AlertState(
+            title = "All items have been removed from the tray.\nPlease place your items back on the tray to continue with payment.",
+            message = "",
+            lottieFileName = "anim_wrong.json",
+            type = AlertType.ERROR,
+            isDismissible = false,
+            showButton = false
         )
     }
     if(canShowVoucherDialog.value) {
