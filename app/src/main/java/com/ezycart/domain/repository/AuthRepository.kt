@@ -1,6 +1,7 @@
 package com.ezycart.domain.repository
 
 import com.ezycart.data.remote.dto.ApplyCouponVoucherRequest
+import com.ezycart.data.remote.dto.CmsLogRequest
 import com.ezycart.data.remote.dto.CreateCartResponse
 import com.ezycart.data.remote.dto.CreateJwtTokenRequest
 import com.ezycart.data.remote.dto.DeviceDetailsResponse
@@ -51,6 +52,7 @@ interface AuthRepository {
     suspend fun applyVoucher(voucherCode: String): NetworkResponse<ShoppingCartDetails>
     suspend fun deleteVoucher(voucherCode: String): NetworkResponse<ShoppingCartDetails>
     suspend fun createHelpTicket(helpRequest: HelpRequest): NetworkResponse<HelpResponse>
+    suspend fun sendLogsToBackend(cmsLogRequest: CmsLogRequest): NetworkResponse<Any>
     //suspend fun refreshInterceptor()
     fun isDeviceActivated(): Flow<Boolean>
     fun getCartId(): Flow<String>

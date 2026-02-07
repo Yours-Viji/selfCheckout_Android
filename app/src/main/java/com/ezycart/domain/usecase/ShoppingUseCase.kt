@@ -1,5 +1,6 @@
 package com.ezycart.domain.usecase
 
+import com.ezycart.data.remote.dto.CmsLogRequest
 import com.ezycart.data.remote.dto.CreateCartResponse
 import com.ezycart.data.remote.dto.HelpRequest
 import com.ezycart.data.remote.dto.HelpResponse
@@ -80,6 +81,10 @@ class ShoppingUseCase @Inject constructor(
 
     suspend  fun createHelpTicket(helpRequest: HelpRequest): NetworkResponse<HelpResponse> {
         return authRepository.createHelpTicket(helpRequest)
+    }
+
+    suspend  fun sendLogsToBackEnd(cmsLogRequest: CmsLogRequest): NetworkResponse<Any> {
+        return authRepository.sendLogsToBackend(cmsLogRequest)
     }
 
 }

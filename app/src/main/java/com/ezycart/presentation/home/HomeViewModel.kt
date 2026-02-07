@@ -24,6 +24,9 @@ import com.ezycart.domain.usecase.ShoppingUseCase
 import com.ezycart.model.EmployeeLoginResponse
 import com.ezycart.model.ProductInfo
 import com.ezycart.model.ProductPriceInfo
+import com.ezycart.model.WeightRange
+import com.ezycart.presentation.AppLogger
+import com.ezycart.presentation.LogEvent
 import com.ezycart.presentation.common.data.Constants
 import com.ezycart.services.usb.WeightUpdate
 import com.ezycart.services.usb.WeightValidationManager
@@ -46,6 +49,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.json.JSONObject
 import java.io.File
+import java.math.BigDecimal
 import java.net.URL
 import javax.inject.Inject
 import kotlin.math.abs
@@ -58,6 +62,7 @@ class HomeViewModel @Inject constructor(
     private val getCartIdUseCase: GetCartIdUseCase,
     private val preferencesManager: PreferencesManager,
     private val loadingManager: LoadingManager,
+    private val appLogger: AppLogger
     // private val ledManager: UsbLedManager
 ) : ViewModel() {
     private val _stateFlow = MutableStateFlow(HomeState())
@@ -204,6 +209,8 @@ class HomeViewModel @Inject constructor(
     private var notScannedTotalWeight = 0.0
     private val printMutex = Mutex()
     private var receiptPrinted = false
+    private var logsDeltaW1=0.0
+    private var logsDeltaW2=0.0
     init {
         viewModelScope.launch {
             val savedAppMode = preferencesManager.getAppMode()
@@ -267,7 +274,7 @@ class HomeViewModel @Inject constructor(
         _canShowMemberDialog.value = true
     }
     fun onProductDeleteClick(barCode: String, id: Int, quantity: Int) {
-        if (canViewAdminSettings.value){
+        if (_canViewAdminSettings.value){
             deleteProductFromShoppingCart(barCode,id)
         }else{
             showDeleteProductDialog()
@@ -945,6 +952,9 @@ class HomeViewModel @Inject constructor(
     fun startShoppingLed(){
         LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
     }
+    private fun getWeightRangeForLogs(weightRange: WeightRange): String {
+        return "${weightRange.startWeight} - ${weightRange.maxWeight}"
+    }
     fun handleWeightUpdate(update: WeightUpdate) {
         val message =
             "Status=${update.status} - w1=${update.w1} - w2=${update.w2} - deltaw1=${update.delta_w1}-deltaw2=${update.delta_w2}"
@@ -966,14 +976,17 @@ class HomeViewModel @Inject constructor(
                 1 -> {
                     finalWeightOfLc1 = update.w1
                     finalTotalWeight = update.w2
-
+                    logsDeltaW1=update.delta_w1
+                    logsDeltaW2=update.delta_w2
                     val product = _productInfo.value
                     //addProductToShoppingCart("9556001601506", 1)
                     if (product != null && update.delta_w2 > 20.0 && update.loadcell_id == 1) {
-                       if (canViewAdminSettings.value){
+                       if (_canViewAdminSettings.value){
                            // Admin
                            addProductToShoppingCart(product.barcode, 1)
                            notScannedTotalWeight = 0.0
+                           sendLog(LogEvent.PRODUCT_ADDED_BY_ADMIN)
+
                        }else{
                            // Customer
                            val result = validationManager.productValidation(
@@ -988,10 +1001,14 @@ class HomeViewModel @Inject constructor(
                                    notScannedTotalWeight = notScannedTotalWeight.plus(update.delta_w2)
                                    _canShowProductMismatchDialog.value = true
                                    // Mismatch
+                                   sendLog(LogEvent.PRODUCT_WEIGHT_MISMATCH)
+
                                }
                            } else {
                                notScannedTotalWeight = 0.0
                                addProductToShoppingCart(product.barcode, 1)
+                               sendLog(LogEvent.BACKEND_RETURNED_ZERO_WEIGHT)
+
                            }
                        }
 
@@ -1000,10 +1017,12 @@ class HomeViewModel @Inject constructor(
                     } else {
                         if (update.delta_w2 > 20.0 && update.loadcell_id == 1) {
                             // Added without scan
-                            if (!canViewAdminSettings.value){
+                            if (!_canViewAdminSettings.value){
                                 _canShowProductNotScannedDialog.value = true
                                 //_errorMessage.value = "Please scan and to add!"
                                 LedSerialConnection.setScenario(AppScenario.ERROR)
+                                sendLog(LogEvent.PRODUCT_NOT_SCANNED)
+
                             }
 
                         }
@@ -1026,7 +1045,9 @@ class HomeViewModel @Inject constructor(
                     }
                 }*/
                 -1,  -> {
-                    if (canViewAdminSettings.value){
+                    logsDeltaW1=update.delta_w1
+                    logsDeltaW2=update.delta_w2
+                    if (_canViewAdminSettings.value){
                         clearSystemAlert()
                         LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
                         notScannedTotalWeight = 0.0
@@ -1180,7 +1201,6 @@ class HomeViewModel @Inject constructor(
             }
         }*/
     }
-
     fun checkPaymentWeightValidation() {
         try {
             val loadCellTotalWeight = finalTotalWeight
@@ -1200,9 +1220,10 @@ class HomeViewModel @Inject constructor(
                 // Weight difference is greater than 30g
                 println("Weight mismatch detected!")
             }*/
-            if (canViewAdminSettings.value){
+            if (_canViewAdminSettings.value){
                 _canMakePayment.value = true
                 _canShowValidationErrorDialog.value = false
+                sendLog(LogEvent.ADMIN_ASSISTED_PAYMENT)
             }else{
                 val difference = abs(loadCellTotalWeight - initialTotalWeight)
                 _loadCellValidationLog.value =
@@ -1222,6 +1243,7 @@ class HomeViewModel @Inject constructor(
                     // _errorMessage.value = "Weight mismatch detected!"
                     // Weight difference is greater than 30g
                     LedSerialConnection.setScenario(AppScenario.ERROR)
+                    sendLog(LogEvent.PAYMENT_ERROR)
                 }
             }
 
@@ -1525,10 +1547,18 @@ class HomeViewModel @Inject constructor(
                     printer = BixolonUsbPrinter(context.applicationContext)
                     printer.configure()
                     printer.printPdfAsBitmap(pdfFile)
+                    try {
+                        if (!printer.checkPaperStatus().lowercase().contains("ok")) {
+                            sendLog(LogEvent.PRINTER_PAPER_EMPTY)
+                        }
+                    } catch (e: Exception) {
+                    }
 
                 } catch (e: Exception) {
                     receiptPrinted = false // allow retry if failed
                     Log.e("PDF", "Print failed", e)
+                    sendLog(LogEvent.RECEIPT_PRINTER_ERROR)
+
                 } finally {
                     try {
                         resetAndGoBack()
@@ -1539,7 +1569,33 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    private fun sendLog(logEvent: LogEvent) {
+        try {
+            viewModelScope.launch(Dispatchers.IO) {
+                var barcode = ""
+                var weightRange = ""
+                _productInfo.value?.let {
+                    barcode = it.barcode
+                    weightRange = getWeightRangeForLogs(it.weightRange)
+                }
+                appLogger.sendLogData(
+                        preferencesManager.getMerchantId(),
+                        preferencesManager.getOutletId(),
+                        barcode,
+                        weightRange,
+                        "DeltaW1=$logsDeltaW1,DeltaW2=$logsDeltaW2",
+                        logEvent,
+                        cartId,
+                        cartCount.value,
+                        "LC1-W1=$initialTotalWeight,LC2-W2=$finalTotalWeight",
+                        ""
+                    )
 
+            }
+        } catch (e: Exception) {
+        }
+
+    }
     private fun getInvoicePdf(referenceNumber: String) {
         //loadingManager.show()
         try {
@@ -1587,8 +1643,10 @@ class HomeViewModel @Inject constructor(
                     cartId = cartId, description = "Assist Customer", deviceId = "50", requestType = "self_checkout_issue",
                     trolleyId = "50", userId = 0, cartZone = "Self Checkout", merchantId = preferencesManager.getMerchantId(),
                     outletId = preferencesManager.getOutletId(), barcode = "", productName = ""
-                ))) {
+                ))
+            ) {
                 is NetworkResponse.Success -> {
+                    sendLog(LogEvent.HELP_CALLED)
 
                 }
 
@@ -1619,6 +1677,8 @@ class HomeViewModel @Inject constructor(
                             Constants.adminPin = it.employeePin
                             Constants.employeeToken = it.token
                         }
+                        sendLog(LogEvent.ADMIN_LOGIN)
+
                     }
 
                     is NetworkResponse.Error -> {
@@ -1653,6 +1713,8 @@ class HomeViewModel @Inject constructor(
                             Constants.memberPin = it.memberNo
                         }
                         _canShowMemberDialog.value = false
+                        sendLog(LogEvent.MEMBER_LOGIN)
+
                         // TODO : Recreate cart and get updated price details //
 
 
@@ -1685,6 +1747,8 @@ class HomeViewModel @Inject constructor(
                     _cartCount.value = result.data.totalItems
                     loadingManager.hide()
                     getPaymentSummary()
+                    sendLog(LogEvent.VOUCHER_APPLIED)
+
 
                 }
 
@@ -1714,6 +1778,7 @@ class HomeViewModel @Inject constructor(
                     _cartCount.value = result.data.totalItems
                     loadingManager.hide()
                     getPaymentSummary()
+                    sendLog(LogEvent.VOUCHER_DELETED)
 
                 }
 

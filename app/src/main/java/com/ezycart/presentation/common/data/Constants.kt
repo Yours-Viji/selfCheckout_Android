@@ -8,10 +8,11 @@ import java.text.DecimalFormat
 import java.util.Date
 
 object Constants {
-    var BASE_URL = com.ezycart.BuildConfig.BASE_URL
+    var BASE_URL = BuildConfig.BASE_URL
+    private var LOGS_BASE_URL = BuildConfig.LOGS_BASE_URL
 
     var EZY_LITE_TRANSACTION_URL = "${BASE_URL}/ezycart/lite-transactions/15/23"
-
+    val LOG_URL = "${LOGS_BASE_URL}/api/v1/log"
     var currencySymbol = BuildConfig.CURRENCY_SYMBOL
     const val CONTENT_TYPE = "Content-Type"
     const val ACCEPT = "Accept"

@@ -53,6 +53,7 @@ android {
             buildConfigField("String", "BASE_URL", "\"https://uat-api-retailetics-ops-mini-03.retailetics.com\"")
             buildConfigField("String", "CURRENCY_SYMBOL", "\"RM\"")
             buildConfigField("String", "ACTIVATION_CODE", "\"ALpxvmI0111\"")
+            buildConfigField( "String", "LOGS_BASE_URL", "\"https://uat-logs.retailetics.com\"")
 
         }
 
@@ -63,6 +64,7 @@ android {
             buildConfigField("String", "BASE_URL", "\"http://172.16.21.16:8086\"")
             buildConfigField("String", "CURRENCY_SYMBOL", "\"SAR\"")
             buildConfigField("String", "ACTIVATION_CODE", "\"ALpxvcc0022\"")
+            buildConfigField( "String", "LOGS_BASE_URL", "\"https://uat-logs.retailetics.com\"")
         }
     }
 
@@ -75,8 +77,11 @@ android {
             buildConfigField("String", "BASE_URL", "\"https://uat-api-retailetics-ops-mini-03.retailetics.com\"")
            // buildConfigField("String", "BASE_URL", "\"https://api-tamimi-ezylite-ops01.retailetics.com\"")
            // buildConfigField("String", "BASE_URL", "\"http://172.16.21.16:8086\"")
+            buildConfigField( "String", "LOGS_BASE_URL", "\"https://uat-logs.retailetics.com\"")
         }
         release {
+            buildConfigField( "String", "LOGS_BASE_URL", "\"https://uat-logs.retailetics.com\"")
+            buildConfigField("String", "BASE_URL", "\"https://api-retailetics-ops-mini-03.retailetics.com\"")
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

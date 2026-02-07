@@ -9,6 +9,8 @@ import com.ezycart.data.remote.dto.NetworkResponse
 import com.ezycart.domain.usecase.LoginUseCase
 import com.ezycart.domain.usecase.ShoppingUseCase
 import com.ezycart.model.EmployeeLoginResponse
+import com.ezycart.presentation.AppLogger
+import com.ezycart.presentation.LogEvent
 import com.ezycart.presentation.common.data.Constants
 import com.ezycart.services.usb.LoadCellSerialPort
 
@@ -19,13 +21,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.math.BigDecimal
 import javax.inject.Inject
 
 @HiltViewModel
 class LandingViewModel @Inject constructor(
     private val shoppingUseCase: ShoppingUseCase,
     private val loginUseCase: LoginUseCase,
-    private val preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager,
+    private val appLogger:AppLogger
 
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(LandingUiState())
@@ -186,7 +190,9 @@ class LandingViewModel @Inject constructor(
                            Constants.adminPin = it.employeePin
                            Constants.employeeToken = it.token
                        }
-
+                       appLogger.sendLogData(preferencesManager.getMerchantId(),preferencesManager.getOutletId(),"","",
+                           "-",
+                           LogEvent.ADMIN_LOGIN,"",0,"","")
                        // loadingManager.hide()
                    }
 
@@ -217,6 +223,9 @@ class LandingViewModel @Inject constructor(
                        }
                        _canShowMemberDialog.value = false
                        _isMemberLoginSuccess.value = true
+                       appLogger.sendLogData(preferencesManager.getMerchantId(),preferencesManager.getOutletId(),"","",
+                           "-",
+                           LogEvent.MEMBER_LOGIN,"",0,"","")
                       // loadingManager.hide()
                    }
 

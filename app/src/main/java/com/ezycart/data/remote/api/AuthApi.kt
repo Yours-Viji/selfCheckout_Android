@@ -3,6 +3,7 @@ package com.ezycart.data.remote.api
 import com.ezycart.data.remote.dto.AddProductToCartRequest
 import com.ezycart.data.remote.dto.ApiResponse
 import com.ezycart.data.remote.dto.ApplyCouponVoucherRequest
+import com.ezycart.data.remote.dto.CmsLogRequest
 import com.ezycart.data.remote.dto.CreateCartRequest
 import com.ezycart.data.remote.dto.CreateCartResponse
 import com.ezycart.data.remote.dto.CreateJwtTokenRequest
@@ -158,6 +159,13 @@ interface AuthApi {
 
     @POST("/ezyCart/cs/ticket")
     suspend fun createNewHelpApi(@Body helpRequest: HelpRequest): Response<HelpResponse>
+
+    @POST
+    suspend fun sendLogsToCms(@Url url : String,@Body cmsLogRequest:CmsLogRequest): Response<Any>
+
+    @GET
+    @Headers("Content-Type:application/x-www-form-urlencoded; charset=utf-8")
+    suspend fun retrieveCartTransaction(@Url url: String): Response<ShoppingCartDetails>
 
     /* @POST("/Login")
     fun loginApi(@Body loginRequest: LoginRequest): Call<Any>

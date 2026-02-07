@@ -227,6 +227,15 @@ class AuthRepositoryImpl @Inject constructor(
             }
     }
 
+    override suspend fun sendLogsToBackend(cmsLogRequest: CmsLogRequest): NetworkResponse<Any> {
+        return safeApiCallRaw { authApi.sendLogsToCms(Constants.LOG_URL,cmsLogRequest) }
+            .also { result ->
+                if (result is NetworkResponse.Success) {
+                    //Constants.nearPaySessionID=result.data.sessionId
+                }
+            }
+    }
+
     private suspend fun getMerchantParam(): HashMap<String, String> {
         val params = HashMap<String, String>()
         params["merchantId"] = "" + preferencesManager.getMerchantId()
