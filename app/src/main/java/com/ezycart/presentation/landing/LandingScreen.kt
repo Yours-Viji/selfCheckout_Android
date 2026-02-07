@@ -97,6 +97,7 @@ import com.ezycart.services.usb.BixolonUsbPrinter
 import com.ezycart.services.usb.PrinterStatusDialog
 import com.ezycart.services.usb.StatusActionRow
 import com.ezycart.services.usb.WeightScaleManager
+import com.pranavpandey.android.dynamic.toasts.DynamicToast
 
 @Composable
 fun LandingScreen(
@@ -117,9 +118,15 @@ fun LandingScreen(
     var canShowMemberDialog = viewModel.canShowMemberDialog.collectAsState()
     var isMemberLoginSuccess= viewModel.isMemberLoginSuccess.collectAsState()
     var scanBuffer = remember { mutableStateOf("") }
+    val errorMessage = viewModel.errorMessage.collectAsState()
     var settingsOpenCounter = 0
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
+    }
+    LaunchedEffect(errorMessage.value) {
+        errorMessage.value.let { message ->
+            DynamicToast.makeError(context, message).show()
+        }
     }
     if (isMemberLoginSuccess.value){
         viewModel.hideAdminSettings()
