@@ -199,7 +199,8 @@ class HomeViewModel @Inject constructor(
 
     private val _canShowMemberDialog = MutableStateFlow<Boolean>(false)
     val canShowMemberDialog: StateFlow<Boolean> = _canShowMemberDialog.asStateFlow()
-
+    private val _canViewAdminSettings = MutableStateFlow<Boolean>(false)
+    val canViewAdminSettings: StateFlow<Boolean> = _canViewAdminSettings.asStateFlow()
     private var notScannedTotalWeight = 0.0
     private val printMutex = Mutex()
     private var receiptPrinted = false
@@ -279,6 +280,8 @@ class HomeViewModel @Inject constructor(
          initialTotalWeight= 0.0
        finalTotalWeight= 0.0
        finalWeightOfLc1= 0.0
+        Constants.clearMemberData()
+        Constants.clearAdminData()
         _resetAndGoBack.value = true
     }
 
@@ -1581,6 +1584,12 @@ class HomeViewModel @Inject constructor(
                         )
                         _employeeLoginData.value = result.data
                          loadingManager.hide()
+                        Constants.isAdminLogin = true
+                        _canViewAdminSettings.value = true
+                        employeeLoginData.value?.let {
+                            Constants.adminPin = it.employeePin
+                            Constants.employeeToken = it.token
+                        }
                     }
 
                     is NetworkResponse.Error -> {
@@ -1609,6 +1618,14 @@ class HomeViewModel @Inject constructor(
                         )
                         _memberLoginData.value = result.data
                         loadingManager.hide()
+                        Constants.isMemberLogin = true
+                        memberLoginData.value?.let {
+                            Constants.memberPin = it.memberNo
+                        }
+                        _canShowMemberDialog.value = false
+                        // TODO : Recreate cart and get updated price details //
+
+
                     }
 
                     is NetworkResponse.Error -> {

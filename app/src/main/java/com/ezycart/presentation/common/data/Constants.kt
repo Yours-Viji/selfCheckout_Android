@@ -68,4 +68,21 @@ object Constants {
             else -> "en"
         }
     }
+
+    var isMemberLogin = false
+    var memberPin = ""
+    var isAdminLogin = false
+    var adminPin = ""
+
+    fun clearAdminData(){
+        isAdminLogin = false
+        employeeToken = ""
+        adminPin = ""
+    }
+
+    fun clearMemberData(){
+        isMemberLogin = false
+        memberPin = ""
+
+    }
 }

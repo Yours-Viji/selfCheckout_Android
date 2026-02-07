@@ -4,10 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ezycart.data.datastore.PreferencesManager
 import com.ezycart.data.remote.dto.HelpRequest
+import com.ezycart.data.remote.dto.MemberLoginResponse
 import com.ezycart.data.remote.dto.NetworkResponse
 import com.ezycart.domain.usecase.LoginUseCase
 import com.ezycart.domain.usecase.ShoppingUseCase
 import com.ezycart.model.EmployeeLoginResponse
+import com.ezycart.presentation.common.data.Constants
 import com.ezycart.services.usb.LoadCellSerialPort
 
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,8 +23,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LandingViewModel @Inject constructor(
-   /* private val shoppingUseCase: ShoppingUseCase,
-    private val loginUseCase: LoginUseCase,*/
+    private val shoppingUseCase: ShoppingUseCase,
+    private val loginUseCase: LoginUseCase,
     private val preferencesManager: PreferencesManager
 
 ) : ViewModel() {
@@ -48,6 +50,18 @@ class LandingViewModel @Inject constructor(
     private val _employeeLoginData = MutableStateFlow<EmployeeLoginResponse?>(null)
     val employeeLoginData: StateFlow<EmployeeLoginResponse?> = _employeeLoginData.asStateFlow()
 
+    private val _memberLoginData = MutableStateFlow<MemberLoginResponse?>(null)
+    val memberLoginData: StateFlow<MemberLoginResponse?> = _memberLoginData.asStateFlow()
+
+    private val _canShowMemberDialog = MutableStateFlow<Boolean>(false)
+    val canShowMemberDialog: StateFlow<Boolean> = _canShowMemberDialog.asStateFlow()
+
+    private val _isMemberLoginSuccess = MutableStateFlow<Boolean>(false)
+    val isMemberLoginSuccess: StateFlow<Boolean> = _isMemberLoginSuccess.asStateFlow()
+
+    private val _canViewAdminSettings = MutableStateFlow<Boolean>(false)
+    val canViewAdminSettings: StateFlow<Boolean> = _canViewAdminSettings.asStateFlow()
+
     init {
         startAutoScroll()
     }
@@ -69,6 +83,16 @@ class LandingViewModel @Inject constructor(
         _canStartShopping.value = false
         _canShowHelpDialog.value = false
     }
+    fun showMemberDialog(){
+        _canShowMemberDialog.value = true
+    }
+    fun hideAdminSettings(){
+        Constants.clearAdminData()
+        _canViewAdminSettings.value = false
+    }
+    fun clearMemberData(){
+        Constants.clearMemberData()
+    }
     fun showHelpDialog(){
         _canShowHelpDialog.value = true
        /* try {
@@ -87,6 +111,13 @@ class LandingViewModel @Inject constructor(
     }
     fun onStartClicked() {
         _uiState.value = _uiState.value.copy(isStarted = true)
+    }
+    fun isProbablyQRCode(barCodeData: String): Boolean {
+        return barCodeData.contains(":") ||
+                barCodeData.contains("http", ignoreCase = true) ||
+                barCodeData.length < 4 ||
+                barCodeData.length > 20 ||
+                barCodeData.lowercase().matches("[a-zA-Z]+".toRegex())
     }
      fun getWeightThreshold(): Double {
        var weightThreshold = 25.00
@@ -135,31 +166,67 @@ class LandingViewModel @Inject constructor(
         }
     }
 
-    fun employeeLogin(pinNumber: String) {
-        clearSystemAlert()
-        try {
-            viewModelScope.launch {
-              //  _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
+    */
+   fun employeeLogin(pinNumber: String) {
+       clearSystemAlert()
+       try {
+           viewModelScope.launch {
+               //  _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
 
-                when (val result = loginUseCase(pinNumber)) {
-                    is NetworkResponse.Success -> {
-                       *//* _stateFlow.value = _stateFlow.value.copy(
-                            isLoading = false
-                        )*//*
-                        _employeeLoginData.value = result.data
+               when (val result = loginUseCase(pinNumber)) {
+                   is NetworkResponse.Success -> {
+
+                       _employeeLoginData.value = result.data
+                       Constants.isAdminLogin = true
+                       _canViewAdminSettings.value = true
+                       employeeLoginData.value?.let {
+                           Constants.adminPin = it.employeePin
+                           Constants.employeeToken = it.token
+                       }
+
                        // loadingManager.hide()
-                    }
+                   }
 
-                    is NetworkResponse.Error -> {
-                       *//* _stateFlow.value = _stateFlow.value.copy(
-                            isLoading = false,
-                            error = result.message,
-                        )*//*
-                      //  loadingManager.hide()
-                    }
-                }
-            }
-        } catch (e: Exception) {
-        }
-    }*/
+                   is NetworkResponse.Error -> {
+
+                   }
+               }
+           }
+       } catch (e: Exception) {
+       }
+   }
+   fun memberLogin(memberNumber: String) {
+       //loadingManager.show()
+       try {
+           viewModelScope.launch {
+              // _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
+
+               when (val result = shoppingUseCase.memberLogin(memberNumber)) {
+                   is NetworkResponse.Success -> {
+                      /* _stateFlow.value = _stateFlow.value.copy(
+                           isLoading = false
+                       )*/
+                       hideAdminSettings()
+                       _memberLoginData.value = result.data
+                       Constants.isMemberLogin = true
+                       memberLoginData.value?.let {
+                           Constants.memberPin = it.memberNo
+                       }
+                       _canShowMemberDialog.value = false
+                       _isMemberLoginSuccess.value = true
+                      // loadingManager.hide()
+                   }
+
+                   is NetworkResponse.Error -> {
+                     /*  _stateFlow.value = _stateFlow.value.copy(
+                           isLoading = false,
+                           error = result.message,
+                       )
+                       loadingManager.hide()*/
+                   }
+               }
+           }
+       } catch (e: Exception) {
+       }
+   }
 }

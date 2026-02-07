@@ -231,7 +231,7 @@ class AuthRepositoryImpl @Inject constructor(
         val params = HashMap<String, String>()
         params["merchantId"] = "" + preferencesManager.getMerchantId()
         params["outletId"] = "" + preferencesManager.getOutletId()
-        params["isMemberLogin"] = "false"
+        params["isMemberLogin"] = "${Constants.isMemberLogin}"
 
         return params
     }
@@ -245,7 +245,7 @@ class AuthRepositoryImpl @Inject constructor(
 
             return CreateCartRequest(
                 employeeId = prefs.employeeId.toString(),
-                memberNumber = "12345678",
+                memberNumber = Constants.memberPin,
                 userId = "$employeeId",
                 name = prefs.employeeName,
                 deviceId = Constants.deviceId,

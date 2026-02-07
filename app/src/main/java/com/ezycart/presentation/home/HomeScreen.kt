@@ -703,6 +703,7 @@ fun BitesHeaderNew(
 ) {
     val showManualBarCode = remember { mutableStateOf(false) }
     val scannedCode = remember { mutableStateOf<String?>(null) }
+    val canViewAdminSettings = viewModel.canViewAdminSettings.collectAsState()
 
     var showAdminDialog = remember { mutableStateOf(false) }
     if (showAdminDialog.value) {
@@ -827,20 +828,23 @@ fun BitesHeaderNew(
                 Spacer(modifier = Modifier.width(35.dp)) // Space between the two icons
 
                 // Settings Button
-                Box(
-                    modifier = Modifier
-                        .size(33.dp)
-                        .clickable { showAdminDialog.value = true },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_settings),
-                        contentDescription = "settings",
-                        tint = Color.White,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                if (canViewAdminSettings.value){
+                    Box(
+                        modifier = Modifier
+                            .size(33.dp)
+                            .clickable { showAdminDialog.value = true },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_settings),
+                            contentDescription = "settings",
+                            tint = Color.White,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(25.dp))
                 }
-                Spacer(modifier = Modifier.width(25.dp)) // Space between the two icons
+                 // Space between the two icons
 
                 // Settings Button
                 Box(

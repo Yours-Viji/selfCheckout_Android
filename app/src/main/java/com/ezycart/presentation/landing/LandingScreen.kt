@@ -76,6 +76,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusTarget
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.utf16CodePoint
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.window.DialogProperties
@@ -109,19 +114,39 @@ fun LandingScreen(
     var currentSystemAlert = remember { mutableStateOf<AlertState?>(null) }
     var canStartShopping = viewModel.canStartShopping.collectAsState()
     var showAdminDialog = remember { mutableStateOf(false) }
+    var canShowMemberDialog = viewModel.canShowMemberDialog.collectAsState()
+    var isMemberLoginSuccess= viewModel.isMemberLoginSuccess.collectAsState()
+    var scanBuffer = remember { mutableStateOf("") }
     var settingsOpenCounter = 0
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
+    }
+    if (isMemberLoginSuccess.value){
+        viewModel.hideAdminSettings()
+        showGuidelines.value = true
+        continueShoppingDialog.value = false
+    }
+    if (canShowMemberDialog.value) {
+        currentSystemAlert.value = null
+        currentSystemAlert.value = AlertState(
+            title = "Member Login",
+            message = "Scan your Member code",
+            lottieFileName = "anim_scanner.json",
+            type = AlertType.INFO,
+            isDismissible = false,
+            showButton = true
+        )
     }
     if (continueShoppingDialog.value) {
         ContinueShoppingDialog(
 
             onMemberLogin = {
-                showGuidelines.value = true
-                continueShoppingDialog.value = false
+                viewModel.showMemberDialog()
                 // Navigate to member login
             },
             onGuestLogin = {
+                viewModel.clearMemberData()
+                viewModel.hideAdminSettings()
                 showGuidelines.value = true
                 continueShoppingDialog.value = false
                 // Continue without login
@@ -205,6 +230,63 @@ fun LandingScreen(
             }
         )
     }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .focusRequester(focusRequester)
+            .focusTarget()
+            .onKeyEvent { keyEvent ->
+                if (keyEvent.type == androidx.compose.ui.input.key.KeyEventType.KeyUp) {
+                    when (keyEvent.key) {
+                        androidx.compose.ui.input.key.Key.Enter, androidx.compose.ui.input.key.Key.NumPadEnter -> {
+                            if (scanBuffer.value.isNotBlank()) {
+
+                                val re = Regex("[^a-zA-Z0-9]")
+                                var barCode = scanBuffer.value
+                                val isQR = viewModel.isProbablyQRCode(barCode)
+                                val containsEmp = barCode.lowercase().contains(":")
+                                when {
+                                    isQR && containsEmp -> {
+                                        val pinList = barCode.split(":")
+                                        if (pinList.size > 1) {
+                                            val empPin = re.replace(pinList[1], "")
+                                            viewModel.employeeLogin(empPin)
+                                        }
+                                    }
+
+                                    !isQR -> {
+                                        if(canShowMemberDialog.value){
+                                            // Call Member login API
+                                            viewModel.clearSystemAlert()
+                                            viewModel.memberLogin(barCode)
+                                        }
+                                    } else -> {
+                                    // Alert to scan barcode and hide qr code
+                                }
+                                }
+
+
+                                focusRequester.requestFocus()
+
+                                scanBuffer.value = ""
+                            }
+                            true
+                        }
+
+                        else -> {
+                            val c = keyEvent.utf16CodePoint.toChar()
+                            if (c.isLetterOrDigit()) {
+                                scanBuffer.value += c
+                            }
+                            false
+                        }
+                    }
+                } else {
+                    // Also consume KeyDown for Enter to prevent the "pressed" state on buttons
+                    keyEvent.key == androidx.compose.ui.input.key.Key.Enter
+                }
+            }
+    ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -296,6 +378,7 @@ fun LandingScreen(
             }
         }
     }
+}
 
     currentSystemAlert.value?.let { alert ->
         CommonAlertView(state = alert) {
