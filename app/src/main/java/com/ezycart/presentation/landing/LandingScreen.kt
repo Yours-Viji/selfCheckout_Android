@@ -143,6 +143,7 @@ fun LandingScreen(
             isDismissible = false,
             showButton = true
         )
+        //viewModel.memberLogin("88001962")
     }
     if (continueShoppingDialog.value) {
         ContinueShoppingDialog(
