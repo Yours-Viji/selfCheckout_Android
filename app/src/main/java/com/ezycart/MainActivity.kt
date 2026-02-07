@@ -1,6 +1,8 @@
 package com.ezycart
 
+import android.app.Activity
 import android.app.Application
+import android.content.Context
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -47,6 +49,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.net.URLDecoder
 import java.net.URLEncoder
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -230,6 +233,9 @@ class MainActivity : ComponentActivity() {
                                         },
                                         onTransactionCalled = {
                                             navController.navigateToWebView(Constants.EZY_LITE_TRANSACTION_URL)
+                                        },
+                                        reSetLanguage={
+                                            updateLanguage(this@MainActivity,"en")
                                         }
                                     )
                                 }
@@ -266,7 +272,34 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+    fun updateLanguage(activity: Activity, selectedLanguage:String){
 
+        val langCode = languageToCode(selectedLanguage)
+        updateAppLanguage(activity, langCode)
+         activity.recreate()
+    }
+    fun updateAppLanguage(context: Context, languageCode: String) {
+        val locale = Locale(languageCode)
+        Locale.setDefault(locale)
+
+        val config = context.resources.configuration
+        config.setLocale(locale)
+
+        context.resources.updateConfiguration(
+            config,
+            context.resources.displayMetrics
+        )
+    }
+    fun languageToCode(language: String): String {
+        return when (language) {
+            "English" -> "en"
+            "Bahasa Malaysia" -> "ms"
+            "中文" -> "zh"
+            "日本語" -> "ja"
+            "한국인" -> "ko"
+            else -> "en"
+        }
+    }
     fun NavController.navigateToWebView(url: String) {
         try {
             val encodedUrl = URLEncoder.encode(url, "UTF-8")

@@ -205,9 +205,9 @@ class HomeViewModel @Inject constructor(
 
     private val _canShowMemberDialog = MutableStateFlow<Boolean>(false)
     val canShowMemberDialog: StateFlow<Boolean> = _canShowMemberDialog.asStateFlow()
-    private val _canViewAdminSettings = MutableStateFlow<Boolean>(true)
+    private val _canViewAdminSettings = MutableStateFlow<Boolean>(false)
     val canViewAdminSettings: StateFlow<Boolean> = _canViewAdminSettings.asStateFlow()
-    private val _showAlertWhenPaymentTrayEmpty = MutableStateFlow<Boolean>(true)
+    private val _showAlertWhenPaymentTrayEmpty = MutableStateFlow<Boolean>(false)
     val showAlertWhenPaymentTrayEmpty: StateFlow<Boolean> =
         _showAlertWhenPaymentTrayEmpty.asStateFlow()
     private var notScannedTotalWeight = 0.0
@@ -1099,7 +1099,7 @@ class HomeViewModel @Inject constructor(
 
                             //LedSerialConnection.setScenario(AppScenario.ALL_OFF)
                         }
-                        if (update.w2 <= 50 && !isPaymentSuccess) {
+                        if (update.w2 <= 50 && !isPaymentSuccess && cartCount.value >0) {
                             _showAlertWhenPaymentTrayEmpty.value = false
                             LedSerialConnection.setScenario(AppScenario.ERROR)
                             sendLog(LogEvent.TRAY_EMPTY_BEFORE_PAYMENT)

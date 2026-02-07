@@ -107,6 +107,7 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -164,7 +165,8 @@ fun HomeScreen(
     makeNearPayment: (String, String, NearPaymentListener?) -> Unit,
     onLogout: () -> Unit,
     goToPaymentScreen: () -> Unit,
-    onTransactionCalled: () -> Unit
+    onTransactionCalled: () -> Unit,
+    reSetLanguage: () -> Unit,
 ) {
 
 
@@ -235,6 +237,7 @@ fun HomeScreen(
             viewModel.clearCartDetails()
             viewModel.resetAndGoBackSetDefault()
             onLogout()
+            reSetLanguage()
 
         }
     }
@@ -244,8 +247,8 @@ fun HomeScreen(
     if(canShowProductNotFoundDialog.value) {
         currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
-            title = "Product Not Found",
-            message = "Please try again or Call for Help.",
+            title = stringResource(R.string.product_not_found),
+            message = stringResource(R.string.please_try_again_or_call_for_help),
             lottieFileName = "anim_warning_circle.json",
             type = AlertType.INFO,
             isDismissible = true,
@@ -255,7 +258,7 @@ fun HomeScreen(
     if (showAlertWhenPaymentTrayEmpty.value){
         currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
-            title = "All items have been removed from the tray.\nPlease place your items back on the tray to continue with payment.",
+            title = stringResource(R.string.all_items_have_been_removed_from_the_tray_please_place_your_items_back_on_the_tray_to_continue_with_payment),
             message = "",
             lottieFileName = "anim_wrong.json",
             type = AlertType.ERROR,
@@ -266,8 +269,8 @@ fun HomeScreen(
     if(canShowVoucherDialog.value) {
         currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
-            title = "Redeem Voucher",
-            message = "Scan your Voucher barcode.",
+            title = stringResource(R.string.redeem_voucher),
+            message = stringResource(R.string.scan_your_voucher_barcode),
             lottieFileName = "anim_scanner.json",
             type = AlertType.INFO,
             isDismissible = false,
@@ -277,8 +280,8 @@ fun HomeScreen(
     if(canShowMemberDialog.value) {
         currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
-            title = "Member Login",
-            message = "Scan your Member code",
+            title = stringResource(R.string.member_login),
+            message = stringResource(R.string.scan_your_member_code),
             lottieFileName = "anim_scanner.json",
             type = AlertType.INFO,
             isDismissible = false,
@@ -288,7 +291,7 @@ fun HomeScreen(
     if(canShowDeleteDialog.value) {
         currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
-            title = "Please Wait, Support Will Assist You To Delete",
+            title = stringResource(R.string.please_wait_support_will_assist_you_to_delete),
             message = "",
             lottieFileName = "anim_help_support.json",
             type = AlertType.INFO,
@@ -299,8 +302,8 @@ fun HomeScreen(
     if (canShowProductNotScannedDialog.value){
         currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
-            title = "Product Not Scanned",
-            message = "Please remove and scan the product.",
+            title = stringResource(R.string.product_not_scanned),
+            message = stringResource(R.string.please_remove_and_scan_the_product),
             lottieFileName = "anim_wrong.json",
             type = AlertType.WARNING,
             isDismissible = false,
@@ -310,8 +313,8 @@ fun HomeScreen(
     if (canShowProductMismatchDialog.value){
         currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
-            title = "Wrong Product Placed",
-            message = "Please remove, scan and add the correct product.",
+            title = stringResource(R.string.wrong_product_placed),
+            message = stringResource(R.string.please_remove_scan_and_add_the_correct_product),
             lottieFileName = "anim_wrong.json",
             type = AlertType.ERROR,
             isDismissible = false,
@@ -321,8 +324,8 @@ fun HomeScreen(
     if(canShowValidationErrorDialog.value) {
         currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
-            title = "Validation Error",
-            message = "Please Call for Help.",
+            title = stringResource(R.string.validation_error),
+            message = stringResource(R.string.please_call_for_help),
             lottieFileName = "anim_wrong.json",
             type = AlertType.ERROR,
             isDismissible = false,
@@ -332,8 +335,8 @@ fun HomeScreen(
     if(canShowPaymentProcess.value) {
         currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
-            title = "Please Tap Your  Credit/Debit Card on Terminal",
-            message = "To be paid RM ${viewModel.getFormatedFinalAmount()}",
+            title = stringResource(R.string.please_tap_your_credit_debit_card_on_terminal),
+            message = stringResource(R.string.to_be_paid_rm, viewModel.getFormatedFinalAmount()),
             lottieFileName = "anim_payment_3.json",
             type = AlertType.SUCCESS,
             isDismissible = false,
@@ -346,8 +349,8 @@ fun HomeScreen(
 
         currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
-            title = "Thank You for Shopping with us.",
-            message = "Please remember to take your receipt",
+            title = stringResource(R.string.thank_you_for_shopping_with_us),
+            message = stringResource(R.string.please_remember_to_take_your_receipt),
             lottieFileName = "anim_print_receipt.json",
             type = AlertType.SUCCESS,
             showButton = false,
@@ -448,20 +451,20 @@ fun HomeScreen(
         )*/
         currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
-            title = "Payment Success",
-            message = "Save Paper & Mother Earth.\nThank you for your purchase!",
+            title = stringResource(R.string.payment_success),
+            message = stringResource(R.string.save_paper_mother_earth_thank_you_for_your_purchase),
             lottieFileName = "anim_success_3.json",
             type = AlertType.SUCCESS,
             isDismissible = false,
             showButton = true,
-            negativeButtonText = "Print Receipt",
+            negativeButtonText = stringResource(R.string.print_receipt),
             onNegativeClick = {
                 viewModel.printReceipt(context as Activity)
                 currentSystemAlert.value = null
                 viewModel.timerDisplayForReceiptPrint()
 
                               },
-            positiveButtonText = "Exit & Close",
+            positiveButtonText = stringResource(R.string.exit_close),
             onPositiveClick = {
                 currentSystemAlert.value = null
                 viewModel.resetLoadCell()
@@ -485,8 +488,8 @@ fun HomeScreen(
         )*/
         currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
-            title = "Payment was not successful",
-            message = "Please try again or choose another payment method",
+            title = stringResource(R.string.payment_was_not_successful),
+            message = stringResource(R.string.please_try_again_or_choose_another_payment_method),
             lottieFileName = "anim_wrong.json",
             type = AlertType.ERROR,
             showButton = true,
@@ -497,13 +500,13 @@ fun HomeScreen(
     if(canShowHelpDialog.value){
         currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
-            title = "Help is on the way",
-            message = "Please wait for our Staff to assist you.",
+            title = stringResource(R.string.help_is_on_the_way),
+            message = stringResource(R.string.please_wait_for_our_staff_to_assist_you),
             lottieFileName = "anim_help_support.json",
             type = AlertType.INFO,
             isDismissible = false,
             showButton = true,
-            positiveButtonText = "Ok",
+            positiveButtonText = stringResource(R.string.ok),
             onPositiveClick = {viewModel.clearSystemAlert()}
         )
     }
@@ -585,22 +588,24 @@ fun HomeScreen(
                                     }
 
                                     !isQR -> {
-                                        if(canShowVoucherDialog.value){
+                                        if (canShowVoucherDialog.value) {
                                             // Call voucher API
                                             viewModel.clearSystemAlert()
                                             viewModel.applyVoucher(barCode)
-                                        }else if(canShowMemberDialog.value){
+                                        } else if (canShowMemberDialog.value) {
                                             // Call Member login API
                                             viewModel.clearSystemAlert()
                                             viewModel.memberLogin(barCode)
-                                        }else{
+                                        } else {
                                             // Product barcode // Get Product info
                                             viewModel.resetProductInfoDetails()
                                             viewModel.getProductDetails(barCode)
                                         }
-                                    } else -> {
+                                    }
+
+                                    else -> {
                                         // Alert to scan barcode and hide qr code
-                                }
+                                    }
                                 }
 
 
@@ -853,7 +858,7 @@ fun BitesHeaderNew(
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_reset),
-                        contentDescription = "settings",
+                        contentDescription = "reset",
                         tint = Color.White,
                         modifier = Modifier.fillMaxSize()
                     )
@@ -861,7 +866,7 @@ fun BitesHeaderNew(
             }
             // 2. CENTER: Title
             Text(
-                text = "SELF CHECKOUT",
+                text = stringResource(R.string.self_checkout),
                 style = TextStyle(
                     color = Color.White,
                     fontSize = 18.sp,
@@ -902,7 +907,7 @@ fun BitesHeaderNew(
                     Spacer(modifier = Modifier.width(6.dp))
 
                     Text(
-                        text = "Help",
+                        text = stringResource(R.string.help),
                         color = colorResource(R.color.white),
                         fontSize = 27.sp,
                         fontWeight = FontWeight.Bold
@@ -1262,13 +1267,13 @@ fun EmptyCartScreen(
                 )
         )
         Text(
-            text = "Cart is Empty",
+            text = stringResource(R.string.cart_is_empty),
             fontSize = 33.sp,
             color = MaterialTheme.colorScheme.tertiary
         )
         Spacer(modifier = Modifier.height(20.dp))
         Text(
-            text = "Scan a product barcode to begin shopping",
+            text = stringResource(R.string.scan_a_product_barcode_to_begin_shopping),
             fontSize = 28.sp,
             color = MaterialTheme.colorScheme.primary
         )
@@ -1411,7 +1416,7 @@ fun AnimatedPayableText() {
     )
 
     Text(
-        text = "Total Payable",
+        text = stringResource(R.string.total_payable),
         style = MaterialTheme.typography.headlineSmall.copy(
             fontWeight = FontWeight.Bold,
             fontSize = 30.sp,
@@ -1468,7 +1473,10 @@ fun CartScreen(
                 ) {
                     Spacer(Modifier.height(5.dp))
                     Text(
-                        text = "Total Products : ${paymentSummary?.totalItems ?: 0}",
+                        text = stringResource(
+                            R.string.total_products,
+                            paymentSummary?.totalItems ?: 0
+                        ),
                         color = Color.Black,
 
                         style = MaterialTheme.typography.bodyLarge.copy(
@@ -1480,11 +1488,11 @@ fun CartScreen(
                     Spacer(Modifier.height(5.dp))
                     // --- BILLING SECTION ---
                     val summaryRows = listOf(
-                        Triple("Sub Total", paymentSummary?.totalPrice ?: 0.0, true),
-                        Triple("Promo Discount", paymentSummary?.promotionSave ?: 0.0, false),
-                        Triple("Special Discount", paymentSummary?.totalDiscount ?: 0.0, false),
-                        Triple("Voucher Discount", paymentSummary?.vourcherAmount ?: 0.0, false),
-                        Triple("Tax", paymentSummary?.totalTax ?: 0.0, true)
+                        Triple(stringResource(R.string.sub_total), paymentSummary?.totalPrice ?: 0.0, true),
+                        Triple(stringResource(R.string.promo_discount), paymentSummary?.promotionSave ?: 0.0, false),
+                        Triple(stringResource(R.string.special_discount), paymentSummary?.totalDiscount ?: 0.0, false),
+                        Triple(stringResource(R.string.voucher_discount), paymentSummary?.vourcherAmount ?: 0.0, false),
+                        Triple(stringResource(R.string.tax), paymentSummary?.totalTax ?: 0.0, true)
                     )
 
                     summaryRows.forEach { (label, value, isBiggerFont) ->
@@ -1559,7 +1567,7 @@ fun CartScreen(
                                 )
                                 Spacer(Modifier.width(4.dp))
                                 Text(
-                                    "LIVE",
+                                    stringResource(R.string.live),
                                     color = Color.White,
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold
@@ -1574,7 +1582,7 @@ fun CartScreen(
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             BillRow(
-                                "Grand Total",
+                                stringResource(R.string.grand_total),
                                 "${Constants.currencySymbol} ${getFormattedPrice(paymentSummary?.finalAmount ?: 0.0)}",
                                 isBold = true,
                                 color = MaterialTheme.colorScheme.primary,
@@ -1609,7 +1617,7 @@ fun CartScreen(
                                     )
                                     Spacer(modifier = Modifier.width(5.dp))
                                     Text(
-                                        "MEMBER",
+                                        stringResource(R.string.member),
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -1634,7 +1642,7 @@ fun CartScreen(
                                     )
                                     Spacer(modifier = Modifier.width(5.dp))
                                     Text(
-                                        "VOUCHER",
+                                        stringResource(R.string.voucher),
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -1660,7 +1668,7 @@ fun CartScreen(
                                 shape = RoundedCornerShape(12.dp)
                             ) {
                                 Text(
-                                    text = "PAY NOW",
+                                    text = stringResource(R.string.pay_now),
                                     style = TextStyle(
                                         color = Color.White,
                                         fontSize = 28.sp,
@@ -1699,7 +1707,7 @@ fun CartScreen(
                     .padding(innerPadding),
                 contentAlignment = Alignment.Center
             ) {
-                Text("Your cart is empty", color = Color.Gray)
+                Text(stringResource(R.string.your_cart_is_empty), color = Color.Gray)
             }
         } else {
            /* if (!isRecording.value) {
@@ -1844,7 +1852,7 @@ fun CartItemCard(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Buy One Get One",
+                        text = stringResource(R.string.buy_one_get_one),
                         style = TextStyle(
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
@@ -1905,9 +1913,13 @@ fun CartItemCard(
                     modifier = Modifier
                         .size(26.dp)
                         .clickable {
-                            onDeleteItemClick(productInfo.barcode,productInfo.id,productInfo.quantity)
-                           // selectedCartItem.value = productInfo
-                          //  showDeleteDialog.value = true
+                            onDeleteItemClick(
+                                productInfo.barcode,
+                                productInfo.id,
+                                productInfo.quantity
+                            )
+                            // selectedCartItem.value = productInfo
+                            //  showDeleteDialog.value = true
                         }
                 )
                 Spacer(Modifier.width(7.dp))
@@ -1925,14 +1937,14 @@ fun CancelConfirmationDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Cancel Transaction?",
+                text = stringResource(R.string.cancel_transaction),
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
         },
         text = {
             Text(
-                text = "Are you sure you want to cancel? All items in your cart will be cleared.",
+                text = stringResource(R.string.are_you_sure_you_want_to_cancel_all_items_in_your_cart_will_be_cleared),
                 style = MaterialTheme.typography.bodyLarge,
                 fontSize = 20.sp // Larger for kiosk readability
             )
@@ -1945,7 +1957,7 @@ fun CancelConfirmationDialog(
                     .height(60.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
             ) {
-                Text("YES, CANCEL", color = Color.White, fontSize = 18.sp)
+                Text(stringResource(R.string.yes_cancel), color = Color.White, fontSize = 18.sp)
             }
         },
         dismissButton = {
@@ -1955,7 +1967,7 @@ fun CancelConfirmationDialog(
                     .padding(8.dp)
                     .height(60.dp)
             ) {
-                Text("NO, GO BACK", fontSize = 18.sp)
+                Text(stringResource(R.string.no_go_back), fontSize = 18.sp)
             }
         },
         shape = RoundedCornerShape(24.dp),
@@ -2239,7 +2251,7 @@ fun BarcodeScannerDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
                     shape = RoundedCornerShape(50)
                 ) {
-                    Text("Close Scanner", color = Color.White)
+                    Text(stringResource(R.string.close_scanner), color = Color.White)
                 }
             }
         }
@@ -2364,7 +2376,7 @@ fun ProductPriceAlert(
                                 .padding(end = 8.dp)
                         ) {
                             Text(
-                                text = "Cancel",
+                                text = stringResource(R.string.cancel),
                                 style = MaterialTheme.typography.headlineMedium.copy(
                                     color = Color.White,
                                     fontWeight = FontWeight.Bold,
@@ -2395,7 +2407,7 @@ fun ProductPriceAlert(
                                 .padding(start = 8.dp)
                         ) {
                             Text(
-                                text = "Add To Cart",
+                                text = stringResource(R.string.add_to_cart),
                                 style = MaterialTheme.typography.headlineMedium.copy(
                                     color = Color.White,
                                     fontWeight = FontWeight.Bold,
@@ -2453,7 +2465,7 @@ fun DeleteProductDialog(
                         )
                         Spacer(modifier = Modifier.width(5.dp))
                         Text(
-                            text = "Are you sure want to delete this product?",
+                            text = stringResource(R.string.are_you_sure_want_to_delete_this_product),
                             color = Color.White,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Medium
@@ -2556,7 +2568,7 @@ fun DeleteProductDialog(
                         border = BorderStroke(2.dp, colorResource(R.color.colorPrimary))
                     ) {
                         Text(
-                            text = "CANCEL",
+                            text = stringResource(R.string.cancel),
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold,
                                 color = colorResource(R.color.colorPrimary)
@@ -2574,7 +2586,7 @@ fun DeleteProductDialog(
                         shape = RoundedCornerShape(50)
                     ) {
                         Text(
-                            text = "DELETE",
+                            text = stringResource(R.string.delete),
                             style = MaterialTheme.typography.titleMedium.copy(
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold
@@ -2629,7 +2641,7 @@ fun EditProductDialog(
                         )
                         Spacer(modifier = Modifier.width(5.dp))
                         Text(
-                            text = "Edit Product",
+                            text = stringResource(R.string.edit_product),
                             color = Color.White,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Medium
@@ -2780,7 +2792,7 @@ fun EditProductDialog(
                         border = BorderStroke(2.dp, colorResource(R.color.colorPrimary))
                     ) {
                         Text(
-                            text = "CANCEL",
+                            text = stringResource(R.string.cancel),
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold
                             )
@@ -2796,7 +2808,7 @@ fun EditProductDialog(
                         shape = RoundedCornerShape(50)
                     ) {
                         Text(
-                            text = "UPDATE",
+                            text = stringResource(R.string.update),
                             style = MaterialTheme.typography.titleMedium.copy(
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold
@@ -2831,7 +2843,7 @@ fun ManualBarcodeEntryDialog(
             ) {
                 // Title
                 Text(
-                    text = "Enter bar code manually",
+                    text = stringResource(R.string.enter_bar_code_manually),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Medium,
                     color = Color(0xFF0D47A1),
@@ -2844,7 +2856,7 @@ fun ManualBarcodeEntryDialog(
                 TextField(
                     value = barcode.value,
                     onValueChange = { barcode.value = it },
-                    placeholder = { Text("Enter barcode") },
+                    placeholder = { Text(stringResource(R.string.enter_barcode)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     colors = TextFieldDefaults.colors(
@@ -2884,7 +2896,7 @@ fun ManualBarcodeEntryDialog(
                         border = BorderStroke(2.dp, colorResource(R.color.colorRed))
                     ) {
                         Text(
-                            text = "Cancel",
+                            text = stringResource(R.string.cancel),
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -2902,7 +2914,7 @@ fun ManualBarcodeEntryDialog(
                             .height(50.dp)
                     ) {
                         Text(
-                            text = "Proceed",
+                            text = stringResource(R.string.proceed),
                             color = Color.White,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium
@@ -3003,7 +3015,7 @@ fun QRPaymentAlert(
         ) {
             // Header
             Text(
-                text = "Scan to Pay",
+                text = stringResource(R.string.scan_to_pay),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = Color.Black,
@@ -3012,7 +3024,7 @@ fun QRPaymentAlert(
 
             // Amount Display
             Text(
-                text = "Amount to Pay",
+                text = stringResource(R.string.amount_to_pay),
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Gray,
                 modifier = Modifier.padding(bottom = 4.dp)
@@ -3042,7 +3054,7 @@ fun QRPaymentAlert(
 
                 if (loadingError.value) {
                     Text(
-                        text = "Failed to load QR",
+                        text = stringResource(R.string.failed_to_load_qr),
                         color = Color.Gray,
                         fontSize = 12.sp
                     )
@@ -3108,7 +3120,7 @@ fun QRPaymentAlert(
                 elevation = ButtonDefaults.buttonElevation(0.dp)
             ) {
                 Text(
-                    text = "Cancel Payment",
+                    text = stringResource(R.string.cancel_payment),
                     fontWeight = FontWeight.Medium,
                     fontSize = 14.sp
                 )
@@ -3217,7 +3229,7 @@ fun PaymentSuccessAlert(
 
             // Success Text
             Text(
-                text = "Payment Successful!",
+                text = stringResource(R.string.payment_successful),
                 style = MaterialTheme.typography.titleLarge,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
@@ -3228,7 +3240,7 @@ fun PaymentSuccessAlert(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Your payment has been processed successfully",
+                text = stringResource(R.string.your_payment_has_been_processed_successfully),
                 style = MaterialTheme.typography.bodyMedium,
                 fontSize = 8.sp,
                 color = Color.Gray,
@@ -3250,7 +3262,7 @@ fun PaymentSuccessAlert(
                 )
             ) {
                 Text(
-                    text = "Send Receipt",
+                    text = stringResource(R.string.send_receipt),
                     fontWeight = FontWeight.Medium,
                     fontSize = 10.sp,
                 )
@@ -3299,7 +3311,7 @@ fun PaymentFailureAlert(
 
             // Success Text
             Text(
-                text = "Payment Failed!",
+                text = stringResource(R.string.payment_failed),
                 style = MaterialTheme.typography.titleLarge,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
@@ -3310,7 +3322,7 @@ fun PaymentFailureAlert(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Please Try Again!",
+                text = stringResource(R.string.please_try_again),
                 style = MaterialTheme.typography.bodyMedium,
                 fontSize = 10.sp,
                 color = Color.DarkGray,
@@ -3332,7 +3344,7 @@ fun PaymentFailureAlert(
                 )
             ) {
                 Text(
-                    text = "Retry Again",
+                    text = stringResource(R.string.retry_again),
                     fontWeight = FontWeight.Medium,
                     fontSize = 10.sp,
                 )

@@ -1,5 +1,6 @@
 package com.ezycart.presentation.landing
 
+import android.app.Activity
 import android.content.Context
 import android.hardware.usb.UsbManager
 import android.util.Log
@@ -83,6 +84,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.key.utf16CodePoint
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ezycart.AlertState
@@ -98,6 +100,7 @@ import com.ezycart.services.usb.PrinterStatusDialog
 import com.ezycart.services.usb.StatusActionRow
 import com.ezycart.services.usb.WeightScaleManager
 import com.pranavpandey.android.dynamic.toasts.DynamicToast
+import java.util.Locale
 
 @Composable
 fun LandingScreen(
@@ -128,6 +131,28 @@ fun LandingScreen(
             DynamicToast.makeError(context, message).show()
         }
     }
+    fun updateAppLanguage(context: Context, languageCode: String) {
+        val locale = Locale(languageCode)
+        Locale.setDefault(locale)
+
+        val config = context.resources.configuration
+        config.setLocale(locale)
+
+        context.resources.updateConfiguration(
+            config,
+            context.resources.displayMetrics
+        )
+    }
+    fun languageToCode(language: String): String {
+        return when (language) {
+            "English" -> "en"
+            "Bahasa Malaysia" -> "ms"
+            "中文" -> "zh"
+            "日本語" -> "ja"
+            "한국인" -> "ko"
+            else -> "en"
+        }
+    }
     if (isMemberLoginSuccess.value){
         viewModel.hideAdminSettings()
         showGuidelines.value = true
@@ -136,8 +161,8 @@ fun LandingScreen(
     if (canShowMemberDialog.value) {
         currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
-            title = "Member Login",
-            message = "Scan your Member code",
+            title = stringResource(R.string.member_login),
+            message = stringResource(R.string.scan_your_member_code),
             lottieFileName = "anim_scanner.json",
             type = AlertType.INFO,
             isDismissible = false,
@@ -168,7 +193,7 @@ fun LandingScreen(
     if (canStartShopping.value) {
         currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
-            title = "Please, Place all your products in Tray 1",
+            title = stringResource(R.string.please_place_all_your_products_in_tray_1),
             message = "",
             lottieFileName = "anim_warning_circle.json",
             type = AlertType.INFO,
@@ -263,14 +288,16 @@ fun LandingScreen(
                                     }
 
                                     !isQR -> {
-                                        if(canShowMemberDialog.value){
+                                        if (canShowMemberDialog.value) {
                                             // Call Member login API
                                             viewModel.clearSystemAlert()
                                             viewModel.memberLogin(barCode)
                                         }
-                                    } else -> {
-                                    // Alert to scan barcode and hide qr code
-                                }
+                                    }
+
+                                    else -> {
+                                        // Alert to scan barcode and hide qr code
+                                    }
                                 }
 
 
@@ -338,6 +365,11 @@ fun LandingScreen(
                             Constants.selectedLanguage = lang
                             continueShoppingDialog.value = true
 
+                            val activity = context as Activity
+
+                            val langCode = languageToCode(lang)
+                            updateAppLanguage(activity, langCode)
+                           // activity.recreate()
 
                         },
                         onSettingsSelected = { showAdminDialog.value = true })
@@ -360,9 +392,9 @@ fun LandingScreen(
                             LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
                             viewModel.onStartClicked()
                         } else {
-                            /*LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
+                           /* LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
                             viewModel.onStartClicked()*/
-                            viewModel.setStartShopping(true)
+                             viewModel.setStartShopping(true)
 
                         }
 
@@ -370,7 +402,7 @@ fun LandingScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "TOUCH TO START",
+                    text = stringResource(R.string.touch_to_start),
                     color = Color.White,
                     style = TextStyle(
                         fontSize = 36.sp,
@@ -386,7 +418,9 @@ fun LandingScreen(
                 )
             }
         }
+
     }
+
 }
 
     currentSystemAlert.value?.let { alert ->
@@ -395,6 +429,8 @@ fun LandingScreen(
             currentSystemAlert.value = null
         }
     }
+
+
 }
 
 @Composable
@@ -408,8 +444,8 @@ fun LanguageSelectionScreen(
     if (canShowHelpDialog.value) {
         currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
-            title = "Help is on the way",
-            message = "Please wait for our Staff to assist you.",
+            title = stringResource(R.string.help_is_on_the_way),
+            message = stringResource(R.string.please_wait_for_our_staff_to_assist_you),
             lottieFileName = "anim_help_support.json",
             type = AlertType.INFO,
             isDismissible = false,
@@ -453,7 +489,7 @@ fun LanguageSelectionScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "Please select your preferred language",
+                text = stringResource(R.string.please_select_your_preferred_language),
                 fontSize = 28.sp,
                 textAlign = TextAlign.Center,
                 color = Color.DarkGray,
@@ -602,7 +638,7 @@ fun BitesHeader(
             }
             // 2. CENTER: Title
             Text(
-                text = "SELF CHECKOUT",
+                text = stringResource(R.string.self_checkout),
                 style = TextStyle(
                     color = Color.White,
                     fontSize = 18.sp,
@@ -707,7 +743,7 @@ fun GuidelinesDialog(
         containerColor = Color.White,
         title = {
             Text(
-                text = "Guidelines to follow",
+                text = stringResource(R.string.guidelines_to_follow),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.fillMaxWidth(),
@@ -720,7 +756,7 @@ fun GuidelinesDialog(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "Please follow these instructions for a smooth checkout.",
+                    text = stringResource(R.string.please_follow_these_instructions_for_a_smooth_checkout),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray,
                     textAlign = TextAlign.Center
@@ -735,10 +771,10 @@ fun GuidelinesDialog(
                 ) {
                     GuidelineImage(
                         resId = R.drawable.ic_guideline_1,
-                        label = "Load all in Entry Basket "
+                        label = stringResource(R.string.load_all_in_entry_basket)
                     )
-                    GuidelineImage(resId = R.drawable.ic_guideline_2, label = "Scan a Product")
-                    GuidelineImage(resId = R.drawable.ic_guideline_3, label = "Drop in Exit Basket")
+                    GuidelineImage(resId = R.drawable.ic_guideline_2, label = stringResource(R.string.scan_a_product))
+                    GuidelineImage(resId = R.drawable.ic_guideline_3, label = stringResource(R.string.drop_in_exit_basket))
                 }
             }
         },
@@ -748,7 +784,7 @@ fun GuidelinesDialog(
                 modifier = Modifier.padding(8.dp)
             ) {
                 Text(
-                    "I Got It",
+                    stringResource(R.string.i_got_it),
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 18.sp,
                     color = Color(0xFF007BFF) // Kiosk Blue
@@ -954,7 +990,9 @@ fun LedControlDialog(onDismiss: () -> Unit) {
                 // 3. Output Grid - Fixed Height Removed to prevent scrolling
                 Text(
                     "Manual Output Control",
-                    modifier = Modifier.align(Alignment.Start).padding(start = 8.dp, bottom = 12.dp),
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .padding(start = 8.dp, bottom = 12.dp),
                     style = TextStyle(fontSize = 15.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
                 )
 
@@ -963,7 +1001,9 @@ fun LedControlDialog(onDismiss: () -> Unit) {
                     columns = GridCells.Fixed(3),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxWidth().heightIn(max = 1000.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 1000.dp)
                 ) {
                     items(6) { index ->
                         val isOn = ledStates[index]
@@ -991,7 +1031,9 @@ fun LedControlDialog(onDismiss: () -> Unit) {
                             LedSerialConnection.setAll(true)
                             for (i in 0..5) ledStates[i] = true
                         },
-                        modifier = Modifier.weight(1f).height(56.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp),
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
                     ) { Text("ALL ON", fontWeight = FontWeight.Bold, color = Color.White) }
@@ -1001,7 +1043,9 @@ fun LedControlDialog(onDismiss: () -> Unit) {
                             LedSerialConnection.setAll(false)
                             for (i in 0..5) ledStates[i] = false
                         },
-                        modifier = Modifier.weight(1f).height(56.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp),
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC62828))
                     ) { Text("ALL OFF", fontWeight = FontWeight.Bold, color = Color.White) }
@@ -1012,7 +1056,9 @@ fun LedControlDialog(onDismiss: () -> Unit) {
                 // 5. Close Button (Changed from White to a prominent Subtle Gray)
                 Button(
                     onClick = onDismiss,
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFFF1F3F5),
@@ -1037,7 +1083,9 @@ fun OutputToggleCard(label: String, isOn: Boolean, onClick: () -> Unit) {
         border = BorderStroke(1.dp, if (isOn) Color(0xFF2E7D32) else Color(0xFFEEEEEE))
     ) {
         Column(
-            modifier = Modifier.padding(10.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(10.dp)
+                .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isOn) Color(0xFF2E7D32) else Color.Gray)
@@ -1087,7 +1135,7 @@ fun ContinueShoppingDialog(
 
                 // Title
                 Text(
-                    text = "Continue Shopping",
+                    text = stringResource(R.string.continue_shopping),
                     fontSize = 25.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -1096,7 +1144,7 @@ fun ContinueShoppingDialog(
 
                 // Message
                 Text(
-                    text = "Choose how you’d like to proceed",
+                    text = stringResource(R.string.choose_how_you_d_like_to_proceed),
                     fontSize = 20.sp,
                     color = Color.Black,
                     textAlign = TextAlign.Center
@@ -1118,7 +1166,7 @@ fun ContinueShoppingDialog(
                     Icon(Icons.Default.Person, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = "Member Login",
+                        text = stringResource(R.string.member_login),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium
                     )
@@ -1140,7 +1188,7 @@ fun ContinueShoppingDialog(
                     Icon(Icons.Default.Person, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = "Continue as Guest",
+                        text = stringResource(R.string.continue_as_guest),
                         fontSize = 16.sp
                     )
                 }
@@ -1148,4 +1196,5 @@ fun ContinueShoppingDialog(
             }
         }
     }
+
 }

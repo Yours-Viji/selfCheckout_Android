@@ -49,6 +49,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.material3.Text
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import com.ezycart.R
 import com.ezycart.presentation.home.HomeViewModel
@@ -90,7 +91,7 @@ fun BitesPaymentDialog(
                     // 1. Pricing Section
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = "Please select your payment preference",
+                            text = stringResource(R.string.please_select_your_payment_preference),
                             style = TextStyle(
                                 fontSize = 28.sp,
                                 fontWeight = FontWeight.ExtraBold,
@@ -102,12 +103,12 @@ fun BitesPaymentDialog(
                         Spacer(modifier = Modifier.height(32.dp))
 
                         Text(
-                            text = "Total Amount : RM $formattedAmount",
+                            text = stringResource(R.string.total_amount_rm, formattedAmount),
                             style = TextStyle(fontSize = 22.sp, color = Color.Gray)
                         )
                         Row {
                             Text(
-                                text = "To be paid : ",
+                                text = stringResource(R.string.to_be_paid),
                                 style = TextStyle(fontSize = 22.sp, color = Color.Gray)
                             )
                             Text(
@@ -148,7 +149,9 @@ fun BitesPaymentDialog(
                         PaymentOptionCard(
                             title = "GRABPAY / PAYLATER",
                             iconRes = R.drawable.ic_pay_3,
-                            modifier = Modifier.fillMaxWidth(0.7f).align(Alignment.CenterHorizontally)
+                            modifier = Modifier
+                                .fillMaxWidth(0.7f)
+                                .align(Alignment.CenterHorizontally)
                         ) {
                             onGrabPaymentClicked()
                             viewModel.onPaymentMethodSelected("GRAB")
@@ -164,23 +167,27 @@ fun BitesPaymentDialog(
                         // Back Button
                         OutlinedButton(
                             onClick = onDismiss,
-                            modifier = Modifier.weight(1f).height(60.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(60.dp),
                             shape = RoundedCornerShape(12.dp),
                             border = BorderStroke(2.dp, Color.LightGray)
                         ) {
-                            Text("BACK", style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Gray))
+                            Text(stringResource(R.string.back), style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Gray))
                         }
 
                         // Help Button
                         Button(
                             onClick = onHelpClicked,
-                            modifier = Modifier.weight(1f).height(60.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(60.dp),
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6A1B9A))
                         ) {
                             Icon(Icons.Default.Info, contentDescription = null, tint = Color.White)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("HELP", style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White))
+                            Text(stringResource(R.string.help), style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White))
                         }
                     }
                 }
@@ -205,7 +212,9 @@ fun PaymentOptionCard(
         border = BorderStroke(1.dp, Color(0xFFEEEEEE))
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {

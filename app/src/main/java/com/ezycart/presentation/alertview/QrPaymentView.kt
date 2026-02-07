@@ -33,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -92,13 +93,13 @@ fun QrPaymentAlertView(
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.outline_arrow_back_24),
-                        contentDescription = "Back to Summary",
+                        contentDescription = stringResource(R.string.back_to_summary),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "Back to Summary",
+                    text = stringResource(R.string.back_to_summary),
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
                     fontSize = 7.sp
@@ -114,7 +115,7 @@ fun QrPaymentAlertView(
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.outline_close_24),
-                    contentDescription = "Close",
+                    contentDescription = stringResource(R.string.close),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -123,7 +124,7 @@ fun QrPaymentAlertView(
             if (qrTypeLogoVisible) {
                 Image(
                     painter = qrTypeLogo,
-                    contentDescription = "QR Type Logo",
+                    contentDescription = stringResource(R.string.qr_type_logo),
                     modifier = Modifier
                         .size(width = 55.dp, height = 20.dp)
                         .align(Alignment.TopCenter)
@@ -139,7 +140,7 @@ fun QrPaymentAlertView(
                 // Message Text
                 Spacer(modifier = Modifier.height(30.dp)) // Adjust based on your layout
                 Text(
-                    text = "Scan QR code Pay",
+                    text = stringResource(R.string.scan_qr_code_pay),
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
                     fontSize = 11.sp,
@@ -183,7 +184,7 @@ fun QrPaymentAlertView(
                                     verticalArrangement = Arrangement.Center
                                 ) {
                                     Text(
-                                        text = "Timed out!.\n\nScanned? Please Wait\n\nOR",
+                                        text = stringResource(R.string.timed_out_scanned_please_wait_or),
                                         color = Color.White,
                                         fontWeight = FontWeight.Black,
                                         fontSize = 11.sp,
@@ -191,7 +192,7 @@ fun QrPaymentAlertView(
                                     )
                                     Spacer(modifier = Modifier.height(7.dp))
                                     Text(
-                                        text = "Refresh",
+                                        text = stringResource(R.string.refresh),
                                         color = Color(0xFFFFC0CB), // Pink color
                                         fontWeight = FontWeight.Black,
                                         fontSize = 11.sp,
@@ -243,7 +244,7 @@ fun QrPaymentAlertView(
 
                 // Transaction Amount Title
                 Text(
-                    text = "Transaction Amount",
+                    text = stringResource(R.string.transaction_amount),
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Medium,
                     fontSize = 9.sp,
