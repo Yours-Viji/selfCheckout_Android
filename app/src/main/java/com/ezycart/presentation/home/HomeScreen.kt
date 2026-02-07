@@ -59,37 +59,24 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
-import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberDrawerState
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -147,7 +134,6 @@ import com.ezycart.CommonAlertView
 import com.ezycart.R
 import com.ezycart.data.remote.dto.CartItem
 import com.ezycart.data.remote.dto.ShoppingCartDetails
-import com.ezycart.domain.model.AppMode
 import com.ezycart.payment.nearpay.NearPaymentListener
 import com.ezycart.presentation.UsbTerminalDialog
 import com.ezycart.presentation.activation.LockScreenOrientation
@@ -1355,8 +1341,8 @@ fun PickersShoppingScreen(
                     },
                     onPayNowClick = onTapToPayClick,
                     onLogout = onLogout,
-                    onDeleteItemClick = {
-                        viewModel.showDeleteProductDialog()
+                    onDeleteItemClick = {barCode, id, quantity ->
+                        viewModel.onProductDeleteClick(barCode, id, quantity)
                     },
                     onVoucherClick= {viewModel.showVoucherDialog()},
                 onMemberClick= {viewModel.showMemberDialog()},
@@ -1443,7 +1429,7 @@ fun CartScreen(
     onEditProduct: (String, Int, Int) -> Unit,
     onPayNowClick: () -> Unit,
     onLogout: () -> Unit,
-    onDeleteItemClick: () -> Unit,
+    onDeleteItemClick: (String, Int, Int) -> Unit,
     onVoucherClick: () -> Unit,
     onMemberClick: () -> Unit,
 ) {
@@ -1723,8 +1709,8 @@ fun CartScreen(
                         onEditProduct = { barCode, id, updatedQuantity ->
                             onEditProduct(barCode, id, updatedQuantity)
                         },
-                        onDeleteItemClick = {
-                            onDeleteItemClick()
+                        onDeleteItemClick = {barCode, id, updatedQuantity ->
+                            onDeleteItemClick(barCode, id, updatedQuantity)
                         }
                     )
                 }
@@ -1740,7 +1726,7 @@ fun CartItemCard(
     onRemove: (CartItem) -> Unit,
     modifier: Modifier = Modifier,
     onEditProduct: (String, Int, Int) -> Unit,
-    onDeleteItemClick: () -> Unit
+    onDeleteItemClick: (String, Int, Int) -> Unit
 ) {
     val showDeleteDialog = remember { mutableStateOf(false) }
     val showEditDialog = remember { mutableStateOf(false) }
@@ -1907,7 +1893,7 @@ fun CartItemCard(
                     modifier = Modifier
                         .size(26.dp)
                         .clickable {
-                            onDeleteItemClick()
+                            onDeleteItemClick(productInfo.barcode,productInfo.id,productInfo.quantity)
                            // selectedCartItem.value = productInfo
                           //  showDeleteDialog.value = true
                         }

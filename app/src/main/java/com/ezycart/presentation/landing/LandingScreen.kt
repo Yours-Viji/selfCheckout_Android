@@ -534,7 +534,7 @@ fun BitesHeader(
     onSettingsSelected: () -> Unit
 ) {
     val focusRequester = remember { FocusRequester() }
-
+    val canViewAdminSettings = viewModel.canViewAdminSettings.collectAsState()
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -575,20 +575,21 @@ fun BitesHeader(
             contentAlignment = Alignment.Center // This ensures the 'SELF CHECKOUT' is exactly in the middle
         ) {
             // 1. LEFT SIDE: Scan Button
-
-            Box(
-                modifier = Modifier
-                    .align(Alignment.CenterStart) // Force to far left
-                    .size(32.dp)
-                    .clickable { onSettingsSelected() },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_settings),
-                    contentDescription = "scan",
-                    tint = Color.White,
-                    modifier = Modifier.fillMaxSize()
-                )
+            if (canViewAdminSettings.value) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterStart) // Force to far left
+                        .size(32.dp)
+                        .clickable { onSettingsSelected() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_settings),
+                        contentDescription = "scan",
+                        tint = Color.White,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
             // 2. CENTER: Title
             Text(

@@ -266,7 +266,14 @@ class HomeViewModel @Inject constructor(
     fun showMemberDialog(){
         _canShowMemberDialog.value = true
     }
-    fun showDeleteProductDialog(){
+    fun onProductDeleteClick(barCode: String, id: Int, quantity: Int) {
+        if (canViewAdminSettings.value){
+            deleteProductFromShoppingCart(barCode,id)
+        }else{
+            showDeleteProductDialog()
+        }
+    }
+   private fun showDeleteProductDialog(){
         _canShowDeleteDialog.value = true
     }
     fun showHelpDialog(){
@@ -963,32 +970,42 @@ class HomeViewModel @Inject constructor(
                     val product = _productInfo.value
                     //addProductToShoppingCart("9556001601506", 1)
                     if (product != null && update.delta_w2 > 20.0 && update.loadcell_id == 1) {
-                        val result = validationManager.productValidation(
-                            product = product,
-                            deltaW2 = update.delta_w2
-                        )
-                        if (product.validateWG) {
-                            if (result is ValidationResult.Success) {
-                                addProductToShoppingCart(product.barcode, 1)
-                                notScannedTotalWeight = 0.0
-                            } else {
-                                notScannedTotalWeight = notScannedTotalWeight.plus(update.delta_w2)
-                                _canShowProductMismatchDialog.value = true
-                                // Mismatch
-                            }
-                        } else {
-                            notScannedTotalWeight = 0.0
-                            addProductToShoppingCart(product.barcode, 1)
-                        }
+                       if (canViewAdminSettings.value){
+                           // Admin
+                           addProductToShoppingCart(product.barcode, 1)
+                           notScannedTotalWeight = 0.0
+                       }else{
+                           // Customer
+                           val result = validationManager.productValidation(
+                               product = product,
+                               deltaW2 = update.delta_w2
+                           )
+                           if (product.validateWG) {
+                               if (result is ValidationResult.Success) {
+                                   addProductToShoppingCart(product.barcode, 1)
+                                   notScannedTotalWeight = 0.0
+                               } else {
+                                   notScannedTotalWeight = notScannedTotalWeight.plus(update.delta_w2)
+                                   _canShowProductMismatchDialog.value = true
+                                   // Mismatch
+                               }
+                           } else {
+                               notScannedTotalWeight = 0.0
+                               addProductToShoppingCart(product.barcode, 1)
+                           }
+                       }
+
 
                         // _productInfo.value = null
                     } else {
                         if (update.delta_w2 > 20.0 && update.loadcell_id == 1) {
                             // Added without scan
+                            if (!canViewAdminSettings.value){
+                                _canShowProductNotScannedDialog.value = true
+                                //_errorMessage.value = "Please scan and to add!"
+                                LedSerialConnection.setScenario(AppScenario.ERROR)
+                            }
 
-                            _canShowProductNotScannedDialog.value = true
-                            //_errorMessage.value = "Please scan and to add!"
-                            LedSerialConnection.setScenario(AppScenario.ERROR)
                         }
                     }
                 }
@@ -1009,27 +1026,34 @@ class HomeViewModel @Inject constructor(
                     }
                 }*/
                 -1,  -> {
-                    if (update.delta_w2 <= 50 && canShowProductNotScannedDialog.value && update.loadcell_id == 1) {
-                        LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
+                    if (canViewAdminSettings.value){
                         clearSystemAlert()
-
-                    }
-                    if (update.delta_w2 <= 50 && canShowProductMismatchDialog.value && update.loadcell_id == 1) {
-                        notScannedTotalWeight = notScannedTotalWeight.minus(Math.abs(update.delta_w2))
-                        if (notScannedTotalWeight < 50.0){
+                        LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
+                        notScannedTotalWeight = 0.0
+                    }else{
+                        if (update.delta_w2 <= 50 && canShowProductNotScannedDialog.value && update.loadcell_id == 1) {
                             LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
                             clearSystemAlert()
-                            notScannedTotalWeight = 0.0
+
                         }
+                        if (update.delta_w2 <= 50 && canShowProductMismatchDialog.value && update.loadcell_id == 1) {
+                            notScannedTotalWeight = notScannedTotalWeight.minus(Math.abs(update.delta_w2))
+                            if (notScannedTotalWeight < 50.0){
+                                LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
+                                clearSystemAlert()
+                                notScannedTotalWeight = 0.0
+                            }
 
-                    }
-                    if (update.w2 <= 50 && canShowPrintReceiptDialog.value && update.loadcell_id == 1) {
-                        clearSystemAlert()
-                       /* _canShowPrintReceiptDialog.value = false
-                        _resetAndGoBack.value = true*/
+                        }
+                        if (update.w2 <= 50 && canShowPrintReceiptDialog.value && update.loadcell_id == 1) {
+                            clearSystemAlert()
+                            /* _canShowPrintReceiptDialog.value = false
+                             _resetAndGoBack.value = true*/
 
-                        //LedSerialConnection.setScenario(AppScenario.ALL_OFF)
+                            //LedSerialConnection.setScenario(AppScenario.ALL_OFF)
+                        }
                     }
+
 
                     /* if (canShowProductNotScannedDialog.value){
                         _canShowProductNotScannedDialog.value = false
@@ -1176,26 +1200,31 @@ class HomeViewModel @Inject constructor(
                 // Weight difference is greater than 30g
                 println("Weight mismatch detected!")
             }*/
-
-            val difference = abs(loadCellTotalWeight - initialTotalWeight)
-            _loadCellValidationLog.value =
-                "W1 = ${initialTotalWeight} // w2 = $loadCellTotalWeight // Final W1 = $finalWeightOfLc1 // Difference =  $difference"
-            if (finalWeightOfLc1 <= 30.0 && difference <= threshold) {
+            if (canViewAdminSettings.value){
                 _canMakePayment.value = true
                 _canShowValidationErrorDialog.value = false
-                // _errorMessage.value = "Weight is stable and within range."
-            } else {
-                // Testing
-                 /*_canMakePayment.value = true
-                 _canShowValidationErrorDialog.value = false*/
+            }else{
+                val difference = abs(loadCellTotalWeight - initialTotalWeight)
+                _loadCellValidationLog.value =
+                    "W1 = ${initialTotalWeight} // w2 = $loadCellTotalWeight // Final W1 = $finalWeightOfLc1 // Difference =  $difference"
+                if (finalWeightOfLc1 <= 30.0 && difference <= threshold) {
+                    _canMakePayment.value = true
+                    _canShowValidationErrorDialog.value = false
+                    // _errorMessage.value = "Weight is stable and within range."
+                } else {
+                    // Testing
+                    /*_canMakePayment.value = true
+                    _canShowValidationErrorDialog.value = false*/
 
 
-                _canMakePayment.value = false
-                _canShowValidationErrorDialog.value = true
-                // _errorMessage.value = "Weight mismatch detected!"
-                // Weight difference is greater than 30g
-                LedSerialConnection.setScenario(AppScenario.ERROR)
+                    _canMakePayment.value = false
+                    _canShowValidationErrorDialog.value = true
+                    // _errorMessage.value = "Weight mismatch detected!"
+                    // Weight difference is greater than 30g
+                    LedSerialConnection.setScenario(AppScenario.ERROR)
+                }
             }
+
         } catch (e: Exception) {
             TODO("Not yet implemented")
         }
