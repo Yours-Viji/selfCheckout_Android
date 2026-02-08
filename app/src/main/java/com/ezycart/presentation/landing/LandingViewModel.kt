@@ -9,6 +9,7 @@ import com.ezycart.data.remote.dto.NetworkResponse
 import com.ezycart.domain.usecase.LoginUseCase
 import com.ezycart.domain.usecase.ShoppingUseCase
 import com.ezycart.model.EmployeeLoginResponse
+import com.ezycart.payment.terminal.GhlPaymentRepository
 import com.ezycart.presentation.AppLogger
 import com.ezycart.presentation.LogEvent
 import com.ezycart.presentation.common.data.Constants
@@ -29,7 +30,8 @@ class LandingViewModel @Inject constructor(
     private val shoppingUseCase: ShoppingUseCase,
     private val loginUseCase: LoginUseCase,
     private val preferencesManager: PreferencesManager,
-    private val appLogger:AppLogger
+    private val appLogger:AppLogger,
+    private val repo: GhlPaymentRepository
 
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(LandingUiState())
@@ -72,7 +74,13 @@ class LandingViewModel @Inject constructor(
     init {
         startAutoScroll()
     }
+    fun onQrPayClicked(amount: String) {
+        viewModelScope.launch { repo.payByQr(amount) }
+    }
 
+    fun resetPayment() {
+       // paymentViewModel.paymentState.value = PaymentState.Idle
+    }
     private fun startAutoScroll() {
         viewModelScope.launch {
             while (isActive) {

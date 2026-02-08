@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.dagger.hilt)
     alias(libs.plugins.kotlin.kapt)
+    alias (libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -191,7 +192,7 @@ dependencies {
 
     // Custom Toast
     implementation(libs.dynamic.toasts)
-//Permission
+    //Permission
     implementation(libs.accompanist.permissions)
 
     //Near Pay
@@ -208,5 +209,49 @@ dependencies {
     androidTestImplementation(libs.androidx.test.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
 
+    implementation(libs.jose4j)
 
+    // Kotlin Serialization - Add constraints
+    implementation(libs.kotlinx.serialization.json) {
+        version {
+            strictly("1.6.3")  // Force this version
+        }
+    }
+
+    constraints {
+        implementation("org.jetbrains.kotlinx:kotlinx-serialization-json") {
+            version {
+                strictly("1.6.3")
+            }
+        }
+        implementation("org.jetbrains.kotlinx:kotlinx-serialization-core") {
+            version {
+                strictly("1.6.3")
+            }
+        }
+    }
+}
+
+// Add resolution strategy
+configurations.all {
+    resolutionStrategy {
+        eachDependency {
+            when (requested.group) {
+                "org.jetbrains.kotlinx" -> {
+                    if (requested.name.startsWith("kotlinx-serialization-")) {
+                        useVersion("1.6.3")
+                        because("Force compatibility with Kotlin 1.9.25")
+                    }
+                }
+            }
+        }
+        // Also force the BOM version
+        force(
+            "org.jetbrains.kotlinx:kotlinx-serialization-bom:1.6.3",
+            "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3",
+            "org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.3",
+            "org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.6.3",
+            "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.6.3"
+        )
+    }
 }
