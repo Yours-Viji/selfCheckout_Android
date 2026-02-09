@@ -1724,16 +1724,17 @@ class HomeViewModel @Inject constructor(
                             Constants.employeeToken = it.token
                         }
                         sendLog(LogEvent.ADMIN_LOGIN)
-
+                        _errorMessage.value = "Admin Login Success"
                     }
 
                     is NetworkResponse.Error -> {
+                        loadingManager.hide()
+                        _errorMessage.value = result.message
                         _stateFlow.value = _stateFlow.value.copy(
                             isLoading = false,
                             error = result.message,
                         )
-                        loadingManager.hide()
-                        _errorMessage.value = result.message
+
                     }
                 }
             }
@@ -1758,6 +1759,7 @@ class HomeViewModel @Inject constructor(
                         memberLoginData.value?.let {
                             Constants.memberPin = it.memberNo
                         }
+                        _errorMessage.value = "Member Login Success"
                         _canShowMemberDialog.value = false
                         sendLog(LogEvent.MEMBER_LOGIN)
 
@@ -1767,12 +1769,13 @@ class HomeViewModel @Inject constructor(
                     }
 
                     is NetworkResponse.Error -> {
+                        loadingManager.hide()
+                        _errorMessage.value = result.message
                         _stateFlow.value = _stateFlow.value.copy(
                             isLoading = false,
                             error = result.message,
                         )
-                        loadingManager.hide()
-                        _errorMessage.value = result.message
+
                     }
                 }
             }

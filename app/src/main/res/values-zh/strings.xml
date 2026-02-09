@@ -50,7 +50,7 @@
     <string name="help_is_on_the_way">帮助正在赶来</string>
     <string name="please_wait_for_our_staff_to_assist_you">请等待工作人员协助您。</string>
     <string name="ok">确定</string>
-    <string name="cart_is_empty">购物车为空</string>
+    <string name="cart_is_empty">列表为空</string>
     <string name="scan_a_product_barcode_to_begin_shopping">扫描商品条码开始购物</string>
     <string name="total_payable">应付总额</string>
     <string name="total_products">商品总数 : %1$s</string>

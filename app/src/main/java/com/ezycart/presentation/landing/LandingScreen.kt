@@ -275,57 +275,69 @@ fun LandingScreen(
             .focusRequester(focusRequester)
             .focusTarget()
             .onKeyEvent { keyEvent ->
-                if (keyEvent.type == androidx.compose.ui.input.key.KeyEventType.KeyUp) {
-                    when (keyEvent.key) {
-                        androidx.compose.ui.input.key.Key.Enter, androidx.compose.ui.input.key.Key.NumPadEnter -> {
-                            if (scanBuffer.value.isNotBlank()) {
+                // We handle KeyDown to capture characters as they are typed
+                if (keyEvent.type == androidx.compose.ui.input.key.KeyEventType.KeyDown) {
+                    val nativeEvent = keyEvent.nativeKeyEvent
 
+                    when (keyEvent.key) {
+                        androidx.compose.ui.input.key.Key.Enter,
+                        androidx.compose.ui.input.key.Key.NumPadEnter -> {
+                            if (scanBuffer.value.isNotBlank()) {
                                 val re = Regex("[^a-zA-Z0-9]")
-                                var barCode = scanBuffer.value
+                                var barCode =scanBuffer.value.trim()
                                 val isQR = viewModel.isProbablyQRCode(barCode)
                                 val containsEmp = barCode.lowercase().contains(":")
+
+                                viewModel.setErrorMessage("Scanned Code - $barCode")
+
                                 when {
+                                    // This now works because getUnicodeChar captured the ':' correctly
                                     isQR && containsEmp -> {
                                         val pinList = barCode.split(":")
                                         if (pinList.size > 1) {
                                             val empPin = re.replace(pinList[1], "")
+                                            viewModel.setErrorMessage("employee API Call - $empPin")
                                             viewModel.employeeLogin(empPin)
                                         }
                                     }
 
                                     !isQR -> {
                                         if (canShowMemberDialog.value) {
-                                            // Call Member login API
                                             viewModel.clearSystemAlert()
                                             viewModel.memberLogin(barCode)
                                         }
                                     }
 
                                     else -> {
-                                        // Alert to scan barcode and hide qr code
+                                        // Logic for "Alert to scan barcode and hide qr code"
                                     }
                                 }
-
-
-                                focusRequester.requestFocus()
-
                                 scanBuffer.value = ""
                             }
-                            true
+                            return@onKeyEvent true
                         }
+                        // Ignore standalone modifier keys so they don't add null chars to buffer
+                        androidx.compose.ui.input.key.Key.ShiftLeft,
+                        androidx.compose.ui.input.key.Key.ShiftRight,
+                        androidx.compose.ui.input.key.Key.CapsLock -> return@onKeyEvent false
 
                         else -> {
-                            val c = keyEvent.utf16CodePoint.toChar()
-                            if (c.isLetterOrDigit()) {
-                                scanBuffer.value += c
+                            // IMPORTANT: getUnicodeChar handles the Shift modifier for you
+                            // It converts (Shift + ;) into (:) automatically
+                            val unicodeChar = nativeEvent.getUnicodeChar(nativeEvent.metaState)
+
+                            if (unicodeChar != 0) {
+                                val c = unicodeChar.toChar()
+                                // Accept printable characters
+                                if (!c.isISOControl()) {
+                                    scanBuffer.value += c
+                                }
                             }
-                            false
+                            return@onKeyEvent false
                         }
                     }
-                } else {
-                    // Also consume KeyDown for Enter to prevent the "pressed" state on buttons
-                    keyEvent.key == androidx.compose.ui.input.key.Key.Enter
                 }
+                false
             }
     ) {
     Column(
@@ -402,9 +414,11 @@ fun LandingScreen(
                             LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
                             viewModel.onStartClicked()
                         } else {
-                            LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
-                            viewModel.onStartClicked()
-                           //  viewModel.setStartShopping(true)
+                          //  viewModel.employeeLogin("15532")
+                           /* LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
+                            viewModel.onStartClicked()*/
+
+                             viewModel.setStartShopping(true)
                           //  viewModel.onQrPayClicked("20.00")
                         }
 

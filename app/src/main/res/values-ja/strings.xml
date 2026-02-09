@@ -49,7 +49,7 @@
     <string name="help_is_on_the_way">店員が向かっています</string>
     <string name="please_wait_for_our_staff_to_assist_you">店員が参りますので、少々お待ちください。</string>
     <string name="ok">OK</string>
-    <string name="cart_is_empty">カートは空です</string>
+    <string name="cart_is_empty">リストは空です</string>
     <string name="scan_a_product_barcode_to_begin_shopping">バーコードをスキャンして買い物を開始してください</string>
     <string name="total_payable">お支払い合計</string>
     <string name="total_products">合計点数 : %1$s</string>

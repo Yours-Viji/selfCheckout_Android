@@ -30,6 +30,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import com.ezycart.R
 import com.ezycart.data.remote.dto.ShoppingCartDetails
@@ -172,7 +173,7 @@ fun BitesHeaderPayment(
             Box(modifier = Modifier.size(40.dp))
 
             Text(
-                text = "SELF CHECKOUT",
+                text = stringResource(R.string.self_checkout),
                 style = TextStyle(
                     color = Color.White,
                     fontSize = 18.sp,

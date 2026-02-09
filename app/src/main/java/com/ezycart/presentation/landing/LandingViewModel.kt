@@ -77,7 +77,9 @@ class LandingViewModel @Inject constructor(
     fun onQrPayClicked(amount: String) {
         viewModelScope.launch { repo.payByCard(amount) }
     }
-
+    fun setErrorMessage(data: String) {
+        _errorMessage.value = "New Data ==>>: $data"
+    }
     fun resetPayment() {
        // paymentViewModel.paymentState.value = PaymentState.Idle
     }
@@ -187,7 +189,6 @@ class LandingViewModel @Inject constructor(
        try {
            viewModelScope.launch {
                //  _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
-
                when (val result = loginUseCase(pinNumber)) {
                    is NetworkResponse.Success -> {
 
@@ -198,6 +199,7 @@ class LandingViewModel @Inject constructor(
                            Constants.adminPin = it.employeePin
                            Constants.employeeToken = it.token
                        }
+                       _errorMessage.value = "Admin login success"
                        appLogger.sendLogData(preferencesManager.getMerchantId(),preferencesManager.getOutletId(),"","",
                            "-",
                            LogEvent.ADMIN_LOGIN,"",0,"","")
@@ -205,11 +207,13 @@ class LandingViewModel @Inject constructor(
                    }
 
                    is NetworkResponse.Error -> {
-
+                       _errorMessage.value = result.message
+                       //_errorMessage.value = "Admin login Error "
                    }
                }
            }
        } catch (e: Exception) {
+           _errorMessage.value = "ERROR API CALL - ${e.message}"
        }
    }
    fun memberLogin(memberNumber: String) {
@@ -231,6 +235,7 @@ class LandingViewModel @Inject constructor(
                        }
                        _canShowMemberDialog.value = false
                        _isMemberLoginSuccess.value = true
+                       _errorMessage.value = "Member Login Success"
                        appLogger.sendLogData(preferencesManager.getMerchantId(),preferencesManager.getOutletId(),"","",
                            "-",
                            LogEvent.MEMBER_LOGIN,"",0,"","")

@@ -50,7 +50,7 @@
     <string name="help_is_on_the_way">Help is on the way</string>
     <string name="please_wait_for_our_staff_to_assist_you">Please wait for our Staff to assist you.</string>
     <string name="ok">Ok</string>
-    <string name="cart_is_empty">Cart is Empty</string>
+    <string name="cart_is_empty">List is Empty</string>
     <string name="scan_a_product_barcode_to_begin_shopping">Scan a product barcode to begin shopping</string>
     <string name="total_payable">Total Payable</string>
     <string name="total_products">Total Products : %1$s</string>

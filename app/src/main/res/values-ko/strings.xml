@@ -49,7 +49,7 @@
     <string name="help_is_on_the_way">직원이 도움을 드리러 오고 있습니다</string>
     <string name="please_wait_for_our_staff_to_assist_you">직원이 도와드릴 때까지 잠시만 기다려 주세요.</string>
     <string name="ok">확인</string>
-    <string name="cart_is_empty">장바구니가 비어 있습니다</string>
+    <string name="cart_is_empty">목록이 비어 있습니다</string>
     <string name="scan_a_product_barcode_to_begin_shopping">바코드를 스캔하여 쇼핑을 시작하세요</string>
     <string name="total_payable">총 결제 금액</string>
     <string name="total_products">총 상품 개수 : %1$s</string>

@@ -5,7 +5,7 @@
         <string name="load_all_in_entry_basket">Letakkan Bakul anda di Dulang 1.</string>
         <string name="please_follow_these_instructions_for_a_smooth_checkout">Sila ikuti arahan ini untuk proses pembayaran yang lancar.</string>
         <string name="guidelines_to_follow">Garis panduan untuk diikuti</string>
-        <string name="self_checkout">DAFTAR SENDIRI</string>
+        <string name="self_checkout">Layan diri</string>
         <string name="scan_a_product">Pilih Barangan dan Imbasnya.</string>
         <string name="drop_in_exit_basket">Selepas Imbasan, Letakkan di Dulang 2.</string>
         <string name="i_got_it">Saya Faham</string>
@@ -51,7 +51,7 @@
         <string name="help_is_on_the_way">Bantuan sedang dalam perjalanan</string>
         <string name="please_wait_for_our_staff_to_assist_you">Sila tunggu kakitangan kami membantu anda.</string>
         <string name="ok">OK</string>
-        <string name="cart_is_empty">Troli Kosong</string>
+        <string name="cart_is_empty">Senarai adalah kosong</string>
         <string name="scan_a_product_barcode_to_begin_shopping">Imbas kod bar produk untuk mula membeli-belah</string>
         <string name="total_payable">Jumlah Perlu Dibayar</string>
         <string name="total_products">Jumlah Produk : %1$s</string>
@@ -59,9 +59,9 @@
         <string name="promo_discount">Diskaun Promosi</string>
         <string name="special_discount">Diskaun Istimewa</string>
         <string name="voucher_discount">Diskaun Baucar</string>
-        <string name="tax">Cukai</string>
+        <string name="tax">Tax</string>
         <string name="live">LANGSUNG</string>
-        <string name="grand_total">Jumlah Keseluruhan</string>
+        <string name="grand_total">Jumlah</string>
         <string name="member">AHLI</string>
         <string name="voucher">BAUCAR</string>
         <string name="pay_now">BAYAR SEKARANG</string>
