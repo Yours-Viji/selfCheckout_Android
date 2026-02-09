@@ -39,6 +39,7 @@ import com.ezycart.services.usb.AppScenario
 import com.ezycart.services.usb.LedSerialConnection
 import com.ezycart.services.usb.LoadCellSerialPort
 import com.ezycart.services.usb.WeightScaleManager
+import com.itbizflow.ecrsdkhelper.EcrSdkHelper
 import com.meticha.permissions_compose.PermissionManagerConfig
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.HiltAndroidApp
@@ -83,6 +84,9 @@ class MainActivity : ComponentActivity() {
         }
         WeightScaleManager.init(homeViewModel)
         WeightScaleManager.connect(this)
+        if (!EcrSdkHelper.isInitialized()) {
+            EcrSdkHelper.initializeSdk(this)
+        }
         //ledManager = UsbLedManager.getInstance(this)
         //  ledManager.connectAndPrepare()
         /* lifecycleScope.launch {

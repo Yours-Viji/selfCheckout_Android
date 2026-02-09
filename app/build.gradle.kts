@@ -217,7 +217,7 @@ dependencies {
             strictly("1.6.3")  // Force this version
         }
     }
-
+    implementation(files("libs/ecrsdkhelper-1.0.0-003-release.aar"))
     constraints {
         implementation("org.jetbrains.kotlinx:kotlinx-serialization-json") {
             version {
@@ -230,6 +230,10 @@ dependencies {
             }
         }
     }
+
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
+    implementation("com.fasterxml.jackson.core:jackson-core:2.15.2")
+    implementation("com.fasterxml.jackson.core:jackson-annotations:2.15.2")
 }
 
 // Add resolution strategy
