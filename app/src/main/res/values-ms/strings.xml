@@ -2,12 +2,12 @@
     <string name="app_name">ezyExpress</string>
 
 
-        <string name="load_all_in_entry_basket">Masukkan semua ke dalam Bakul Masuk</string>
+        <string name="load_all_in_entry_basket">Letakkan Bakul anda di Dulang 1.</string>
         <string name="please_follow_these_instructions_for_a_smooth_checkout">Sila ikuti arahan ini untuk proses pembayaran yang lancar.</string>
         <string name="guidelines_to_follow">Garis panduan untuk diikuti</string>
         <string name="self_checkout">DAFTAR SENDIRI</string>
-        <string name="scan_a_product">Imbas Produk</string>
-        <string name="drop_in_exit_basket">Masukkan ke dalam Bakul Keluar</string>
+        <string name="scan_a_product">Pilih Barangan dan Imbasnya.</string>
+        <string name="drop_in_exit_basket">Selepas Imbasan, Letakkan di Dulang 2.</string>
         <string name="i_got_it">Saya Faham</string>
         <string name="continue_shopping">Teruskan Membeli-belah</string>
         <string name="choose_how_you_d_like_to_proceed">Pilih cara untuk meneruskan</string>

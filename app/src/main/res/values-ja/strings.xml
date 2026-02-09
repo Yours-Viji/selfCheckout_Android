@@ -1,11 +1,11 @@
 <resources>
     <string name="app_name">ezyExpress</string>
-    <string name="load_all_in_entry_basket">"商品を入口バスケットに入れてください "</string>
+    <string name="load_all_in_entry_basket">バスケットをトレイ1に置いてください。</string>
     <string name="please_follow_these_instructions_for_a_smooth_checkout">スムーズなお会計のため、以下の手順に従ってください。</string>
     <string name="guidelines_to_follow">ご利用ガイド</string>
     <string name="self_checkout">セルフチェックアウト</string>
-    <string name="scan_a_product">商品をスキャン</string>
-    <string name="drop_in_exit_basket">出口バスケットに入れてください</string>
+    <string name="scan_a_product">商品を選んでスキャンしてください。</string>
+    <string name="drop_in_exit_basket">スキャン後、トレイ2に置いてください。</string>
     <string name="i_got_it">了解しました</string>
     <string name="continue_shopping">買い物を続ける</string>
     <string name="choose_how_you_d_like_to_proceed">ご希望の操作を選択してください</string>

@@ -1,12 +1,12 @@
 <resources>
     <string name="app_name">ezyExpress</string>
 
-    <string name="load_all_in_entry_basket">"Load all in Entry Basket "</string>
+    <string name="load_all_in_entry_basket">"Place your Basket in Tray 1."</string>
     <string name="please_follow_these_instructions_for_a_smooth_checkout">Please follow these instructions for a smooth checkout.</string>
     <string name="guidelines_to_follow">Guidelines to follow</string>
     <string name="self_checkout">SELF CHECKOUT</string>
-    <string name="scan_a_product">Scan a Product</string>
-    <string name="drop_in_exit_basket">Drop in Exit Basket</string>
+    <string name="scan_a_product">Pick a Item and Scan it.</string>
+    <string name="drop_in_exit_basket">After Scanning, Place it in Tray 2.</string>
     <string name="i_got_it">I Got It</string>
     <string name="continue_shopping">Continue Shopping</string>
     <string name="choose_how_you_d_like_to_proceed">Choose how you’d like to proceed</string>

@@ -402,10 +402,10 @@ fun LandingScreen(
                             LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
                             viewModel.onStartClicked()
                         } else {
-                           /* LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
-                            viewModel.onStartClicked()*/
-                             viewModel.setStartShopping(true)
-                           // viewModel.onQrPayClicked("20.00")
+                            LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
+                            viewModel.onStartClicked()
+                           //  viewModel.setStartShopping(true)
+                          //  viewModel.onQrPayClicked("20.00")
                         }
 
                     },
@@ -852,7 +852,7 @@ fun GuidelineImage(resId: Int, label: String) {
                 .background(Color.LightGray)
         )
         Spacer(modifier = Modifier.height(8.dp))
-        Text(text = label, style = MaterialTheme.typography.bodyMedium)
+        Text(text = label, style = MaterialTheme.typography.titleLarge,fontSize = 10.sp)
     }
 }
 

@@ -75,7 +75,7 @@ class LandingViewModel @Inject constructor(
         startAutoScroll()
     }
     fun onQrPayClicked(amount: String) {
-        viewModelScope.launch { repo.payByQr(amount) }
+        viewModelScope.launch { repo.payByCard(amount) }
     }
 
     fun resetPayment() {

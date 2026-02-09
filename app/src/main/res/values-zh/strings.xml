@@ -1,12 +1,12 @@
 <resources>
     <string name="app_name">ezyExpress</string>
 
-    <string name="load_all_in_entry_basket">将所有商品放入入口篮</string>
+    <string name="load_all_in_entry_basket">将您的购物篮放入托盘1。</string>
     <string name="please_follow_these_instructions_for_a_smooth_checkout">请按照以下说明进行顺畅结账。</string>
     <string name="guidelines_to_follow">操作指南</string>
     <string name="self_checkout">自助结账</string>
-    <string name="scan_a_product">扫描商品</string>
-    <string name="drop_in_exit_basket">放入出口篮</string>
+    <string name="scan_a_product">选择商品并扫描。</string>
+    <string name="drop_in_exit_basket">扫描后，将商品放入托盘2。</string>
     <string name="i_got_it">我知道了</string>
     <string name="continue_shopping">继续购物</string>
     <string name="choose_how_you_d_like_to_proceed">请选择继续方式</string>
