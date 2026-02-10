@@ -52,6 +52,8 @@
     <usb-device vendor-id="1046" product-id="20499" />
     <!-- Generic Bixolon Vendor ID -->
     <usb-device vendor-id="1046" />
+    <usb-device vendor-id="5380" />
+    <usb-device vendor-id="5380" product-id="259" />
     <!-- Generic USB Printer Class -->
     <usb-device class="7" subclass="1" protocol="2" />
 </resources>

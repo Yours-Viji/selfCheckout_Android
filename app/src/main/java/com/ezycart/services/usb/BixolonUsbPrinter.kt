@@ -133,6 +133,10 @@ class BixolonUsbPrinter(private val context: Context) {
     fun checkPaperStatus(): String {
         return try {
             // We open and claim briefly to check status properties
+            posPrinter.open(logicalName)
+            posPrinter.claim(5000)
+            posPrinter.deviceEnabled = true
+
             if (!posPrinter.claimed) {
                 posPrinter.open(logicalName)
                 posPrinter.claim(1000)
@@ -169,12 +173,23 @@ class BixolonUsbPrinter(private val context: Context) {
     fun requestUsbPermission(onResult: (Boolean) -> Unit) {
         val usbManager = context.getSystemService(Context.USB_SERVICE) as UsbManager
         val deviceList = usbManager.deviceList
-        val bixolonDevice = deviceList.values.find { it.vendorId == 0x154F || it.vendorId == 0x0483 }
+        val bixolonDevice = deviceList.values.find { it.vendorId == 5380 || it.vendorId == 0x154F || it.vendorId == 0x0483 }
+        if (bixolonDevice ==null){
+            onResult.invoke(true)
+        }else{
+            if (usbManager.hasPermission(bixolonDevice)){
+                onResult.invoke(usbManager.hasPermission(bixolonDevice))
+            }else{
+                onResult.invoke(false)
+                bixolonDevice?.let { device ->
+                    val permissionIntent = PendingIntent.getBroadcast(context, 0, Intent("com.android.example.USB_PERMISSION"), PendingIntent.FLAG_IMMUTABLE)
+                    usbManager.requestPermission(device, permissionIntent)
+                }
+            }
 
-        bixolonDevice?.let { device ->
-            val permissionIntent = PendingIntent.getBroadcast(context, 0, Intent("com.android.example.USB_PERMISSION"), PendingIntent.FLAG_IMMUTABLE)
-            usbManager.requestPermission(device, permissionIntent)
         }
+
+
     }
 
     fun printTestPage() {
@@ -189,7 +204,7 @@ class BixolonUsbPrinter(private val context: Context) {
 
                 posPrinter.printNormal(
                     POSPrinterConst.PTR_S_RECEIPT,
-                    "\u001b|cA\u001b|2C*** TEST PRINT ***\n" +
+                    "\u001b|cA\u001b|2C*** TEST PRINT  Mr.ARIVU***\n" +
                             "\u001b|cAConnection: USB (Bixolon BK3)\n" +
                             "\u001b|cATime: $time\n\n" +
                             "\u001b|cAStatus: SUCCESSFUL\n" +

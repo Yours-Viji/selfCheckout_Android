@@ -418,7 +418,7 @@ fun LandingScreen(
                            /* LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
                             viewModel.onStartClicked()*/
 
-                             viewModel.setStartShopping(true)
+                            viewModel.setStartShopping(true)
                           //  viewModel.onQrPayClicked("20.00")
                         }
 

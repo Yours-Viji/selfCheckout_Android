@@ -38,7 +38,7 @@
             </intent-filter>
         </receiver>
         <activity
-            android:name=".payment.maybank.PaymentActivity"
+            android:name=".MainActivity"
             android:exported="true"
             android:screenOrientation="portrait">
             <intent-filter>

@@ -111,7 +111,11 @@ fun PrinterStatusDialog(
                     buttonLabel = if (hasPermission.value) "Re-check" else "Authorize",
                     buttonIcon = if (hasPermission.value) Icons.Default.CheckCircle else Icons.Default.Warning,
                     onAction = {
-                        printer.requestUsbPermission { hasPermission.value = it }
+                        try {
+                            printer.requestUsbPermission { hasPermission.value = it }
+                        } catch (e: Exception) {
+                            TODO("Not yet implemented")
+                        }
                     }
                 )
 
@@ -125,7 +129,11 @@ fun PrinterStatusDialog(
                     buttonLabel = "Check Paper",
                     buttonIcon = Icons.Default.Info,
                     onAction = {
-                        paperStatus.value = printer.checkPaperStatus()
+                        try {
+                            paperStatus.value = printer.checkPaperStatus()
+                        } catch (e: Exception) {
+                            TODO("Not yet implemented")
+                        }
                     }
                 )
 
@@ -139,13 +147,24 @@ fun PrinterStatusDialog(
                     buttonLabel = "Test Print",
                     buttonIcon = Icons.Default.PlayArrow, // Using Play icon for "Action"
                     onAction = {
-                        if (hasPermission.value) {
-                            isTesting.value = true
-                            // Run on background thread to avoid UI lag
-                            Thread {
-                                printer.printTestPage()
-                                isTesting.value = false
-                            }.start()
+                        try {
+                            if (hasPermission.value) {
+                                isTesting.value = true
+                                // Run on background thread to avoid UI lag
+                                Thread {
+                                    printer.printTestPage()
+                                    isTesting.value = false
+                                }.start()
+                            }else{
+                                isTesting.value = true
+                                // Run on background thread to avoid UI lag
+                                Thread {
+                                    printer.printTestPage()
+                                    isTesting.value = false
+                                }.start()
+                            }
+                        } catch (e: Exception) {
+                            TODO("Not yet implemented")
                         }
                     }
                 )
