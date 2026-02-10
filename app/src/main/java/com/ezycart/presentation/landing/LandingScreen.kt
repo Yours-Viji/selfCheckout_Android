@@ -19,8 +19,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -105,8 +107,13 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.ui.unit.Dp
 import kotlinx.coroutines.delay
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun LandingScreen(
@@ -415,10 +422,10 @@ fun LandingScreen(
                             viewModel.onStartClicked()
                         } else {
                           //  viewModel.employeeLogin("15532")
-                           /* LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
-                            viewModel.onStartClicked()*/
+                            LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
+                            viewModel.onStartClicked()
 
-                            viewModel.setStartShopping(true)
+                            //viewModel.setStartShopping(true)
                           //  viewModel.onQrPayClicked("20.00")
                         }
 
@@ -455,6 +462,34 @@ fun LandingScreen(
     }
 
 
+}
+@Composable
+fun LiveClock() {
+    // State to hold the formatted string
+    var currentDateTime = remember {
+        mutableStateOf(LocalDateTime.now().format(DateTimeFormatter.ofPattern("EEEE, dd MMM yyyy | hh:mm:ss a")))
+    }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            // Updated pattern: EEEE (Day), dd MMM (Date), hh:mm:ss a (12hr time with AM/PM)
+            currentDateTime.value = LocalDateTime.now().format(DateTimeFormatter.ofPattern("EEEE, dd MMM yyyy | hh:mm:ss a"))
+            delay(1000)
+        }
+    }
+
+    Text(
+        text = currentDateTime.value,
+        style = TextStyle(
+            fontSize = 24.sp, // Adjusted size to fit the longer date string
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF2D3436),
+            textAlign = TextAlign.Center
+        ),
+        modifier = Modifier
+            .fillMaxWidth() // Essential for centering
+            .padding(vertical = 16.dp)
+    )
 }
 
 @Composable
@@ -499,7 +534,7 @@ fun LanguageSelectionScreen(
                 onHelpClick = { viewModel.showHelpDialog() },
                 onSettingsSelected = { onSettingsSelected() }
             )
-
+            LiveClock()
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -796,77 +831,103 @@ fun GuidelinesDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit
 ) {
-    AlertDialog(
+    Dialog(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(16.dp),
-        containerColor = Color.White,
-        title = {
-            Text(
-                text = stringResource(R.string.guidelines_to_follow),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center
-            )
-        },
-        text = {
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.9f) // Slightly wider for 22" screen
+                .wrapContentHeight(),
+            shape = RoundedCornerShape(28.dp),
+            color = Color.White
+        ) {
             Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
+                    text = stringResource(R.string.guidelines_to_follow),
+                    style = TextStyle(
+                        fontSize = 40.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
+                )
+
+                Text(
                     text = stringResource(R.string.please_follow_these_instructions_for_a_smooth_checkout),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray,
+                    style = TextStyle(fontSize = 22.sp, color = Color.Gray),
+                    modifier = Modifier.padding(top = 12.dp, bottom = 40.dp),
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // The three rounded corner images in a row
+                // The Fix: Using a Row with weighted children
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                    horizontalArrangement = Arrangement.spacedBy(16.dp) // Gap between items
                 ) {
-                    GuidelineImage(
+                    GuidelineItem(
+                        modifier = Modifier.weight(1f),
                         resId = R.drawable.ic_guideline_1,
                         label = stringResource(R.string.load_all_in_entry_basket)
                     )
-                    GuidelineImage(resId = R.drawable.ic_guideline_2, label = stringResource(R.string.scan_a_product))
-                    GuidelineImage(resId = R.drawable.ic_guideline_3, label = stringResource(R.string.drop_in_exit_basket))
+                    GuidelineItem(
+                        modifier = Modifier.weight(1f),
+                        resId = R.drawable.ic_guideline_2,
+                        label = stringResource(R.string.scan_a_product)
+                    )
+                    GuidelineItem(
+                        modifier = Modifier.weight(1f),
+                        resId = R.drawable.ic_guideline_3,
+                        label = stringResource(R.string.drop_in_exit_basket)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(48.dp))
+
+                Button(
+                    onClick = onConfirm,
+                    modifier = Modifier
+                        .fillMaxWidth(0.35f)
+                        .height(70.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6))
+                ) {
+                    Text("Got It", fontSize = 24.sp, fontWeight = FontWeight.Bold)
                 }
             }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = onConfirm,
-                modifier = Modifier.padding(8.dp)
-            ) {
-                Text(
-                    stringResource(R.string.i_got_it),
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 18.sp,
-                    color = Color(0xFF007BFF) // Kiosk Blue
-                )
-            }
         }
-    )
+    }
 }
 
 @Composable
-fun GuidelineImage(resId: Int, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+fun GuidelineItem(modifier: Modifier = Modifier, resId: Int, label: String) {
+    Column(
+        modifier = modifier, // Uses the weight from the Row
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         Image(
             painter = painterResource(id = resId),
-            contentDescription = label,
-            contentScale = ContentScale.Crop,
+            contentDescription = null,
+            contentScale = ContentScale.FillWidth, // Adapts to the weight width
             modifier = Modifier
-                .size(110.dp)
-                .clip(RoundedCornerShape(12.dp)) // Rounded corners for images
-                .background(Color.LightGray)
+                .fillMaxWidth() // Fills its 1/3rd of the Row
+                .aspectRatio(1f) // Keeps it square
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color(0xFFF8FAFC))
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(text = label, style = MaterialTheme.typography.titleLarge,fontSize = 10.sp)
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(
+            text = label,
+            style = TextStyle(
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center
+            ),
+            maxLines = 3, // Prevents text from pushing things off-screen
+            lineHeight = 22.sp
+        )
     }
 }
 
@@ -1166,95 +1227,125 @@ fun ContinueShoppingDialog(
     onGuestLogin: () -> Unit,
     onDismiss: () -> Unit
 ) {
-
-
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
+    Dialog(
+        onDismissRequest = onDismiss,
+        // Critical for 22-inch screens to allow the dialog to expand
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(0.75f) // Large width for kiosk visibility
+                .wrapContentHeight()
                 .padding(24.dp),
-            shape = RoundedCornerShape(20.dp),
-            elevation = CardDefaults.cardElevation(8.dp)
+            shape = RoundedCornerShape(32.dp),
+            color = Color.White,
+            shadowElevation = 12.dp
         ) {
             Column(
                 modifier = Modifier
-                    .padding(24.dp),
+                    .fillMaxWidth()
+                    .padding(48.dp), // Spacious internal padding
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // 🛒 Premium Icon Container
+                Box(
+                    modifier = Modifier
+                        .size(120.dp)
+                        .background(
+                            color = Color(0xFF6A1B9A).copy(alpha = 0.1f),
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_shopping_bag),
+                        contentDescription = null,
+                        tint = Color(0xFF6A1B9A),
+                        modifier = Modifier.size(75.dp)
+                    )
+                }
 
-                // 🛒 Icon
-                Icon(
-                    imageVector = Icons.Default.ShoppingCart,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(55.dp)
-                )
+                Spacer(modifier = Modifier.height(32.dp))
 
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // Title
+                // Title - Scaled Up
                 Text(
                     text = stringResource(R.string.continue_shopping),
-                    fontSize = 25.sp,
-                    fontWeight = FontWeight.Bold
+                    style = TextStyle(
+                        fontSize = 42.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = (-1).sp
+                    )
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                // Message
+                // Message - Scaled Up
                 Text(
                     text = stringResource(R.string.choose_how_you_d_like_to_proceed),
-                    fontSize = 20.sp,
-                    color = Color.Black,
-                    textAlign = TextAlign.Center
+                    style = TextStyle(
+                        fontSize = 24.sp,
+                        color = Color.Gray,
+                        textAlign = TextAlign.Center
+                    )
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(56.dp))
 
-                // ⭐ Member Login Button
+                // ⭐ Member Login Button - High Contrast
                 Button(
                     onClick = {
                         onMemberLogin()
                         onDismiss()
                     },
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    shape = RoundedCornerShape(14.dp)
+                        .fillMaxWidth(0.9f)  // Not stretching across the whole huge screen
+                        .height(90.dp), // Massive hit target for easy touch
+                    shape = RoundedCornerShape(18.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6A1B9A))
                 ) {
-                    Icon(Icons.Default.Person, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
+                    Icon(painter = painterResource(id = R.drawable.ic_member_icon), contentDescription = null, modifier = Modifier.size(35.dp))
+                    Spacer(Modifier.width(12.dp))
                     Text(
                         text = stringResource(R.string.member_login),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Bold
                     )
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-                // 🛍 Guest Button
+                // 🛍 Guest Button - Clean Outlined Look
                 OutlinedButton(
                     onClick = {
                         onGuestLogin()
                         onDismiss()
                     },
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    shape = RoundedCornerShape(14.dp)
+                        .fillMaxWidth(0.9f) // Increase slightly to give text more horizontal room
+                        .height(90.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    border = BorderStroke(2.dp, Color(0xFF6A1B9A)),
+                    // REDUCE internal padding so text has more room before wrapping
+                    contentPadding = PaddingValues(horizontal = 8.dp)
                 ) {
-                    Icon(Icons.Default.Person, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_basket_1),
+                        contentDescription = null,
+                        tint = Color(0xFF6A1B9A),
+                        modifier = Modifier.size(35.dp)
+                    )
+                    Spacer(Modifier.width(12.dp))
                     Text(
                         text = stringResource(R.string.continue_as_guest),
-                        fontSize = 16.sp
+                        fontSize = 26.sp,
+                        color = Color(0xFF6A1B9A),
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,          // Force single line
+                        softWrap = false       // Prevent automatic wrapping
                     )
                 }
-                Spacer(modifier = Modifier.height(20.dp))
             }
         }
     }
-
 }
 data class LanguageItem(val name: String, val code: String, val flag: String)
