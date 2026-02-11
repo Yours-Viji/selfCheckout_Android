@@ -239,6 +239,7 @@ fun LandingScreen(
             onDismiss = { showGuidelines.value = false },
             onConfirm = {
                 showGuidelines.value = false
+                viewModel.clearAdminSettings()
                 goToHomeScreen()
             }
         )

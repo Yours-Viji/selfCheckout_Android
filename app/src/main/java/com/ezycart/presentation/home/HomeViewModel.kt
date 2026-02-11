@@ -308,6 +308,7 @@ class HomeViewModel @Inject constructor(
         Constants.clearMemberData()
         Constants.clearAdminData()
         _resetAndGoBack.value = true
+        _canViewAdminSettings.value = false
     }
 
     fun resetAndGoBackSetDefault() {

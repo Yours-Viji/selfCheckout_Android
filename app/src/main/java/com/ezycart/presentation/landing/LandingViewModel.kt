@@ -107,6 +107,9 @@ class LandingViewModel @Inject constructor(
         Constants.clearAdminData()
         _canViewAdminSettings.value = false
     }
+    fun clearAdminSettings(){
+        _canViewAdminSettings.value = false
+    }
     fun clearMemberData(){
         Constants.clearMemberData()
     }
