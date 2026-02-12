@@ -446,10 +446,10 @@ fun LandingScreen(
                             viewModel.onStartClicked()
                         } else {
                            //viewModel.employeeLogin("15532")
-                            LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
-                            viewModel.onStartClicked()
+                           /* LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
+                            viewModel.onStartClicked()*/
 
-                            //viewModel.setStartShopping(true)
+                            viewModel.setStartShopping(true)
                           //  viewModel.onQrPayClicked("20.00")
                         }
 
