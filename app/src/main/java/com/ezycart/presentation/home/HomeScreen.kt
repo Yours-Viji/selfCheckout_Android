@@ -144,6 +144,7 @@ import com.ezycart.presentation.common.data.Constants
 import com.ezycart.presentation.landing.LedControlDialog
 import com.ezycart.presentation.payment.BitesPaymentDialog
 import com.ezycart.presentation.payment.LogType
+import com.ezycart.presentation.payment.TerminalDebugDialog
 import com.ezycart.services.usb.AppScenario
 import com.ezycart.services.usb.BixolonUsbPrinter
 import com.ezycart.services.usb.LedSerialConnection
@@ -217,6 +218,7 @@ fun HomeScreen(
     var openPrinterTerminalDialog = viewModel.openPrinterTerminalDialog.collectAsState()
     var showAlertWhenPaymentTrayEmpty = viewModel.showAlertWhenPaymentTrayEmpty.collectAsState()
     var paymentErrorMessage = viewModel.paymentErrorMessage.collectAsState()
+    var openPaymentTerminalDialog = viewModel.openPaymentTerminalDialog.collectAsState()
     val paymentManager = remember { PaymentTerminalManager.getInstance(context) }
     val coroutineScope = rememberCoroutineScope()
     if (openLoadCellTerminalDialog.value){
@@ -366,6 +368,13 @@ fun HomeScreen(
     if (openPrinterTerminalDialog.value) {
         val printer = BixolonUsbPrinter(context.applicationContext)
         PrinterStatusDialog(printer, onDismiss = { viewModel.activatePrinterTerminal() })
+    }
+    if (openPaymentTerminalDialog.value){
+        TerminalDebugDialog(
+            onDismiss = { viewModel.activatePaymentTerminal() },
+            terminalIp = Constants.PAYMENT_TERMINAL_IP,
+            terminalPort = Constants.PAYMENT_TERMINAL_PORT
+        )
     }
     LaunchedEffect(state.error) {
         state.error?.let { errorMessage ->
@@ -821,6 +830,9 @@ fun BitesHeaderNew(
                     }
                     "Printer" -> {
                         viewModel.activatePrinterTerminal()
+                    }
+                    "Payment" -> {
+                        viewModel.activatePaymentTerminal()
                     }
                 }
                 showAdminDialog.value = false

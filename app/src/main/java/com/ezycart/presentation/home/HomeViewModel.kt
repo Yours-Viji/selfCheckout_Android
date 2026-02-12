@@ -241,6 +241,8 @@ class HomeViewModel @Inject constructor(
     fun activatePrinterTerminal() {
         _openPrinterTerminalDialog.value = !openPrinterTerminalDialog.value
     }
+    private val _openPaymentTerminalDialog = MutableStateFlow<Boolean>(false)
+    val openPaymentTerminalDialog: StateFlow<Boolean> = _openPaymentTerminalDialog.asStateFlow()
 
     fun getWeightThreshold(): Double {
         var weightThreshold = 25.00
@@ -274,6 +276,7 @@ class HomeViewModel @Inject constructor(
         _canShowPrintReceiptDialog.value = false
         _canShowVoucherDialog.value = false
         _canShowMemberDialog.value = false
+        _openPaymentTerminalDialog.value = false
     }
 
     fun showVoucherDialog() {
@@ -999,7 +1002,9 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-
+    fun activatePaymentTerminal(){
+        _openPaymentTerminalDialog.value = !openPaymentTerminalDialog.value
+    }
     fun resetLoadCell() {
         sendMessageToLoadCell("2")
     }
