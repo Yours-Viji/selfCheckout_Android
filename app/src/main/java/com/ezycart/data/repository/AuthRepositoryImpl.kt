@@ -246,6 +246,15 @@ class AuthRepositoryImpl @Inject constructor(
             }
     }
 
+    override suspend fun refreshCartByMemberLogin(memberNumber: String): NetworkResponse<ShoppingCartDetails> {
+        return safeApiCallRaw { authApi.refreshCartByMemberId(memberNumber) }
+            .also { result ->
+                if (result is NetworkResponse.Success) {
+                   // preferencesManager.saveCartId(result.data.cartId)
+                   // preferencesManager.saveAuthToken(result.data.token)
+                }
+            }
+    }
 
 
     private suspend fun getMerchantParam(): HashMap<String, String> {

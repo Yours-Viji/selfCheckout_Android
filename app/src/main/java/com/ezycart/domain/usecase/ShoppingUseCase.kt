@@ -71,6 +71,10 @@ class ShoppingUseCase @Inject constructor(
         return authRepository.memberLogin(memberNumber)
     }
 
+    suspend  fun refreshCartAfterMemberLogin(memberNumber: String): NetworkResponse<ShoppingCartDetails> {
+        return authRepository.refreshCartByMemberLogin(memberNumber)
+    }
+
     suspend  fun applyVoucher(voucherCode: String): NetworkResponse<ShoppingCartDetails> {
         return authRepository.applyVoucher(voucherCode)
     }

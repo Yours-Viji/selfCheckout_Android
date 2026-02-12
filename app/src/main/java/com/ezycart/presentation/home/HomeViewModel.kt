@@ -487,6 +487,39 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun refreshShoppingCartAfterMemberLogin(memberNumber: String) {
+        loadingManager.show()
+        // resetProductInfoDetails()
+        viewModelScope.launch {
+            _stateFlow.value = _stateFlow.value.copy(isLoading = true, error = null)
+            when (val result = shoppingUseCase.refreshCartAfterMemberLogin(memberNumber)) {
+                is NetworkResponse.Success -> {
+                    _stateFlow.value = _stateFlow.value.copy(
+                        isLoading = false
+                    )
+                    _canShowProductMismatchDialog.value = false
+                    _canShowProductNotScannedDialog.value = false
+                    weightAtRemovalDeltaW2 = 0.0
+                    _cartDataList.value = result.data.cartItems
+                    _cartCount.value = result.data.totalItems
+                    loadingManager.hide()
+                    getPaymentSummary()
+
+                }
+
+                is NetworkResponse.Error -> {
+                    _stateFlow.value = _stateFlow.value.copy(
+                        isLoading = false,
+                        error = result.message,
+                    )
+                    loadingManager.hide()
+                }
+            }
+            _productInfo.value = null
+            resetProductInfoDetails()
+        }
+    }
+
     fun editProductInShoppingCart(barCode: String, quantity: Int, id: Int) {
         loadingManager.show()
         resetProductInfoDetails()
@@ -1770,6 +1803,7 @@ class HomeViewModel @Inject constructor(
                         Constants.isMemberLogin = true
                         memberLoginData.value?.let {
                             Constants.memberPin = it.memberNo
+                            refreshShoppingCartAfterMemberLogin(Constants.memberPin)
                         }
                         _errorMessage.value = "Member Login Success"
                         _canShowMemberDialog.value = false

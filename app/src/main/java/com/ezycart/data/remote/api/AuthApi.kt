@@ -100,6 +100,9 @@ interface AuthApi {
     @HTTP(method = "DELETE", path = "/v2/ezyCart/cart/item", hasBody = true)
     suspend fun deleteProductFromCart(@Body deleteProductInCartRequest: DeleteProductInCartRequest): Response<ShoppingCartDetails>
 
+    @GET("/v2/ezyCart/cart/member/{memberNumber}/refresh")
+    suspend fun refreshCartByMemberId(
+        @Path(value = "memberNumber", encoded = true) memberNumber: String): Response<ShoppingCartDetails>
 
    /* @HTTP(method = "DELETE", path = "/v1/ezyCart/support/cart/{cart_Id}", hasBody = true)
     suspend fun deleteProductFromCart(

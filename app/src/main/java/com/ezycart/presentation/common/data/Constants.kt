@@ -36,7 +36,7 @@ object Constants {
     const val ACCEPTED_LANGUAGE = "accepted-language"
 
     //Payment Terminal
-    const val PAYMENT_TERMINAL_IP ="192.168.1.200"
+    const val PAYMENT_TERMINAL_IP ="10.14.0.252"
     const val PAYMENT_TERMINAL_PORT=2100
 
     //RemoteConfig Key
