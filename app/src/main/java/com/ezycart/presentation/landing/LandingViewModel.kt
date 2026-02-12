@@ -213,6 +213,8 @@ class LandingViewModel @Inject constructor(
                        employeeLoginData.value?.let {
                            Constants.adminPin = it.employeePin
                            Constants.employeeToken = it.token
+                           Constants.adminName = it.employeeName
+                           Constants.adminRole = it.employeePosition
                        }
                        _errorMessage.value = "Admin login success"
                        appLogger.sendLogData(preferencesManager.getMerchantId(),preferencesManager.getOutletId(),"","",

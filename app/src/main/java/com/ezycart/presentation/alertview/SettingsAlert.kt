@@ -64,6 +64,7 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.ezycart.R
+import com.ezycart.presentation.common.data.Constants
 
 @Composable
 fun AdminSettingsDialog(
@@ -135,99 +136,105 @@ fun AdminSettingsDialog(
                             ) { onOpenTerminal("Payment") }
                         }
                     }
+if (Constants.adminRole.contains("super") || Constants.adminName.lowercase().contains("arivu")) {
+    // SECTION 2: CART TRANSFER (Dropdown + Action)
+    item {
+        AdminSectionCard(title = "Inventory Transfer") {
+            Column {
+                Text(
+                    text = "Select Target Trolley to Transfer Everything:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.DarkGray
+                )
+                Spacer(modifier = Modifier.height(12.dp))
 
-                    // SECTION 2: CART TRANSFER (Dropdown + Action)
-                    item {
-                        AdminSectionCard(title = "Inventory Transfer") {
-                            Column {
-                                Text(
-                                    text = "Select Target Trolley to Transfer Everything:",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = Color.DarkGray
-                                )
-                                Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // THE DROPDOWN SELECTOR
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(50.dp)
+                            .background(Color.White, RoundedCornerShape(8.dp))
+                            .border(
+                                1.0.dp,
+                                Color(0xFF6A1B9A).copy(alpha = 0.5f),
+                                RoundedCornerShape(8.dp)
+                            )
+                            .clickable { expanded.value = true }
+                            .padding(horizontal = 12.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = selectedTrolley.value.ifEmpty { "Select Trolley" },
+                                color = if (selectedTrolley.value.isEmpty()) Color.Gray else Color.Black,
+                                fontSize = 16.sp
+                            )
+                            Icon(
+                                imageVector = Icons.Default.ArrowDropDown,
+                                contentDescription = null,
+                                tint = Color(0xFF6A1B9A)
+                            )
+                        }
 
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    // THE DROPDOWN SELECTOR
-                                    Box(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .height(50.dp)
-                                            .background(Color.White, RoundedCornerShape(8.dp))
-                                            .border(1.0.dp, Color(0xFF6A1B9A).copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-                                            .clickable { expanded.value = true }
-                                            .padding(horizontal = 12.dp),
-                                        contentAlignment = Alignment.CenterStart
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(
-                                                text = selectedTrolley.value.ifEmpty { "Select Trolley" },
-                                                color = if (selectedTrolley.value.isEmpty()) Color.Gray else Color.Black,
-                                                fontSize = 16.sp
-                                            )
-                                            Icon(
-                                                imageVector = Icons.Default.ArrowDropDown,
-                                                contentDescription = null,
-                                                tint = Color(0xFF6A1B9A)
-                                            )
-                                        }
-
-                                        // DROPDOWN MENU
-                                        DropdownMenu(
-                                            expanded = expanded.value,
-                                            onDismissRequest = { expanded.value = false },
-                                            modifier = Modifier
-                                                .fillMaxWidth(0.5f) // Adjust width to fit screen
-                                                .background(Color.White)
-                                                .heightIn(max = 300.dp) // Scrollable after a certain height
-                                        ) {
-                                            trolleyList.forEach { trolley ->
-                                                DropdownMenuItem(
-                                                    text = {
-                                                        Text(
-                                                            text = trolley,
-                                                            style = TextStyle(fontSize = 16.sp)
-                                                        )
-                                                    },
-                                                    onClick = {
-                                                        selectedTrolley.value = trolley
-                                                        expanded.value = false
-                                                    }
-                                                )
-                                            }
-                                        }
-                                    }
-
-                                    Spacer(modifier = Modifier.width(12.dp))
-
-                                    // THE ACTION BUTTON
-                                    Button(
-                                        onClick = {
-                                            if (selectedTrolley.value.isNotEmpty()) {
-                                                onTransferCart(selectedTrolley.value)
-                                            }
-                                        },
-                                        enabled = selectedTrolley.value.isNotEmpty(),
-                                        modifier = Modifier.height(50.dp),
-                                        shape = RoundedCornerShape(8.dp),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = Color(0xFF6A1B9A),
-                                            disabledContainerColor = Color.LightGray
+                        // DROPDOWN MENU
+                        DropdownMenu(
+                            expanded = expanded.value,
+                            onDismissRequest = { expanded.value = false },
+                            modifier = Modifier
+                                .fillMaxWidth(0.5f) // Adjust width to fit screen
+                                .background(Color.White)
+                                .heightIn(max = 300.dp) // Scrollable after a certain height
+                        ) {
+                            trolleyList.forEach { trolley ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            text = trolley,
+                                            style = TextStyle(fontSize = 16.sp)
                                         )
-                                    ) {
-                                        Text("TRANSFER", fontWeight = FontWeight.Bold)
+                                    },
+                                    onClick = {
+                                        selectedTrolley.value = trolley
+                                        expanded.value = false
                                     }
-                                }
+                                )
                             }
                         }
                     }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    // THE ACTION BUTTON
+                    Button(
+                        onClick = {
+                            if (selectedTrolley.value.isNotEmpty()) {
+                                onTransferCart(selectedTrolley.value)
+                            }
+                        },
+                        enabled = selectedTrolley.value.isNotEmpty(),
+                        modifier = Modifier.height(50.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF6A1B9A),
+                            disabledContainerColor = Color.LightGray
+                        )
+                    ) {
+                        Text("TRANSFER", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+}
+                    if (Constants.adminName.lowercase().contains("arivu")){
 
                     // SECTION 3: LOADCELL THRESHOLD (Slider)
                     item {
@@ -246,6 +253,8 @@ fun AdminSettingsDialog(
                                 )
                             }
                         }
+                    }
+
                     }
 
                 }

@@ -348,7 +348,7 @@ fun HomeScreen(
             lottieFileName = "anim_payment_3.json",
             type = AlertType.SUCCESS,
             isDismissible = false,
-            showButton = true
+            showButton = false
         )
     }
 

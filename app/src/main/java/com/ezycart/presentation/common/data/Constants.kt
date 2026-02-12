@@ -79,11 +79,15 @@ object Constants {
     var memberPin = ""
     var isAdminLogin = false
     var adminPin = ""
+    var adminName = ""
+    var adminRole = ""
 
     fun clearAdminData(){
         isAdminLogin = false
         employeeToken = ""
         adminPin = ""
+        adminName = ""
+        adminRole = ""
     }
 
     fun clearMemberData(){
