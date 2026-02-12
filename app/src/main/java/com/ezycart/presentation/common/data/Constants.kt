@@ -35,6 +35,10 @@ object Constants {
     const val X_AUTHORIZATION = "x-authorization"
     const val ACCEPTED_LANGUAGE = "accepted-language"
 
+    //Payment Terminal
+    const val PAYMENT_TERMINAL_IP ="192.168.1.200"
+    const val PAYMENT_TERMINAL_PORT=2100
+
     //RemoteConfig Key
     const val KEY_MID = "mid"
     const val KEY_TID = "tid"

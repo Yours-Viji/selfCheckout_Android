@@ -217,7 +217,9 @@ dependencies {
             strictly("1.6.3")  // Force this version
         }
     }
+    implementation(libs.androidx.security.crypto)
     implementation(files("libs/ecrsdkhelper-1.0.0-003-release.aar"))
+    implementation("com.google.code.gson:gson:2.10.1")
     constraints {
         implementation("org.jetbrains.kotlinx:kotlinx-serialization-json") {
             version {

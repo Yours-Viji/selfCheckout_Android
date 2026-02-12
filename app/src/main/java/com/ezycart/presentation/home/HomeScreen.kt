@@ -135,6 +135,7 @@ import com.ezycart.CommonAlertView
 import com.ezycart.R
 import com.ezycart.data.remote.dto.CartItem
 import com.ezycart.data.remote.dto.ShoppingCartDetails
+import com.ezycart.payment.maybank.PaymentTerminalManager
 import com.ezycart.payment.nearpay.NearPaymentListener
 import com.ezycart.presentation.UsbTerminalDialog
 import com.ezycart.presentation.activation.LockScreenOrientation
@@ -142,6 +143,7 @@ import com.ezycart.presentation.alertview.AdminSettingsDialog
 import com.ezycart.presentation.common.data.Constants
 import com.ezycart.presentation.landing.LedControlDialog
 import com.ezycart.presentation.payment.BitesPaymentDialog
+import com.ezycart.presentation.payment.LogType
 import com.ezycart.services.usb.AppScenario
 import com.ezycart.services.usb.BixolonUsbPrinter
 import com.ezycart.services.usb.LedSerialConnection
@@ -214,6 +216,9 @@ fun HomeScreen(
     var canShowMemberDialog= viewModel.canShowMemberDialog.collectAsState()
     var openPrinterTerminalDialog = viewModel.openPrinterTerminalDialog.collectAsState()
     var showAlertWhenPaymentTrayEmpty = viewModel.showAlertWhenPaymentTrayEmpty.collectAsState()
+    var paymentErrorMessage = viewModel.paymentErrorMessage.collectAsState()
+    val paymentManager = remember { PaymentTerminalManager.getInstance(context) }
+    val coroutineScope = rememberCoroutineScope()
     if (openLoadCellTerminalDialog.value){
         WeightScaleManager.initOnce(viewModel)
         WeightScaleManager.connectSafe(context)
@@ -489,7 +494,8 @@ fun HomeScreen(
         currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
             title = stringResource(R.string.payment_was_not_successful),
-            message = stringResource(R.string.please_try_again_or_choose_another_payment_method),
+            //message = stringResource(R.string.please_try_again_or_choose_another_payment_method),
+            message = paymentErrorMessage.value,
             lottieFileName = "anim_wrong.json",
             type = AlertType.ERROR,
             showButton = true,
@@ -557,9 +563,82 @@ fun HomeScreen(
             onHelpClicked = {
                 viewModel.showHelpDialog()
             },
-            onCardPaymentClicked = {viewModel.timerDisplayForPaymentProcess()},
-            onWalletPaymentClicked = {viewModel.timerDisplayForPaymentProcess()},
-            onGrabPaymentClicked = {viewModel.timerDisplayForPaymentProcess()}
+            onCardPaymentClicked = {
+                viewModel.showPaymentProcessAlertView()
+                paymentManager.pingTerminal(Constants.PAYMENT_TERMINAL_IP, Constants.PAYMENT_TERMINAL_PORT) { reachable ->
+                    if (reachable) {
+                        paymentManager.logonToTerminal(Constants.PAYMENT_TERMINAL_IP, Constants.PAYMENT_TERMINAL_PORT) { success ->
+                            coroutineScope.launch {
+                                if (success){
+                                    paymentManager.performSale(Constants.PAYMENT_TERMINAL_IP, Constants.PAYMENT_TERMINAL_PORT, viewModel.getFinalAmountInLong()) { result ->
+                                        coroutineScope.launch {
+                                            if (result.isSuccess){
+                                                //result.approvalCode
+                                                viewModel.showPaymentSuccessAlertView()
+                                            }else if(result.isDeclined){
+                                                viewModel.setPaymentErrorMessage(result.description)
+                                                viewModel.showPaymentErrorAlertView()
+                                               //
+                                            }else if(result.isError){
+                                                viewModel.setPaymentErrorMessage(result.description)
+                                                viewModel.showPaymentErrorAlertView()
+                                               // result.description
+                                            }else{
+                                                viewModel.clearSystemAlert()
+                                            }
+                                        }
+                                    }
+                                }else{
+                                    // Error Dialog
+                                }
+
+                            }
+                        }
+                    } else {
+                        coroutineScope.launch {
+                            // Terminal unreachable Error
+                        }
+                    }
+                }
+            },
+            onQrPaymentClicked = {
+                paymentManager.pingTerminal(Constants.PAYMENT_TERMINAL_IP, Constants.PAYMENT_TERMINAL_PORT) { reachable ->
+                    if (reachable) {
+                        paymentManager.logonToTerminal(Constants.PAYMENT_TERMINAL_IP, Constants.PAYMENT_TERMINAL_PORT) { success ->
+                            coroutineScope.launch {
+                                if (success){
+                                    paymentManager.performQrSale(Constants.PAYMENT_TERMINAL_IP, Constants.PAYMENT_TERMINAL_PORT, viewModel.getFinalAmountInLong()) { result ->
+                                        coroutineScope.launch {
+                                            if (result.isSuccess){
+                                                //result.approvalCode
+                                                viewModel.showPaymentSuccessAlertView()
+                                            }else if(result.isDeclined){
+                                                viewModel.setPaymentErrorMessage(result.description)
+                                                viewModel.showPaymentErrorAlertView()
+                                                //
+                                            }else if(result.isError){
+                                                viewModel.setPaymentErrorMessage(result.description)
+                                                viewModel.showPaymentErrorAlertView()
+                                                // result.description
+                                            }else{
+                                                viewModel.clearSystemAlert()
+                                            }
+                                        }
+                                    }
+                                }else{
+                                    // Error Dialog
+                                }
+
+                            }
+                        }
+                    } else {
+                        coroutineScope.launch {
+                            // Terminal unreachable Error
+                        }
+                    }
+                }
+            },
+
 
         )
     }

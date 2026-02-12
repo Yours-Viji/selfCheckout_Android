@@ -1,5 +1,6 @@
 package com.ezycart.presentation.landing
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ezycart.data.datastore.PreferencesManager
@@ -16,13 +17,17 @@ import com.ezycart.presentation.common.data.Constants
 import com.ezycart.services.usb.LoadCellSerialPort
 
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.math.BigDecimal
+import java.net.InetSocketAddress
+import java.net.Socket
 import javax.inject.Inject
 
 @HiltViewModel
@@ -46,6 +51,10 @@ class LandingViewModel @Inject constructor(
 
     private val _openPrinterTerminalDialog = MutableStateFlow<Boolean>(false)
     val openPrinterTerminalDialog: StateFlow<Boolean> = _openPrinterTerminalDialog.asStateFlow()
+
+    private val _openPaymentTerminalDialog = MutableStateFlow<Boolean>(false)
+    val openPaymentTerminalDialog: StateFlow<Boolean> = _openPaymentTerminalDialog.asStateFlow()
+
 
     private val _canShowHelpDialog = MutableStateFlow<Boolean>(false)
     val canShowHelpDialog: StateFlow<Boolean> = _canShowHelpDialog.asStateFlow()
@@ -128,6 +137,9 @@ class LandingViewModel @Inject constructor(
     }
     fun activatePrinterTerminal(){
         _openPrinterTerminalDialog.value = !openPrinterTerminalDialog.value
+    }
+    fun activatePaymentTerminal(){
+        _openPaymentTerminalDialog.value = !openPaymentTerminalDialog.value
     }
     fun onStartClicked() {
         _uiState.value = _uiState.value.copy(isStarted = true)
@@ -258,4 +270,5 @@ class LandingViewModel @Inject constructor(
        } catch (e: Exception) {
        }
    }
+
 }

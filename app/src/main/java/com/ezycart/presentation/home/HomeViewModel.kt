@@ -215,7 +215,8 @@ class HomeViewModel @Inject constructor(
     private var receiptPrinted = false
     private var logsDeltaW1 = 0.0
     private var logsDeltaW2 = 0.0
-
+    private val _paymentErrorMessage = MutableStateFlow("")
+    val paymentErrorMessage: StateFlow<String> = _paymentErrorMessage.asStateFlow()
     init {
         viewModelScope.launch {
             val savedAppMode = preferencesManager.getAppMode()
@@ -226,7 +227,9 @@ class HomeViewModel @Inject constructor(
         }
         // observeUsbData()
     }
-
+    fun setPaymentErrorMessage(message : String){
+        _paymentErrorMessage.value = message
+    }
     fun activateLoadCellTerminal() {
         _openLoadCellTerminalDialog.value = !openLoadCellTerminalDialog.value
     }
@@ -335,7 +338,9 @@ class HomeViewModel @Inject constructor(
         return String.format("%.2f", shoppingCartInfo.value?.finalAmount ?: 0.0)
     }
 
-
+    fun getFinalAmountInLong(): Long {
+        return ((shoppingCartInfo.value?.finalAmount ?: 0.0) * 100).toLong()
+    }
     fun setPriceCheckerView(canShow: Boolean) {
         viewModelScope.launch {
             preferencesManager.setPriceCheckerStatus(canShow)
@@ -885,6 +890,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun showPaymentProcessAlertView() {
+        clearSystemAlert()
         _canShowPaymentProcessDialog.value = true
     }
 
@@ -893,11 +899,16 @@ class HomeViewModel @Inject constructor(
     }
 
     fun showPaymentSuccessAlertView() {
+        clearSystemAlert()
         _canShowPaymentSuccessDialog.value = true
         isPaymentSuccess = true
         sendLog(LogEvent.PAYMENT_SUCCESS)
     }
 
+    fun showPaymentErrorAlertView(){
+        clearSystemAlert()
+        _canShowPaymentErrorDialog.value = true
+    }
     fun hidePaymentSuccessAlertView() {
         _canShowPaymentSuccessDialog.value = false
     }

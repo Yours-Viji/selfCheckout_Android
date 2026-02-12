@@ -48,133 +48,110 @@ fun BitesPaymentDialog(
     onDismiss: () -> Unit,
     onHelpClicked: () -> Unit,
     onCardPaymentClicked: () -> Unit,
-    onWalletPaymentClicked: () -> Unit,
-    onGrabPaymentClicked: () -> Unit
+    onQrPaymentClicked: () -> Unit // Combined TNG/Grab/Maybank
 ) {
     val shoppingCartInfo = homeViewModel.shoppingCartInfo.collectAsState()
-    val formattedAmount = String.format("%.2f", shoppingCartInfo?.value?.finalAmount ?: 0.0)
-    // Use Dialog with platformDefaultScrollDisabled to make it look like an Activity
+    val finalAmount = shoppingCartInfo.value?.finalAmount ?: 0.0
+    val formattedAmount = String.format("%.2f", finalAmount)
+
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false // Forces full screen
-        )
+        properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = Color.White
+            color = Color(0xFFF8F9FA) // Light grey background for "Premium" feel
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
-                // Header (Your provided code)
                 BitesHeaderPayment()
 
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.SpaceBetween
+                        .padding(horizontal = 40.dp, vertical = 32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // 1. Pricing Section
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = stringResource(R.string.please_select_your_payment_preference),
-                            style = TextStyle(
-                                fontSize = 28.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = Color(0xFF333333)
-                            ),
-                            textAlign = TextAlign.Center
+                    // --- 1. Modern Pricing Header ---
+                    Text(
+                        text = "Checkout",
+                        style = TextStyle(fontSize = 20.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
+                    )
+                    Text(
+                        text = "RM $formattedAmount",
+                        style = TextStyle(
+                            fontSize = 64.sp,
+                            fontWeight = FontWeight.Black,
+                            color = Color(0xFF1A1A1A),
+                            letterSpacing = (-2).sp
                         )
+                    )
 
-                        Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(48.dp))
 
-                        Text(
-                            text = stringResource(R.string.total_amount_rm, formattedAmount),
-                            style = TextStyle(fontSize = 22.sp, color = Color.Gray)
-                        )
-                        Row {
-                            Text(
-                                text = stringResource(R.string.to_be_paid),
-                                style = TextStyle(fontSize = 22.sp, color = Color.Gray)
-                            )
-                            Text(
-                                text = "RM $formattedAmount",
-                                style = TextStyle(
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.Red
-                                )
-                            )
-                        }
-                    }
+                    Text(
+                        text = "Select Payment Method",
+                        style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    )
 
-                    // 2. Payment Methods Grid
-                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            PaymentOptionCard(
-                                title = "VISA / MASTERCARD / AMEX",
-                                iconRes = R.drawable.ic_pay_1, // Add your icons
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                onCardPaymentClicked()
-                                viewModel.onPaymentMethodSelected("CARD")
-                                onDismiss
-                            }
+                    Spacer(modifier = Modifier.weight(1f))
 
-                            PaymentOptionCard(
-                                title = "TNG / MAYBANK / ALIPAY",
-                                iconRes = R.drawable.ic_pay_2,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                onWalletPaymentClicked()
-                                viewModel.onPaymentMethodSelected("E-WALLET")
-                                onDismiss
-                            }
-                        }
-
+                    // --- 2. The Two Main Payment Options ---
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(24.dp)
+                    ) {
+                        // Option 1: Physical Card
                         PaymentOptionCard(
-                            title = "GRABPAY / PAYLATER",
-                            iconRes = R.drawable.ic_pay_3,
-                            modifier = Modifier
-                                .fillMaxWidth(0.7f)
-                                .align(Alignment.CenterHorizontally)
-                        ) {
-                            onGrabPaymentClicked()
-                            viewModel.onPaymentMethodSelected("GRAB")
-                            onDismiss
-                        }
+                            title = "Credit / Debit Card",
+                            subtitle = "Visa, Mastercard, Amex",
+                            iconRes = R.drawable.ic_pay_1, // Ensure this icon is high quality
+                            primaryColor = Color(0xFF2196F3), // Professional Blue
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                viewModel.onPaymentMethodSelected("CARD")
+                                onCardPaymentClicked()
+                            }
+                        )
+
+                        // Option 2: Digital QR
+                        PaymentOptionCard(
+                            title = "E-Wallet / QR",
+                            subtitle = "TNG, Maybank, GrabPay",
+                            iconRes = R.drawable.ic_pay_2,
+                            primaryColor = Color(0xFF4CAF50), // "Digital" Green
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                viewModel.onPaymentMethodSelected("QR")
+                                onQrPaymentClicked()
+                            }
+                        )
                     }
 
-                    // 3. Bottom Navigation Buttons
+                    Spacer(modifier = Modifier.weight(1.2f))
+
+                    // --- 3. Bottom Actions ---
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // Back Button
                         OutlinedButton(
                             onClick = onDismiss,
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(60.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            border = BorderStroke(2.dp, Color.LightGray)
+                            modifier = Modifier.height(72.dp).weight(1f),
+                            shape = RoundedCornerShape(16.dp),
+                            border = BorderStroke(2.dp, Color(0xFFE0E0E0))
                         ) {
-                            Text(stringResource(R.string.back), style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Gray))
+                            Text("CANCEL", style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Gray))
                         }
 
-                        // Help Button
                         Button(
                             onClick = onHelpClicked,
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(60.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6A1B9A))
+                            modifier = Modifier.height(72.dp).weight(1f),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFC107)) // Yellow for "Help"
                         ) {
-                            Icon(Icons.Default.Info, contentDescription = null, tint = Color.White)
+                            Icon(Icons.Default.Info, contentDescription = null, tint = Color.Black)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.help), style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White))
+                            Text("CALL ASSISTANCE", style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black))
                         }
                     }
                 }
@@ -186,40 +163,50 @@ fun BitesPaymentDialog(
 @Composable
 fun PaymentOptionCard(
     title: String,
+    subtitle: String,
     iconRes: Int,
+    primaryColor: Color,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     Card(
         onClick = onClick,
-        modifier = modifier.height(200.dp),
-        shape = RoundedCornerShape(16.dp),
+        modifier = modifier.height(320.dp), // Taller for better visual impact
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        border = BorderStroke(1.dp, Color(0xFFEEEEEE))
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        border = BorderStroke(2.dp, primaryColor.copy(alpha = 0.1f))
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxSize().padding(24.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Optional Image for better look
-             Image(
-                painter = painterResource(id = iconRes),
-                contentDescription = null,
-                modifier = Modifier.size(150.dp)
-            )
+            // Circle Background for Icon
+            Surface(
+                modifier = Modifier.size(140.dp),
+                shape = RoundedCornerShape(70.dp),
+                color = primaryColor.copy(alpha = 0.1f)
+            ) {
+                Image(
+                    painter = painterResource(id = iconRes),
+                    contentDescription = null,
+                    modifier = Modifier.padding(24.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
             Text(
                 text = title,
-                style = TextStyle(
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.DarkGray,
-                    textAlign = TextAlign.Center
-                )
+                style = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1A1A1A))
+            )
+
+            Text(
+                text = subtitle,
+                style = TextStyle(fontSize = 16.sp, color = Color.Gray, textAlign = TextAlign.Center)
             )
         }
     }
+
 }

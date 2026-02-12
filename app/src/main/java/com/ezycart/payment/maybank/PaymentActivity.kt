@@ -2,6 +2,7 @@ package com.ezycart.payment.maybank
 
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -48,26 +49,41 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.ezycart.payment.maybank.PaymentResult.Status
+import com.ezycart.presentation.landing.LandingViewModel
+import com.ezycart.presentation.payment.LogEntry
+import com.ezycart.presentation.payment.LogType
+import com.itbizflow.ecrsdkhelper.EcrSdkHelper
+import dagger.hilt.android.AndroidEntryPoint
+import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.net.InetSocketAddress
+import java.net.Socket
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@AndroidEntryPoint
 class PaymentActivity : ComponentActivity() {
 
     private lateinit var paymentManager: PaymentTerminalManager
 
     // Terminal configuration (get these from settings or configuration)
-    private val terminalIp = "192.168.0.100" // Replace with actual terminal IP
-    private val terminalPort = 8080 // Replace with actual terminal port
+    private val terminalIp = "192.168.1.200" // Replace with actual terminal IP
+    private val terminalPort =2100 // Replace with actual terminal port
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         // Initialize Payment Manager
         paymentManager = PaymentTerminalManager.getInstance(applicationContext)
-
+        if (!EcrSdkHelper.isInitialized()) {
+            EcrSdkHelper.initializeSdk(this)
+            Log.i("SDK VERSION","${EcrSdkHelper.getSdkHelperVersion()}")
+        }
         setContent {
             PaymentScreen(
                 paymentManager = paymentManager,
@@ -87,6 +103,7 @@ class PaymentActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PaymentScreen(
+    viewModel: LandingViewModel = hiltViewModel(),
     paymentManager: PaymentTerminalManager,
     terminalIp: String,
     terminalPort: Int,
@@ -196,7 +213,6 @@ fun PaymentScreen(
                         isProcessing = true
                         connectionStatus = "Connecting..."
                         addLog("Connecting to terminal...")
-
                         // First ping to check if terminal is reachable
                         paymentManager.pingTerminal(terminalIp, terminalPort) { isReachable ->
                             coroutineScope.launch {
@@ -533,50 +549,3 @@ fun LogItem(
     }
 }
 
-// Data classes for logs
-data class LogEntry(
-    val timestamp: String,
-    val message: String,
-    val type: LogType
-)
-
-enum class LogType {
-    INFO,
-    SUCCESS,
-    ERROR,
-    WARNING
-}
-
-// If you need a ViewModel for more complex state management:
-/*
-@HiltViewModel
-class PaymentViewModel @Inject constructor(
-    private val paymentManager: PaymentTerminalManager
-) : ViewModel() {
-
-    private val _logs = mutableStateListOf<LogEntry>()
-    val logs: SnapshotStateList<LogEntry> = _logs
-
-    private val _connectionStatus = mutableStateOf("Disconnected")
-    val connectionStatus = _connectionStatus.asStateFlow()
-
-    private val _isProcessing = mutableStateOf(false)
-    val isProcessing = _isProcessing.asStateFlow()
-
-    fun addLog(message: String, type: LogType = LogType.INFO) {
-        val timestamp = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
-        _logs.add(LogEntry(timestamp, message, type))
-
-        // Keep only last 100 logs
-        if (_logs.size > 100) {
-            _logs.removeAt(0)
-        }
-    }
-
-    fun connectToTerminal(terminalIp: String, terminalPort: Int) {
-        // Implementation...
-    }
-
-    // Other functions...
-}
-*/

@@ -110,6 +110,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.ui.unit.Dp
+import com.ezycart.presentation.payment.TerminalDebugDialog
 import kotlinx.coroutines.delay
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -125,6 +126,7 @@ fun LandingScreen(
     var showLedDialog = viewModel.openLedTerminalDialog.collectAsState()
     var openLoadCellTerminalDialog = viewModel.openLoadCellTerminalDialog.collectAsState()
     var openPrinterTerminalDialog = viewModel.openPrinterTerminalDialog.collectAsState()
+    var openPaymentTerminalDialog = viewModel.openPaymentTerminalDialog.collectAsState()
     val context = LocalContext.current
     val focusRequester = remember { FocusRequester() }
     var continueShoppingDialog = remember { mutableStateOf(false) }
@@ -231,6 +233,13 @@ fun LandingScreen(
         val printer = BixolonUsbPrinter(context.applicationContext)
         PrinterStatusDialog(printer, onDismiss = { viewModel.activatePrinterTerminal() })
     }
+    if (openPaymentTerminalDialog.value){
+        TerminalDebugDialog(
+            onDismiss = { viewModel.activatePaymentTerminal() },
+            terminalIp = Constants.PAYMENT_TERMINAL_IP,
+            terminalPort = Constants.PAYMENT_TERMINAL_PORT
+        )
+    }
     if (showLedDialog.value) {
         LedControlDialog(onDismiss = { viewModel.activateLedTerminal() })
     }
@@ -261,6 +270,9 @@ fun LandingScreen(
 
                     "Printer" -> {
                         viewModel.activatePrinterTerminal()
+                    }
+                    "Payment" -> {
+                        viewModel.activatePaymentTerminal()
                     }
                 }
                 showAdminDialog.value = false
