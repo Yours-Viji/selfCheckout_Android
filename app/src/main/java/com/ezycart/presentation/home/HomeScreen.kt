@@ -589,7 +589,8 @@ fun HomeScreen(
                                         }
                                     }
                                 }else{
-                                    // Error Dialog
+                                    viewModel.setPaymentErrorMessage("Terminal Login Failed")
+                                    viewModel.showPaymentErrorAlertView()
                                 }
 
                             }
@@ -597,6 +598,8 @@ fun HomeScreen(
                     } else {
                         coroutineScope.launch {
                             // Terminal unreachable Error
+                            viewModel.setPaymentErrorMessage("Terminal unreachable Error")
+                            viewModel.showPaymentErrorAlertView()
                         }
                     }
                 }
@@ -626,6 +629,8 @@ fun HomeScreen(
                                         }
                                     }
                                 }else{
+                                    viewModel.setPaymentErrorMessage("Terminal Login Failed")
+                                    viewModel.showPaymentErrorAlertView()
                                     // Error Dialog
                                 }
 
@@ -633,6 +638,8 @@ fun HomeScreen(
                         }
                     } else {
                         coroutineScope.launch {
+                            viewModel.setPaymentErrorMessage("Terminal unreachable Error")
+                            viewModel.showPaymentErrorAlertView()
                             // Terminal unreachable Error
                         }
                     }
