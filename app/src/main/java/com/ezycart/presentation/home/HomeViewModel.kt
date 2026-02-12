@@ -488,6 +488,7 @@ class HomeViewModel @Inject constructor(
                     loadingManager.hide()
                     getPaymentSummary()
                     //employeeLogin("15532")
+                   // memberLogin("88001962")
                 }
 
                 is NetworkResponse.Error -> {

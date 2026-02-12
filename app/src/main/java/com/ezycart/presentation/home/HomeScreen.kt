@@ -1422,7 +1422,7 @@ fun PickersShoppingScreen(
     val shoppingCartInfo = viewModel.shoppingCartInfo.collectAsState()
     val isPickerModel = viewModel.isPickerModel.collectAsState()
     val canViewAdminSettings = viewModel.canViewAdminSettings.collectAsState()
-
+val canViewMemberDetails = viewModel.canViewMemberDetails.collectAsState()
 
     Row(
         modifier = Modifier
@@ -1451,10 +1451,10 @@ fun PickersShoppingScreen(
                     onEnterBarcodeManually = { showManualBarCode.value = true })
             } else {
                 CartScreen(
-
                     shoppingCartInfo,
                     isPickerModel.value,
                     cartItems = cartDataList.value,
+                    canViewMemberDetails.value,
                     onScanBarcode = { showScanner.value = true },
                     onEnterBarcodeManually = { showManualBarCode.value = true },
                     onClearCart = { viewModel.initNewShopping() },
@@ -1475,6 +1475,7 @@ fun PickersShoppingScreen(
                     },
                     onVoucherClick= {viewModel.showVoucherDialog()},
                 onMemberClick= {viewModel.showMemberDialog()},
+
                 )
             }
             if (canViewAdminSettings.value){
@@ -1566,6 +1567,7 @@ fun CartScreen(
     shoppingCartInfo: State<ShoppingCartDetails?>,
     isPickerModel: Boolean,
     cartItems: List<CartItem>,
+    canViewMemberDetails: Boolean,
     onScanBarcode: () -> Unit,
     onEnterBarcodeManually: () -> Unit,
     onClearCart: () -> Unit,
@@ -1803,6 +1805,40 @@ fun CartScreen(
                                         fontWeight = FontWeight.Black
                                     )
                                 )
+                            }
+                            if (canViewMemberDetails){
+                                Box(
+                                    modifier = Modifier
+                                        .padding(bottom = 24.dp) // Gap from the very bottom of the screen
+                                        .background(
+                                            color = Color(0xFF2D3436).copy(alpha = 0.8f), // Dark sleek background
+                                            shape = RoundedCornerShape(50) // Pill shape
+                                        )
+                                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                                    //.align(Alignment.BottomCenter) // Centers it horizontally at the bottom
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        // A small gold/yellow dot to indicate "Member" status
+                                        Box(
+                                            modifier = Modifier
+                                                .size(8.dp)
+                                                .background(Color(0xFFFFD700), CircleShape)
+                                        )
+
+                                        Text(
+                                            text = "MEMBER - ${Constants.memberPin}",
+                                            style = TextStyle(
+                                                color = Color.White,
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                letterSpacing = 1.sp
+                                            )
+                                        )
+                                    }
+                                }
                             }
 
                             // CANCEL TRANSACTION (Red and Simple)
