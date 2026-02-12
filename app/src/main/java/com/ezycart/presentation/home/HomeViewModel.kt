@@ -207,6 +207,8 @@ class HomeViewModel @Inject constructor(
     val canShowMemberDialog: StateFlow<Boolean> = _canShowMemberDialog.asStateFlow()
     private val _canViewAdminSettings = MutableStateFlow<Boolean>(false)
     val canViewAdminSettings: StateFlow<Boolean> = _canViewAdminSettings.asStateFlow()
+    private val _canViewMemberDetails = MutableStateFlow<Boolean>(false)
+    val canViewMemberDetails: StateFlow<Boolean> = _canViewMemberDetails.asStateFlow()
     private val _showAlertWhenPaymentTrayEmpty = MutableStateFlow<Boolean>(false)
     val showAlertWhenPaymentTrayEmpty: StateFlow<Boolean> =
         _showAlertWhenPaymentTrayEmpty.asStateFlow()
@@ -224,6 +226,7 @@ class HomeViewModel @Inject constructor(
             //  _isPickerModel.update { savedAppMode.name == AppMode.EzyLite.name }
             _employeeName.update { preferencesManager.getEmployeeName() }
             _canShowPriceChecker.update { preferencesManager.canShowPriceChecker() }
+
         }
         // observeUsbData()
     }
@@ -237,7 +240,13 @@ class HomeViewModel @Inject constructor(
     fun activateLedTerminal() {
         _openLedTerminalDialog.value = !openLedTerminalDialog.value
     }
-
+    fun hideAdminSettings(){
+        Constants.clearAdminData()
+        _canViewAdminSettings.value = false
+    }
+    fun clearAdminSettings(){
+        _canViewAdminSettings.value = false
+    }
     fun activatePrinterTerminal() {
         _openPrinterTerminalDialog.value = !openPrinterTerminalDialog.value
     }
@@ -364,6 +373,10 @@ class HomeViewModel @Inject constructor(
         createNewShoppingCart()
         startNewTransaction()
     }
+    fun fetchAdminAndMemberDetails(){
+        _canViewAdminSettings.value = Constants.isAdminLogin
+        _canViewMemberDetails.value = Constants.isMemberLogin
+    }
 
     fun clearCartDetails() {
         cartId = ""
@@ -474,7 +487,7 @@ class HomeViewModel @Inject constructor(
                     _cartCount.value = result.data.totalItems
                     loadingManager.hide()
                     getPaymentSummary()
-
+                    //employeeLogin("15532")
                 }
 
                 is NetworkResponse.Error -> {
@@ -592,16 +605,16 @@ class HomeViewModel @Inject constructor(
                     )
                     _productInfo.value = result.data
 
-                    val maxWeight = productInfo.value?.weightRange?.maxWeight?.toInt() ?: 0
+                    /*val maxWeight = productInfo.value?.weightRange?.maxWeight?.toInt() ?: 0
                     val canValidate = productInfo.value?.validateWG == true
                     if (canValidate && maxWeight < 25) {
                         addProductToShoppingCart(productInfo.value?.barcode.orEmpty(), 1)
                         _productInfo.value = null
                     } else {
                         getPriceDetails(barCode)
-                    }
+                    }*/
 
-                    //  addProductToShoppingCart(productInfo.value!!.barcode, 1)
+                      addProductToShoppingCart(productInfo.value!!.barcode, 1)
 
                 }
 
@@ -1806,7 +1819,8 @@ class HomeViewModel @Inject constructor(
                         _memberLoginData.value = result.data
                         loadingManager.hide()
                         Constants.isMemberLogin = true
-                        memberLoginData.value?.let {
+                        _canViewMemberDetails.value = true
+                            memberLoginData.value?.let {
                             Constants.memberPin = it.memberNo
                             refreshShoppingCartAfterMemberLogin(Constants.memberPin)
                         }

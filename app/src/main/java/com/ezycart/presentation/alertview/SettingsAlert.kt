@@ -130,7 +130,7 @@ fun AdminSettingsDialog(
                             TerminalCard(
                                 label = "Payment",
                                 iconResId = R.drawable.ic_payment_terminal,  // Your drawable name
-                                color = colorResource(R.color.colorPrimaryDark),
+                                color = colorResource(R.color.colorOrange),
                                 modifier = Modifier.weight(1f)
                             ) { onOpenTerminal("Payment") }
                         }

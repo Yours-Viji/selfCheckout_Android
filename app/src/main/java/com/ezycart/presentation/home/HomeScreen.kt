@@ -142,6 +142,7 @@ import com.ezycart.presentation.activation.LockScreenOrientation
 import com.ezycart.presentation.alertview.AdminSettingsDialog
 import com.ezycart.presentation.common.data.Constants
 import com.ezycart.presentation.landing.LedControlDialog
+import com.ezycart.presentation.landing.LogoutFab
 import com.ezycart.presentation.payment.BitesPaymentDialog
 import com.ezycart.presentation.payment.LogType
 import com.ezycart.presentation.payment.TerminalDebugDialog
@@ -560,6 +561,7 @@ fun HomeScreen(
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
         viewModel.initNewShopping()
+        viewModel.fetchAdminAndMemberDetails()
     }
     if (canMakePayment.value) {
        // goToPaymentScreen()
@@ -955,7 +957,7 @@ fun BitesHeaderNew(
                             modifier = Modifier.fillMaxSize()
                         )
                     }
-                    Spacer(modifier = Modifier.width(25.dp))
+                    Spacer(modifier = Modifier.width(20.dp))
                 }
                  // Space between the two icons
 
@@ -1419,7 +1421,7 @@ fun PickersShoppingScreen(
     val cartDataList = viewModel.cartDataList.collectAsState()
     val shoppingCartInfo = viewModel.shoppingCartInfo.collectAsState()
     val isPickerModel = viewModel.isPickerModel.collectAsState()
-
+    val canViewAdminSettings = viewModel.canViewAdminSettings.collectAsState()
 
 
     Row(
@@ -1474,6 +1476,22 @@ fun PickersShoppingScreen(
                     onVoucherClick= {viewModel.showVoucherDialog()},
                 onMemberClick= {viewModel.showMemberDialog()},
                 )
+            }
+            if (canViewAdminSettings.value){
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier
+                        .padding(bottom = 600.dp, end = 80.dp)
+                        .align(Alignment.BottomEnd)
+                ) {
+
+                    LogoutFab(onLogoutClick = {
+                        viewModel.hideAdminSettings()
+                        viewModel.clearAdminSettings()
+                    })
+
+                }
             }
         }
 
@@ -1830,7 +1848,7 @@ fun CartScreen(
                     .padding(innerPadding),
                 contentPadding = PaddingValues(bottom = 80.dp) // leave room for bottom bar
             ) {
-                //repeat(20) {
+               // repeat(20) {
                 val productList = cartItems.reversed()
                 itemsIndexed(productList) { index, productData ->
                     CartItemCard(
@@ -1844,7 +1862,7 @@ fun CartScreen(
                         }
                     )
                 }
-                //}
+               // }
             }
         }
     }

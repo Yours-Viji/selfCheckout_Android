@@ -5,6 +5,12 @@ import android.content.Context
 import android.hardware.usb.UsbManager
 import android.util.Log
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -109,6 +115,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import com.ezycart.presentation.payment.TerminalDebugDialog
 import kotlinx.coroutines.delay
@@ -137,6 +147,7 @@ fun LandingScreen(
     var isMemberLoginSuccess= viewModel.isMemberLoginSuccess.collectAsState()
     var scanBuffer = remember { mutableStateOf("") }
     val errorMessage = viewModel.errorMessage.collectAsState()
+
     var settingsOpenCounter = 0
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
@@ -434,7 +445,7 @@ fun LandingScreen(
                             LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
                             viewModel.onStartClicked()
                         } else {
-                          //  viewModel.employeeLogin("15532")
+                           //viewModel.employeeLogin("15532")
                             LedSerialConnection.setScenario(AppScenario.START_SHOPPING)
                             viewModel.onStartClicked()
 
@@ -513,7 +524,7 @@ fun LanguageSelectionScreen(
 ) {
     var currentSystemAlert = remember { mutableStateOf<AlertState?>(null) }
     var canShowHelpDialog = viewModel.canShowHelpDialog.collectAsState()
-
+    val canViewAdminSettings = viewModel.canViewAdminSettings.collectAsState()
     val languages = listOf(
         LanguageItem("English", "en", "🇺🇸"),
         LanguageItem("Bahasa Malaysia", "ms", "🇲🇾"),
@@ -576,13 +587,62 @@ fun LanguageSelectionScreen(
                 }
             }
         }
+        if (canViewAdminSettings.value){
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier
+                    .padding(100.dp)
+                    .align(Alignment.BottomEnd)
+            ) {
+
+                LogoutFab(onLogoutClick = {
+                    viewModel.hideAdminSettings()
+                    viewModel.clearAdminSettings()
+                })
+
+            }
+        }
+
+
     }
 
     currentSystemAlert.value?.let { alert ->
         CommonAlertView(state = alert) { currentSystemAlert.value = null }
     }
 }
+@Composable
+fun LogoutFab(onLogoutClick: () -> Unit) {
+    // 1. Create the Infinite Transition
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
 
+    // 2. Define the scale animation (zoom in and out)
+    val scale = infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.15f, // Zooms in by 15%
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse // Zooms back out
+        ),
+        label = "scale"
+    )
+
+    FloatingActionButton(
+        onClick = onLogoutClick,
+        containerColor = Color(0xFFD35443),
+        shape = CircleShape, // Makes it a perfect circle
+        modifier = Modifier
+            .size(65.dp) // Set a fixed size for a consistent circle
+            .graphicsLayer(scaleX = scale.value, scaleY = scale.value) // Applies the zoom
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_logout),
+            contentDescription = "Logout",
+            modifier = Modifier.size(30.dp),
+            tint = Color.White
+        )
+    }
+}
 @Composable
 fun LanguageRowCard(language: LanguageItem, onClick: () -> Unit) {
     Surface(
@@ -737,11 +797,13 @@ fun BitesHeader(
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_settings),
-                        contentDescription = "scan",
+                        contentDescription = "settings",
                         tint = Color.White,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
+
+                Spacer(modifier = Modifier.width(20.dp))
             }
             // 2. CENTER: Title
             Text(
