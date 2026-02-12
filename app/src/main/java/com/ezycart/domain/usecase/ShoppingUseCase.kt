@@ -11,6 +11,7 @@ import com.ezycart.data.remote.dto.PaymentRequest
 import com.ezycart.data.remote.dto.PaymentResponse
 import com.ezycart.data.remote.dto.PaymentStatusResponse
 import com.ezycart.data.remote.dto.ShoppingCartDetails
+import com.ezycart.data.remote.dto.TransferCartInformation
 import com.ezycart.data.remote.dto.UpdatePaymentRequest
 import com.ezycart.domain.repository.AuthRepository
 
@@ -93,6 +94,10 @@ class ShoppingUseCase @Inject constructor(
 
     suspend  fun reCallTransaction(url: String): NetworkResponse<ShoppingCartDetails> {
         return authRepository.reCallTransaction(url)
+    }
+
+    suspend  fun sendTransferCartInformation(transferCartInformation: TransferCartInformation): NetworkResponse<Any> {
+        return authRepository.sendTransferCartInformation(transferCartInformation)
     }
 
 }

@@ -256,6 +256,15 @@ class AuthRepositoryImpl @Inject constructor(
             }
     }
 
+    override suspend fun sendTransferCartInformation(transferCartInformation: TransferCartInformation): NetworkResponse<Any> {
+        return safeApiCallRaw { authApi.sendTransferCartInformation(transferCartInformation) }
+            .also { result ->
+                if (result is NetworkResponse.Success) {
+
+                }
+            }
+    }
+
 
     private suspend fun getMerchantParam(): HashMap<String, String> {
         val params = HashMap<String, String>()

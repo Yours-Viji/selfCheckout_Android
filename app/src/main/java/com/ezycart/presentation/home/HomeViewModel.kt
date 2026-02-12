@@ -14,6 +14,7 @@ import com.ezycart.data.remote.dto.MemberLoginResponse
 import com.ezycart.data.remote.dto.NetworkResponse
 import com.ezycart.data.remote.dto.PaymentRequest
 import com.ezycart.data.remote.dto.ShoppingCartDetails
+import com.ezycart.data.remote.dto.TransferCartInformation
 import com.ezycart.data.remote.dto.UpdatePaymentRequest
 import com.ezycart.domain.model.AppMode
 import com.ezycart.domain.usecase.GetCartIdUseCase
@@ -51,6 +52,8 @@ import org.json.JSONObject
 import java.io.File
 import java.math.BigDecimal
 import java.net.URL
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import kotlin.math.abs
 
@@ -1911,7 +1914,23 @@ class HomeViewModel @Inject constructor(
             _productInfo.value = null
         }
     }
+    fun sendTransferCartInformation(transferCartInformation:TransferCartInformation) {
+        try {
+            viewModelScope.launch {
+                when (val result = shoppingUseCase.sendTransferCartInformation(transferCartInformation)) {
+                    is NetworkResponse.Success -> {
 
+
+                    }
+
+                    is NetworkResponse.Error -> {
+
+                    }
+                }
+            }
+        } catch (e: Exception) {
+        }
+    }
     fun onReCallTransactionCalled(trolleyNumber: String) {
         viewModelScope.launch {
             var trolleyNumber =
@@ -1920,10 +1939,19 @@ class HomeViewModel @Inject constructor(
                         .replace(" ", "")
                 }"
             reCallTransaction("${Constants.RECALL_API}$trolleyNumber")
+
+            try {
+                sendTransferCartInformation(TransferCartInformation(getCurrentDateTime(), Constants.adminPin,"ezyExpress",trolleyNumber,"51"))
+            } catch (e: Exception) {
+            }
         }
 
     }
-
+    fun getCurrentDateTime(): String {
+        val current = LocalDateTime.now()
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+        return current.format(formatter)
+    }
     private fun reCallTransaction(url: String) {
         loadingManager.show()
         // resetProductInfoDetails()

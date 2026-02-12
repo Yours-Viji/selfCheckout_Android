@@ -16,6 +16,7 @@ import com.ezycart.data.remote.dto.PaymentRequest
 import com.ezycart.data.remote.dto.PaymentResponse
 import com.ezycart.data.remote.dto.PaymentStatusResponse
 import com.ezycart.data.remote.dto.ShoppingCartDetails
+import com.ezycart.data.remote.dto.TransferCartInformation
 import com.ezycart.data.remote.dto.UpdatePaymentRequest
 import com.ezycart.data.remote.dto.WavPayQrPaymentRequest
 import com.ezycart.data.remote.dto.WavPayQrPaymentStatus
@@ -55,6 +56,7 @@ interface AuthRepository {
     suspend fun sendLogsToBackend(cmsLogRequest: CmsLogRequest): NetworkResponse<Any>
     suspend fun reCallTransaction(url: String): NetworkResponse<ShoppingCartDetails>
     suspend fun refreshCartByMemberLogin(memberNumber: String): NetworkResponse<ShoppingCartDetails>
+    suspend fun sendTransferCartInformation(transferCartInformation: TransferCartInformation): NetworkResponse<Any>
     //suspend fun refreshInterceptor()
     fun isDeviceActivated(): Flow<Boolean>
     fun getCartId(): Flow<String>
