@@ -479,10 +479,42 @@ fun LandingScreen(
 }
 
     currentSystemAlert.value?.let { alert ->
-        CommonAlertView(state = alert) {
+       /* CommonAlertView(state = alert) {
             viewModel.clearSystemAlert()
             currentSystemAlert.value = null
-        }
+        }*/
+        CommonAlertView(
+            state = alert,
+            onClose = {
+                viewModel.clearSystemAlert()
+                currentSystemAlert.value = null
+            },
+            onScannerInput = { barcode ->
+                // Handle the scanner data while the alert is open
+                val re = Regex("[^a-zA-Z0-9]")
+                var barCode =barcode.trim()
+                val isQR = viewModel.isProbablyQRCode(barCode)
+                val containsEmp = barCode.lowercase().contains(":")
+
+                viewModel.setErrorMessage("Scanned Code - $barCode")
+
+                when {
+                    isQR && containsEmp -> {
+                        val pinList = barCode.split(":")
+                        if (pinList.size > 1) {
+                            val empPin = re.replace(pinList[1], "")
+                            viewModel.employeeLogin(empPin)
+                        }
+                    }
+
+                    else -> {
+                        // Alert to scan barcode and hide qr code
+                    }
+                }
+                viewModel.clearSystemAlert()
+                currentSystemAlert.value = null
+            }
+        )
     }
 
 
@@ -608,7 +640,40 @@ fun LanguageSelectionScreen(
     }
 
     currentSystemAlert.value?.let { alert ->
-        CommonAlertView(state = alert) { currentSystemAlert.value = null }
+        /*CommonAlertView(state = alert) { currentSystemAlert.value = null }*/
+        CommonAlertView(
+            state = alert,
+            onClose = {
+                viewModel.clearSystemAlert()
+                currentSystemAlert.value = null
+            },
+            onScannerInput = { barcode ->
+                // Handle the scanner data while the alert is open
+                val re = Regex("[^a-zA-Z0-9]")
+                var barCode =barcode.trim()
+                val isQR = viewModel.isProbablyQRCode(barCode)
+                val containsEmp = barCode.lowercase().contains(":")
+
+                viewModel.setErrorMessage("Scanned Code - $barCode")
+
+                when {
+                    isQR && containsEmp -> {
+                        val pinList = barCode.split(":")
+                        if (pinList.size > 1) {
+                            val empPin = re.replace(pinList[1], "")
+                            viewModel.employeeLogin(empPin)
+                        }
+                    }
+
+                    else -> {
+                        // Alert to scan barcode and hide qr code
+                    }
+                }
+                viewModel.clearSystemAlert()
+                currentSystemAlert.value = null
+            }
+        )
+
     }
 }
 @Composable

@@ -16,9 +16,18 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -34,26 +43,63 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 @Composable
 fun CommonAlertView(
     state: AlertState,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    onScannerInput: (String) -> Unit = {}
 ) {
     // Custom Brand Color
     val brandPurple = Color(0xFFC62828)
+
+    val scanBuffer = remember { mutableStateOf("") }
+    val focusRequester = remember { FocusRequester() }
 
     Dialog(
         onDismissRequest = { if (state.isDismissible) onClose() },
         properties = DialogProperties(
             dismissOnBackPress = state.isDismissible,
-            dismissOnClickOutside = state.isDismissible
+            dismissOnClickOutside = state.isDismissible,
+            usePlatformDefaultWidth = false // Helps with focus surface area
         )
     ) {
         Surface(
             shape = RoundedCornerShape(24.dp),
-            color = Color.White,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(16.dp)
+                // 1. Make the Dialog Surface focusable
+                .focusRequester(focusRequester)
+                .focusTarget()
+                // 2. Attach the scanner logic here
+                .onKeyEvent { keyEvent ->
+                    if (keyEvent.type == androidx.compose.ui.input.key.KeyEventType.KeyDown) {
+                        val nativeEvent = keyEvent.nativeKeyEvent
+                        when (keyEvent.key) {
+                            androidx.compose.ui.input.key.Key.Enter,
+                            androidx.compose.ui.input.key.Key.NumPadEnter -> {
+                                if (scanBuffer.value.isNotBlank()) {
+                                    onScannerInput(scanBuffer.value.trim())
+                                    scanBuffer.value = ""
+                                }
+                                true
+                            }
+                            // Ignore modifiers
+                            androidx.compose.ui.input.key.Key.ShiftLeft,
+                            androidx.compose.ui.input.key.Key.ShiftRight -> false
+                            else -> {
+                                val unicodeChar = nativeEvent.getUnicodeChar(nativeEvent.metaState)
+                                if (unicodeChar != 0) {
+                                    val c = unicodeChar.toChar()
+                                    if (!c.isISOControl()) scanBuffer.value += c
+                                }
+                                false
+                            }
+                        }
+                    } else false
+                },
             shadowElevation = 12.dp
         ) {
+            LaunchedEffect(Unit) {
+                focusRequester.requestFocus()
+            }
             Column(
                 modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
