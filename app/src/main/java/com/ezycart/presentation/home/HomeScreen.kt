@@ -286,7 +286,7 @@ fun HomeScreen(
         )
     }
     if(canShowMemberDialog.value) {
-        currentSystemAlert.value = null
+       /* currentSystemAlert.value = null
         currentSystemAlert.value = AlertState(
             title = stringResource(R.string.member_login),
             message = stringResource(R.string.scan_your_member_code),
@@ -294,7 +294,7 @@ fun HomeScreen(
             type = AlertType.INFO,
             isDismissible = false,
             showButton = true
-        )
+        )*/
     }
     if(canShowDeleteDialog.value) {
         currentSystemAlert.value = null
@@ -572,7 +572,8 @@ fun HomeScreen(
                 viewModel.hidePaymentView()
                         },
             onHelpClicked = {
-                viewModel.showHelpDialog()
+                viewModel.printReceipt(context as Activity)
+               // viewModel.showHelpDialog()
             },
             onCardPaymentClicked = {
                 viewModel.showPaymentProcessAlertView()
