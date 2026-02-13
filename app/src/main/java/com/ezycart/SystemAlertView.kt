@@ -63,7 +63,7 @@ fun CommonAlertView(
         Surface(
             shape = RoundedCornerShape(24.dp),
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(0.8f)
                 .padding(16.dp)
                 // 1. Make the Dialog Surface focusable
                 .focusRequester(focusRequester)
