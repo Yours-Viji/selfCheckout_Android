@@ -377,7 +377,7 @@ fun HomeScreen(
             terminalPort = Constants.PAYMENT_TERMINAL_PORT
         )
     }
-    LaunchedEffect(state.error) {
+    /*LaunchedEffect(state.error) {
         state.error?.let { errorMessage ->
             if (errorMessage.isNotEmpty()) {
                 DynamicToast.makeError(context, errorMessage).show()
@@ -391,7 +391,7 @@ fun HomeScreen(
             DynamicToast.makeError(context, message).show()
             viewModel.clearError()
         }
-    }
+    }*/
 
     /*LaunchedEffect(weightState) {
        // viewModel.handleWeightUpdate(weightState)

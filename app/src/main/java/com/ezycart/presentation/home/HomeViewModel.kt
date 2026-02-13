@@ -1645,14 +1645,14 @@ class HomeViewModel @Inject constructor(
 
                     printer = BixolonUsbPrinter(context.applicationContext)
                     printer.configure()
-                    printer.printPdfAsBitmap(pdfFile)
+                   // printer.printPdfAsBitmap(pdfFile)
                     try {
                         if (!printer.checkPaperStatus().lowercase().contains("ok")) {
                             sendLog(LogEvent.PRINTER_PAPER_EMPTY)
                         }
                     } catch (e: Exception) {
                     }
-
+                    printer.printPdfAsBitmap(pdfFile)
                 } catch (e: Exception) {
                     receiptPrinted = false // allow retry if failed
                     Log.e("PDF", "Print failed", e)

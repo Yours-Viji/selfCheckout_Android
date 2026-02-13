@@ -130,6 +130,7 @@ fun PrinterStatusDialog(
                     buttonIcon = Icons.Default.Info,
                     onAction = {
                         try {
+                            printer.configure()
                             paperStatus.value = printer.checkPaperStatus()
                         } catch (e: Exception) {
                             TODO("Not yet implemented")

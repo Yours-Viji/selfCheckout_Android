@@ -152,11 +152,11 @@ fun LandingScreen(
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
     }
-    LaunchedEffect(errorMessage.value) {
+    /*LaunchedEffect(errorMessage.value) {
         errorMessage.value.let { message ->
             DynamicToast.makeError(context, message).show()
         }
-    }
+    }*/
     fun updateAppLanguage(context: Context, languageCode: String) {
         val locale = Locale(languageCode)
         Locale.setDefault(locale)
