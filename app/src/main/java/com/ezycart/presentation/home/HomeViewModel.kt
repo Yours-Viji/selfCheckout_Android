@@ -956,6 +956,7 @@ class HomeViewModel @Inject constructor(
         _canShowPaymentSuccessDialog.value = true
         isPaymentSuccess = true
         sendLog(LogEvent.PAYMENT_SUCCESS)
+       makePayment(2)
     }
 
     fun showPaymentErrorAlertView(){
